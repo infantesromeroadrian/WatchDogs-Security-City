@@ -26,7 +26,7 @@ Sistema de agentes multi-modal para análisis de video e imágenes usando LangGr
 ### Requisitos
 
 - Python 3.10+
-- OpenAI API Key con acceso a GPT-4 Vision
+- OpenAI API Key con acceso a GPT-5.1 - Vision
 
 ### Pasos
 
