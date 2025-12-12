@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sistema de análisis de video e imágenes usando agentes de IA con LangGraph para investigación OSINT">
+    <meta name="keywords" content="OSINT, análisis de video, IA, LangGraph, visión por computadora, OCR, detección de objetos">
+    <meta name="theme-color" content="#1a1a2e">
+    <meta name="robots" content="noindex, nofollow">
+    <title>WatchDogs - Video Analysis System</title>
+    <link rel="stylesheet" href="static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header role="banner">
+            <h1>🎯 WatchDogs OSINT - Video Analysis System</h1>
+            <p class="subtitle">Sistema de Agentes Multi-Modal para Análisis de Video e Imágenes</p>
+            <div id="connectionStatus" class="connection-status" role="status" aria-live="polite"></div>
+        </header>
+
+        <!-- Video Upload Section -->
+        <section class="upload-section" role="region" aria-labelledby="upload-heading">
+            <h2 id="upload-heading">📤 1. Cargar Video</h2>
+            <div class="upload-area">
+                <input type="file" id="videoInput" accept="video/*" aria-label="Seleccionar archivo de video" hidden>
+                <button id="uploadBtn" class="btn btn-primary" aria-describedby="uploadStatus">Seleccionar Video</button>
+                <p id="uploadStatus" class="status-text" role="status" aria-live="polite"></p>
+            </div>
+        </section>
+
+        <!-- Video Player Section -->
+        <section class="player-section" id="playerSection" style="display: none;">
+            <h2>🎬 2. Reproducir y Seleccionar Frame</h2>
+            
+            <div class="video-container">
+                <video id="videoPlayer" controls></video>
+                <canvas id="roiCanvas"></canvas>
+            </div>
+
+            <div class="controls">
+                <button id="playPauseBtn" class="btn btn-control">▶️ Play</button>
+                <button id="captureBtn" class="btn btn-primary" disabled>📸 Capturar Frame</button>
+                <button id="clearRoiBtn" class="btn btn-secondary" disabled>🗑️ Limpiar Selección</button>
+                <button id="analyzeBtn" class="btn btn-success" disabled>🔍 Analizar</button>
+            </div>
+
+            <div class="info-panel">
+                <p><strong>Instrucciones:</strong></p>
+                <ol>
+                    <li>Reproduce el video y pausa en el momento que desees analizar</li>
+                    <li>Haz clic en "Capturar Frame" para tomar una instantánea</li>
+                    <li>Dibuja un rectángulo sobre la región que quieres analizar (opcional)</li>
+                    <li>Haz clic en "Analizar" para ejecutar los agentes</li>
+                </ol>
+                <p id="selectionInfo" class="selection-info"></p>
+            </div>
+        </section>
+
+        <!-- Analysis Section -->
+        <section class="analysis-section" id="analysisSection" style="display: none;">
+            <h2>📊 3. Resultados del Análisis</h2>
+            
+            <div class="loading-indicator" id="loadingIndicator" style="display: none;">
+                <div class="spinner"></div>
+                <p>🤖 Ejecutando agentes de análisis...</p>
+                <p class="loading-subtext">Vision Agent → OCR Agent → Detection Agent</p>
+            </div>
+
+            <div class="results-container" id="resultsContainer" style="display: none;">
+                <!-- Tabs -->
+                <div class="tabs">
+                    <button class="tab active" data-tab="text">📄 Reporte Texto</button>
+                    <button class="tab" data-tab="json">📋 Datos JSON</button>
+                    <button class="tab" data-tab="preview">🖼️ Preview</button>
+                </div>
+
+                <!-- Tab Contents -->
+                <div class="tab-content active" id="textTab">
+                    <pre id="textResults" class="results-text"></pre>
+                </div>
+
+                <div class="tab-content" id="jsonTab">
+                    <pre id="jsonResults" class="results-json"></pre>
+                </div>
+
+                <div class="tab-content" id="previewTab">
+                    <canvas id="previewCanvas"></canvas>
+                </div>
+
+                <div class="actions">
+                    <button id="copyJsonBtn" class="btn btn-secondary">📋 Copiar JSON</button>
+                    <button id="downloadReportBtn" class="btn btn-secondary">💾 Descargar Reporte</button>
+                    <button id="newAnalysisBtn" class="btn btn-primary">🔄 Nuevo Análisis</button>
+                </div>
+
+                <!-- Chat Section for Conversational Analysis -->
+                <div class="chat-section">
+                    <h3>💬 Chat con el Agente - Análisis Conversacional</h3>
+                    <div id="chatMessages"></div>
+                    <div class="chat-input-container">
+                        <textarea id="chatInput" placeholder="Pregunta sobre la imagen analizada..."></textarea>
+                        <button id="sendChat" class="btn" disabled>Enviar</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Scripts -->
+    <script src="static/js/video-player.js"></script>
+    <script src="static/js/roi-selector.js"></script>
+    <script src="static/js/api-client.js"></script>
+</body>
+</html>
+

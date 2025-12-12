@@ -1,0 +1,537 @@
+/* ============================================================================
+   WATCHDOGS OSINT - RESPONSIVE & FLEXIBLE LAYOUT (NO HARDCODED SIZES)
+   ============================================================================ */
+
+/* ---- CSS Custom Properties ---- */
+:root {
+    --bg-primary: #1a1a2e;
+    --bg-secondary: #16213e;
+    --accent-primary: #00d2ff;
+    --accent-secondary: #3a7bd5;
+    --text-primary: #e0e0e0;
+    --text-secondary: #b0b0b0;
+    --panel-bg: rgba(255, 255, 255, 0.05);
+    --border-color: rgba(255, 255, 255, 0.1);
+    --error-color: #ff6b6b;
+    --success-color: #00ff64;
+    
+    --spacing-xs: 0.5rem;
+    --spacing-sm: 1rem;
+    --spacing-md: 1.5rem;
+    --spacing-lg: 2rem;
+    --spacing-xl: 3rem;
+    
+    --radius-sm: 0.5rem;
+    --radius-md: 1rem;
+    --radius-lg: 1.5rem;
+}
+
+/* ---- Reset ---- */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* ---- Body ---- */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+    color: var(--text-primary);
+    min-height: 100vh;
+    padding: var(--spacing-sm);
+    line-height: 1.6;
+}
+
+/* ---- Header ---- */
+header {
+    text-align: center;
+    padding: var(--spacing-lg);
+    background: var(--panel-bg);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--spacing-lg);
+    border: 1px solid var(--border-color);
+}
+
+header h1 {
+    font-size: clamp(1.5rem, 4vw, 2.5rem);
+    background: linear-gradient(45deg, var(--accent-primary), var(--accent-secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: var(--spacing-xs);
+}
+
+header .subtitle {
+    color: var(--text-secondary);
+    font-size: clamp(0.9rem, 2vw, 1.1rem);
+}
+
+/* Connection Status Indicator */
+.connection-status {
+    margin-top: var(--spacing-sm);
+    font-size: 0.85rem;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    display: inline-block;
+}
+
+.connection-status.connected {
+    background: rgba(0, 255, 100, 0.1);
+    color: var(--success-color);
+    border: 1px solid rgba(0, 255, 100, 0.3);
+}
+
+.connection-status.disconnected {
+    background: rgba(255, 107, 107, 0.1);
+    color: var(--error-color);
+    border: 1px solid rgba(255, 107, 107, 0.3);
+}
+
+.connection-status.checking {
+    background: rgba(0, 210, 255, 0.1);
+    color: var(--accent-primary);
+    border: 1px solid rgba(0, 210, 255, 0.3);
+}
+
+/* ---- Main Container (Flexible Grid) ---- */
+.container {
+    max-width: 1800px;
+    margin: 0 auto;
+}
+
+/* ---- Sections ---- */
+section {
+    background: var(--panel-bg);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-md);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    margin-bottom: var(--spacing-lg);
+}
+
+section h2 {
+    color: var(--accent-primary);
+    margin-bottom: var(--spacing-md);
+    font-size: clamp(1.2rem, 3vw, 1.8rem);
+    padding-bottom: var(--spacing-xs);
+    border-bottom: 2px solid rgba(0, 210, 255, 0.3);
+}
+
+/* ---- Upload Area ---- */
+.upload-area {
+    text-align: center;
+    padding: var(--spacing-lg);
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: var(--radius-md);
+    border: 2px dashed rgba(0, 210, 255, 0.3);
+}
+
+.status-text {
+    margin-top: var(--spacing-md);
+    color: var(--text-secondary);
+}
+
+/* ---- Buttons ---- */
+.btn {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: clamp(0.9rem, 2vw, 1rem);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin: var(--spacing-xs);
+}
+
+.btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(0, 210, 255, 0.4);
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-primary {
+    background: linear-gradient(45deg, var(--accent-primary), var(--accent-secondary));
+    color: white;
+}
+
+.btn-success {
+    background: linear-gradient(45deg, #11998e, #38ef7d);
+    color: white;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-control {
+    background: #2196F3;
+    color: white;
+}
+
+/* ---- Video Container (Flexible & Responsive) ---- */
+.video-container {
+    position: relative;
+    background: #000;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    width: 100%;
+    max-height: 70vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#videoPlayer {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+    position: relative;
+    z-index: 1;
+}
+
+#roiCanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 10;
+    touch-action: none;
+}
+
+#roiCanvas.drawing {
+    pointer-events: auto;
+    cursor: crosshair;
+    background: rgba(0, 0, 0, 0.01); /* Barely visible overlay to ensure canvas receives events */
+}
+
+/* ---- Controls ---- */
+.controls {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: var(--spacing-xs);
+    margin: var(--spacing-md) 0;
+}
+
+/* ---- Info Panel ---- */
+.info-panel {
+    background: rgba(0, 0, 0, 0.2);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-sm);
+    margin-top: var(--spacing-md);
+}
+
+.info-panel ol {
+    margin-left: var(--spacing-md);
+    margin-top: var(--spacing-sm);
+}
+
+.info-panel li {
+    margin: var(--spacing-xs) 0;
+}
+
+.selection-info {
+    margin-top: var(--spacing-md);
+    padding: var(--spacing-sm);
+    background: rgba(0, 210, 255, 0.1);
+    border-left: 4px solid var(--accent-primary);
+    font-weight: 600;
+}
+
+/* ---- Loading ---- */
+.loading-indicator {
+    text-align: center;
+    padding: var(--spacing-xl) var(--spacing-md);
+}
+
+.spinner {
+    width: 60px;
+    height: 60px;
+    border: 6px solid rgba(0, 210, 255, 0.1);
+    border-top: 6px solid var(--accent-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto var(--spacing-md);
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-subtext {
+    color: var(--text-secondary);
+    margin-top: var(--spacing-sm);
+}
+
+/* ---- Results Container ---- */
+.results-container {
+    margin-top: var(--spacing-md);
+}
+
+/* ---- Tabs ---- */
+.tabs {
+    display: flex;
+    border-bottom: 2px solid rgba(0, 210, 255, 0.3);
+    margin-bottom: var(--spacing-md);
+    overflow-x: auto;
+}
+
+.tab {
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    font-size: clamp(0.9rem, 2vw, 1rem);
+    font-weight: 600;
+    color: var(--text-secondary);
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.tab:hover {
+    color: var(--accent-primary);
+}
+
+.tab.active {
+    color: var(--accent-primary);
+    border-bottom-color: var(--accent-primary);
+}
+
+/* ---- Tab Content ---- */
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.results-text,
+.results-json {
+    background: rgba(0, 0, 0, 0.2);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-sm);
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    max-height: 600px;
+    overflow-y: auto;
+    font-family: 'Courier New', monospace;
+    font-size: clamp(0.8rem, 1.5vw, 0.9rem);
+    line-height: 1.5;
+    color: var(--text-primary);
+}
+
+#previewCanvas {
+    max-width: 100%;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: #000;
+}
+
+/* ---- Chat Section (Conversational Analysis) ---- */
+.chat-section {
+    background: rgba(0, 0, 0, 0.2);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-sm);
+    margin-top: var(--spacing-lg);
+}
+
+.chat-section h3 {
+    color: var(--accent-primary);
+    margin-bottom: var(--spacing-sm);
+    font-size: clamp(1rem, 2.5vw, 1.2rem);
+}
+
+#chatMessages {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-bottom: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: var(--radius-sm);
+    min-height: 150px;
+}
+
+#chatMessages::-webkit-scrollbar {
+    width: 8px;
+}
+
+#chatMessages::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+}
+
+#chatMessages::-webkit-scrollbar-thumb {
+    background: rgba(0, 210, 255, 0.3);
+    border-radius: 4px;
+}
+
+#chatMessages::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 210, 255, 0.5);
+}
+
+.message {
+    margin-bottom: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    line-height: 1.6;
+}
+
+.message.user {
+    background: rgba(0, 210, 255, 0.15);
+    border-left: 3px solid var(--accent-primary);
+    margin-left: var(--spacing-md);
+}
+
+.message.assistant {
+    background: rgba(255, 255, 255, 0.05);
+    border-left: 3px solid var(--text-secondary);
+    margin-right: var(--spacing-md);
+}
+
+.message strong {
+    color: var(--accent-primary);
+    display: block;
+    margin-bottom: var(--spacing-xs);
+}
+
+.chat-input-container {
+    display: flex;
+    gap: var(--spacing-xs);
+}
+
+#chatInput {
+    flex: 1;
+    padding: var(--spacing-sm);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: 1rem;
+    resize: vertical;
+    min-height: 3rem;
+    font-family: inherit;
+}
+
+#chatInput:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 2px rgba(0, 210, 255, 0.1);
+}
+
+#sendChat {
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: linear-gradient(45deg, var(--accent-primary), var(--accent-secondary));
+    border: none;
+    border-radius: var(--radius-sm);
+    color: white;
+    cursor: pointer;
+    font-weight: bold;
+    transition: transform 0.2s;
+    white-space: nowrap;
+}
+
+#sendChat:hover {
+    transform: scale(1.05);
+}
+
+#sendChat:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* ---- Actions ---- */
+.actions {
+    display: flex;
+    justify-content: center;
+    gap: var(--spacing-xs);
+    margin-top: var(--spacing-md);
+    flex-wrap: wrap;
+}
+
+/* ---- Scrollbar Styling ---- */
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(0, 210, 255, 0.3);
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 210, 255, 0.5);
+}
+
+/* ---- Responsive Breakpoints ---- */
+@media (max-width: 768px) {
+    body {
+        padding: var(--spacing-xs);
+    }
+    
+    header {
+        padding: var(--spacing-md);
+    }
+    
+    section {
+        padding: var(--spacing-sm);
+    }
+    
+    .controls,
+    .actions {
+        flex-direction: column;
+    }
+    
+    .btn {
+        width: 100%;
+    }
+    
+    .tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+    }
+    
+    #chatMessages {
+        max-height: 200px;
+    }
+    
+    .message.user {
+        margin-left: var(--spacing-xs);
+    }
+    
+    .message.assistant {
+        margin-right: var(--spacing-xs);
+    }
+}
+
+@media (max-width: 480px) {
+    header h1 {
+        font-size: 1.5rem;
+    }
+    
+    section h2 {
+        font-size: 1.2rem;
+    }
+    
+    .video-container {
+        max-height: 50vh;
+    }
+}

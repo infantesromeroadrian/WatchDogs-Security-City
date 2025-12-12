@@ -1,0 +1,63 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+.cursor/
+
+# Environment files
+.env.local
+.env.*.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation
+*.md
+docs/
+
+# Temporary files
+data/temp/*
+!data/temp/.gitkeep
+*.log
+
+# Tests (will be copied separately)
+# tests/
+
+# Node modules (if any)
+node_modules/
+
+# Build artifacts
+build/
+dist/
+*.egg
+
+# Jupyter
+.ipynb_checkpoints
+*.ipynb
+
+# Docker
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
