@@ -268,6 +268,11 @@ class APIClient {
         this.chatHistory = [];  // Reset chat history for new analysis
         this.chatMessages.innerHTML = '<p style="color: var(--text-secondary); text-align: center;">El análisis está completo. Puedes hacer preguntas sobre la imagen.</p>';
         
+        // Enable professional features
+        if (window.professionalFeatures) {
+            window.professionalFeatures.enableButtons();
+        }
+        
         console.log('📊 Results displayed and chat controls activated');
     }
     
@@ -317,6 +322,11 @@ class APIClient {
         
         // Switch to text tab
         this.switchTab('text');
+        
+        // Enable professional features
+        if (window.professionalFeatures) {
+            window.professionalFeatures.enableButtons();
+        }
         
         console.log('📊 Multi-frame results displayed and chat activated');
     }

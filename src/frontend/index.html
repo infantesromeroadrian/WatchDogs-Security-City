@@ -118,6 +118,35 @@
                     <button id="newAnalysisBtn" class="btn btn-primary">🔄 Nuevo Análisis</button>
                 </div>
 
+                <!-- Professional OSINT Features -->
+                <div class="professional-features" style="margin-top: 20px; padding: 20px; background: #2a2a3e; border-radius: 8px; border: 2px solid #00d2ff;">
+                    <h3 style="color: #00d2ff; margin-bottom: 15px;">🎯 Professional OSINT Features</h3>
+                    
+                    <div class="feature-actions" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 15px;">
+                        <button id="extractMetadataBtn" class="btn btn-success" disabled>
+                            📊 Extract Metadata
+                        </button>
+                        <button id="generatePdfBtn" class="btn btn-success" disabled>
+                            📄 Generate PDF Report
+                        </button>
+                        <button id="generateEvidenceBtn" class="btn btn-success" disabled>
+                            📦 Evidence Package
+                        </button>
+                    </div>
+
+                    <!-- Metadata Panel (hidden by default) -->
+                    <div id="metadataPanel" class="metadata-panel" style="display: none; margin-top: 15px; padding: 15px; background: rgba(0, 210, 255, 0.1); border-radius: 5px;">
+                        <h4 style="color: #00d2ff; margin-bottom: 10px;">📊 Extracted Metadata</h4>
+                        <div id="metadataContent"></div>
+                    </div>
+
+                    <!-- Evidence Package Panel (hidden by default) -->
+                    <div id="evidencePanel" class="evidence-panel" style="display: none; margin-top: 15px; padding: 15px; background: rgba(255, 100, 100, 0.1); border-radius: 5px; border: 1px solid #ff6464;">
+                        <h4 style="color: #ff6464; margin-bottom: 10px;">📦 Evidence Package Generated</h4>
+                        <div id="evidenceContent"></div>
+                    </div>
+                </div>
+
                 <!-- Chat Section for Conversational Analysis -->
                 <div class="chat-section">
                     <h3>💬 Chat con el Agente - Análisis Conversacional</h3>
@@ -136,6 +165,7 @@
     <script src="static/js/roi-selector.js"></script>
     <script src="static/js/api-client.js"></script>
     <script src="static/js/multi-frame.js"></script>
+    <script src="static/js/professional-features.js"></script>
 </body>
 </html>
 
