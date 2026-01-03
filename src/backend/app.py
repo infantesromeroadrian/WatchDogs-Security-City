@@ -5,8 +5,9 @@ Main API server with endpoints for video upload and frame analysis.
 
 import logging
 import os
+import io
 from datetime import datetime
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, send_file
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -25,6 +26,9 @@ from .config import (
 )
 from .services.video_service import VideoService
 from .services.image_service import ImageService
+from .services.metadata_service import metadata_service
+from .services.report_service import report_service
+from .services.auth_service import auth_service
 from .agents.coordinator import CoordinatorAgent
 from .utils.metrics_utils import get_agent_metrics
 from .utils.cache_utils import get_cache_stats
@@ -396,6 +400,223 @@ def get_metrics():
 
     except Exception as e:
         logger.error(f"❌ Error getting metrics: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/api/extract-metadata", methods=["POST"])
+@limiter.limit("20 per minute")
+def extract_metadata():
+    """
+    Extract comprehensive metadata from image.
+
+    Expected JSON:
+    {
+        "frame": "base64_encoded_image"
+    }
+
+    Returns: Metadata including EXIF, GPS, forensics
+    """
+    try:
+        data = request.get_json()
+
+        if not data or "frame" not in data:
+            return jsonify({"success": False, "error": "No frame provided"}), 400
+
+        frame_base64 = data["frame"]
+
+        # Validate size
+        is_valid, error_msg = validate_base64_size(frame_base64)
+        if not is_valid:
+            return jsonify({"success": False, "error": error_msg}), 400
+
+        logger.info("📊 Extracting metadata...")
+
+        # Extract metadata
+        metadata = metadata_service.extract_image_metadata(frame_base64)
+
+        logger.info("✅ Metadata extraction complete")
+
+        return jsonify({"success": True, "metadata": metadata}), 200
+
+    except Exception as e:
+        logger.error(f"❌ Metadata extraction error: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/api/generate-pdf-report", methods=["POST"])
+@limiter.limit("10 per minute")
+def generate_pdf_report():
+    """
+    Generate professional PDF report.
+
+    Expected JSON:
+    {
+        "analysis_results": {...},
+        "metadata": {...} (optional),
+        "evidence_id": "..." (optional)
+    }
+
+    Returns: PDF file
+    """
+    try:
+        from flask import send_file
+
+        data = request.get_json()
+
+        if not data or "analysis_results" not in data:
+            return jsonify(
+                {"success": False, "error": "No analysis results provided"}
+            ), 400
+
+        analysis_results = data["analysis_results"]
+        metadata = data.get("metadata")
+        evidence_id = data.get("evidence_id")
+
+        logger.info("📄 Generating PDF report...")
+
+        # Generate PDF
+        pdf_bytes = report_service.generate_analysis_report(
+            analysis_results=analysis_results,
+            metadata=metadata,
+            evidence_id=evidence_id,
+        )
+
+        # Create file-like object
+        pdf_io = io.BytesIO(pdf_bytes)
+        pdf_io.seek(0)
+
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"watchdogs_report_{timestamp}.pdf"
+
+        logger.info(f"✅ PDF report generated: {filename}")
+
+        return send_file(
+            pdf_io,
+            mimetype="application/pdf",
+            as_attachment=True,
+            download_name=filename,
+        )
+
+    except Exception as e:
+        logger.error(f"❌ PDF generation error: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/api/generate-evidence-package", methods=["POST"])
+@limiter.limit("10 per minute")
+def generate_evidence_package():
+    """
+    Generate forensic evidence package with chain of custody.
+
+    Expected JSON:
+    {
+        "frame": "base64_encoded_image",
+        "analysis_results": {...}
+    }
+
+    Returns: Complete evidence package
+    """
+    try:
+        data = request.get_json()
+
+        if not data or "frame" not in data or "analysis_results" not in data:
+            return jsonify(
+                {"success": False, "error": "Missing frame or analysis results"}
+            ), 400
+
+        frame_base64 = data["frame"]
+        analysis_results = data["analysis_results"]
+
+        # Validate size
+        is_valid, error_msg = validate_base64_size(frame_base64)
+        if not is_valid:
+            return jsonify({"success": False, "error": error_msg}), 400
+
+        logger.info("📦 Generating evidence package...")
+
+        # Generate evidence package
+        package = metadata_service.generate_evidence_package(
+            frame_base64=frame_base64, analysis_results=analysis_results
+        )
+
+        logger.info(f"✅ Evidence package generated: {package['evidence_id']}")
+
+        return jsonify({"success": True, "evidence_package": package}), 200
+
+    except Exception as e:
+        logger.error(f"❌ Evidence package error: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/api/auth/login", methods=["POST"])
+@limiter.limit("5 per minute")
+def login():
+    """
+    User login endpoint.
+
+    Expected JSON:
+    {
+        "username": "...",
+        "password": "..."
+    }
+
+    Returns: Session token
+    """
+    try:
+        data = request.get_json()
+
+        if not data or "username" not in data or "password" not in data:
+            return jsonify(
+                {"success": False, "error": "Missing username or password"}
+            ), 400
+
+        username = data["username"]
+        password = data["password"]
+
+        # Authenticate
+        session_token = auth_service.authenticate(username, password)
+
+        if not session_token:
+            return jsonify({"success": False, "error": "Invalid credentials"}), 401
+
+        # Get user stats
+        user_stats = auth_service.get_user_stats(username)
+
+        return jsonify(
+            {"success": True, "session_token": session_token, "user": user_stats}
+        ), 200
+
+    except Exception as e:
+        logger.error(f"❌ Login error: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/api/auth/logout", methods=["POST"])
+@limiter.limit("10 per minute")
+def logout():
+    """
+    User logout endpoint.
+
+    Headers:
+    Authorization: Bearer <session_token>
+
+    Returns: Success status
+    """
+    try:
+        auth_header = request.headers.get("Authorization")
+
+        if not auth_header or not auth_header.startswith("Bearer "):
+            return jsonify({"success": False, "error": "Missing authorization"}), 401
+
+        session_token = auth_header.replace("Bearer ", "")
+
+        # Logout
+        auth_service.logout(session_token)
+
+        return jsonify({"success": True, "message": "Logged out successfully"}), 200
+
+    except Exception as e:
+        logger.error(f"❌ Logout error: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
 
