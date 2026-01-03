@@ -42,7 +42,31 @@
                 <button id="playPauseBtn" class="btn btn-control">▶️ Play</button>
                 <button id="captureBtn" class="btn btn-primary" disabled>📸 Capturar Frame</button>
                 <button id="clearRoiBtn" class="btn btn-secondary" disabled>🗑️ Limpiar Selección</button>
-                <button id="analyzeBtn" class="btn btn-success" disabled>🔍 Analizar</button>
+                <button id="analyzeBtn" class="btn btn-success" disabled>🔍 Analizar Frame Actual</button>
+            </div>
+
+            <!-- Multi-Frame Analysis Section (NEW FEATURE) -->
+            <div class="multi-frame-section" style="margin-top: 20px; padding: 15px; background: #2a2a3e; border-radius: 8px;">
+                <h3 style="color: #00d9ff; margin-bottom: 15px;">🎯 Análisis Multi-Frame (OSINT Avanzado)</h3>
+                <p style="color: #aaa; font-size: 14px; margin-bottom: 10px;">
+                    Captura múltiples frames del mismo lugar para mejorar la geolocalización y análisis contextual.
+                </p>
+                
+                <div class="multi-frame-controls" style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <button id="addToCollectionBtn" class="btn btn-primary" disabled>
+                        ➕ Añadir Frame a Colección
+                    </button>
+                    <button id="analyzeBatchBtn" class="btn btn-success" disabled>
+                        🔍 Analizar Colección (<span id="frameCount">0</span> frames)
+                    </button>
+                    <button id="clearCollectionBtn" class="btn btn-secondary" disabled>
+                        🗑️ Limpiar Colección
+                    </button>
+                </div>
+
+                <div id="frameCollectionGrid" class="frame-collection-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; max-height: 200px; overflow-y: auto;">
+                    <!-- Frame thumbnails will be added here dynamically -->
+                </div>
             </div>
 
             <div class="info-panel">
@@ -111,6 +135,7 @@
     <script src="static/js/video-player.js"></script>
     <script src="static/js/roi-selector.js"></script>
     <script src="static/js/api-client.js"></script>
+    <script src="static/js/multi-frame.js"></script>
 </body>
 </html>
 

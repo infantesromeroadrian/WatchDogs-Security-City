@@ -30,6 +30,8 @@ class APIClient {
         this.lastResults = null;
         this.chatHistory = [];
         this.currentFrame = null;
+        this.frameCollection = null;  // For multi-frame chat
+        this.isMultiFrameAnalysis = false;  // Flag to know if last analysis was multi-frame
         
         this.init();
     }
@@ -37,6 +39,19 @@ class APIClient {
     init() {
         // Check backend connection on load
         this.checkBackendConnection();
+        
+        // DEFENSIVE CHECK: Verify critical DOM elements
+        console.log('🔍 DOM Elements Check:');
+        console.log('   - sendChat:', !!this.sendChat, this.sendChat);
+        console.log('   - chatInput:', !!this.chatInput, this.chatInput);
+        console.log('   - chatMessages:', !!this.chatMessages, this.chatMessages);
+        
+        if (!this.sendChat) {
+            console.error('❌ CRITICAL: sendChat button not found! Check HTML id="sendChat"');
+        }
+        if (!this.chatInput) {
+            console.error('❌ CRITICAL: chatInput not found! Check HTML id="chatInput"');
+        }
         
         // Analyze button
         this.analyzeBtn.addEventListener('click', () => {
@@ -66,17 +81,29 @@ class APIClient {
             this.resetAnalysis();
         });
         
-        // Chat functionality
-        this.sendChat.addEventListener('click', () => {
-            this.sendChatMessage();
-        });
-        
-        this.chatInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
+        // Chat functionality (DEFENSIVE)
+        if (this.sendChat) {
+            this.sendChat.addEventListener('click', () => {
+                console.log('🖱️ Chat send button clicked');
                 this.sendChatMessage();
-            }
-        });
+            });
+            console.log('✅ Chat send button listener attached');
+        } else {
+            console.error('❌ Cannot attach listener to sendChat - element not found');
+        }
+        
+        if (this.chatInput) {
+            this.chatInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    console.log('⌨️ Enter pressed in chat input');
+                    this.sendChatMessage();
+                }
+            });
+            console.log('✅ Chat input keypress listener attached');
+        } else {
+            console.error('❌ Cannot attach listener to chatInput - element not found');
+        }
     }
     
     async checkBackendConnection() {
@@ -202,6 +229,8 @@ class APIClient {
         this.lastResults = results;
         this.currentFrame = window.videoPlayer.getCapturedFrame();
         this.currentROI = window.roiSelector.getROI();  // Store ROI for chat
+        this.isMultiFrameAnalysis = false;  // Single frame analysis
+        this.frameCollection = null;  // Clear multi-frame collection
         
         // Hide loading
         this.loadingIndicator.style.display = 'none';
@@ -216,13 +245,80 @@ class APIClient {
         // Display preview (captured frame with ROI)
         this.displayPreview();
         
-        // Enable chat after analysis
-        this.sendChat.disabled = false;
-        this.chatInput.disabled = false;
+        // Enable chat after analysis (DEFENSIVE CHECK)
+        console.log('🔍 Activating chat controls...');
+        console.log('   - sendChat button exists:', !!this.sendChat);
+        console.log('   - chatInput exists:', !!this.chatInput);
+        console.log('   - currentFrame exists:', !!this.currentFrame);
+        
+        if (this.sendChat) {
+            this.sendChat.disabled = false;
+            console.log('✅ Chat send button ENABLED');
+        } else {
+            console.error('❌ sendChat button NOT FOUND in DOM!');
+        }
+        
+        if (this.chatInput) {
+            this.chatInput.disabled = false;
+            console.log('✅ Chat input ENABLED');
+        } else {
+            console.error('❌ chatInput NOT FOUND in DOM!');
+        }
+        
         this.chatHistory = [];  // Reset chat history for new analysis
         this.chatMessages.innerHTML = '<p style="color: var(--text-secondary); text-align: center;">El análisis está completo. Puedes hacer preguntas sobre la imagen.</p>';
         
-        console.log('📊 Results displayed');
+        console.log('📊 Results displayed and chat controls activated');
+    }
+    
+    displayBatchResults(results, frameCollection) {
+        console.log('📊 Displaying multi-frame batch results');
+        this.lastResults = results;
+        this.frameCollection = frameCollection;  // Store all frames
+        this.isMultiFrameAnalysis = true;  // Flag for chat
+        this.currentFrame = null;  // No single frame
+        this.currentROI = null;
+        
+        // Hide loading
+        this.loadingIndicator.style.display = 'none';
+        this.resultsContainer.style.display = 'block';
+        
+        // Display text report
+        this.textResults.textContent = results.summary || results.text || 'No text report available';
+        
+        // Display JSON report
+        this.jsonResults.textContent = JSON.stringify(results, null, 2);
+        
+        // No preview for multi-frame (could show grid in future)
+        const previewTab = document.querySelector('.tab[data-tab="preview"]');
+        if (previewTab) {
+            previewTab.style.display = 'none';  // Hide preview tab for multi-frame
+        }
+        
+        // Enable chat after analysis (DEFENSIVE CHECK)
+        console.log('🔍 Activating chat controls for MULTI-FRAME...');
+        console.log(`   - ${frameCollection.length} frames in collection`);
+        
+        if (this.sendChat) {
+            this.sendChat.disabled = false;
+            console.log('✅ Chat send button ENABLED (multi-frame mode)');
+        }
+        
+        if (this.chatInput) {
+            this.chatInput.disabled = false;
+            console.log('✅ Chat input ENABLED (multi-frame mode)');
+        }
+        
+        this.chatHistory = [];
+        this.chatMessages.innerHTML = `<p style="color: var(--text-secondary); text-align: center;">
+            📊 Análisis multi-frame completo (${frameCollection.length} frames). 
+            Puedes hacer preguntas sobre cualquier frame o todos en conjunto.
+        </p>`;
+        
+        // Switch to text tab
+        this.switchTab('text');
+        
+        console.log('📊 Multi-frame results displayed and chat activated');
     }
     
     displayPreview() {
@@ -346,8 +442,25 @@ class APIClient {
     }
     
     async sendChatMessage() {
+        console.log('💬 sendChatMessage() called');
+        console.log('   - chatInput value:', this.chatInput?.value);
+        console.log('   - isMultiFrameAnalysis:', this.isMultiFrameAnalysis);
+        console.log('   - frameCollection:', this.frameCollection?.length || 0);
+        console.log('   - currentFrame exists:', !!this.currentFrame);
+        console.log('   - sendChat disabled:', this.sendChat?.disabled);
+        
         const message = this.chatInput.value.trim();
-        if (!message || !this.currentFrame) return;
+        if (!message) {
+            console.warn('⚠️ Chat message is empty');
+            return;
+        }
+        
+        // Check if we have frames to analyze
+        if (!this.currentFrame && !this.frameCollection) {
+            console.error('❌ No frames available for chat');
+            alert('⚠️ Debes realizar un análisis primero antes de usar el chat');
+            return;
+        }
         
         // Add user message to chat
         this.addMessageToChat('user', message);
@@ -355,23 +468,41 @@ class APIClient {
         this.sendChat.disabled = true;
         
         try {
-            // Get ROI-cropped frame if ROI exists
-            let frameToSend = this.currentFrame;
-            const roi = this.currentROI || window.roiSelector.getROI();
+            let payload;
             
-            if (roi) {
-                // Crop ROI from frame (async operation)
-                frameToSend = await this.cropROIFromFrame(this.currentFrame, roi);
-                console.log('✂️ Using ROI-cropped frame for chat:', roi);
+            // MULTI-FRAME MODE
+            if (this.isMultiFrameAnalysis && this.frameCollection) {
+                console.log(`📊 Multi-frame chat mode: ${this.frameCollection.length} frames`);
+                
+                // Send all frames with the question
+                payload = {
+                    frames: this.frameCollection,  // Send all frames
+                    message: message,
+                    context: this.buildMultiFrameChatContext(message)
+                };
+                
             } else {
-                console.log('📐 Using full frame for chat (no ROI)');
+                // SINGLE-FRAME MODE (original logic)
+                console.log('📸 Single-frame chat mode');
+                
+                // Get ROI-cropped frame if ROI exists
+                let frameToSend = this.currentFrame;
+                const roi = this.currentROI || window.roiSelector.getROI();
+                
+                if (roi) {
+                    // Crop ROI from frame (async operation)
+                    frameToSend = await this.cropROIFromFrame(this.currentFrame, roi);
+                    console.log('✂️ Using ROI-cropped frame for chat:', roi);
+                } else {
+                    console.log('📐 Using full frame for chat (no ROI)');
+                }
+                
+                // Prepare payload with context
+                payload = {
+                    frame: frameToSend,
+                    context: this.buildChatContext(message, roi)
+                };
             }
-            
-            // Prepare payload with context
-            const payload = {
-                frame: frameToSend,
-                context: this.buildChatContext(message, roi)
-            };
             
             // Send to backend with timeout
             const controller = new AbortController();
@@ -467,6 +598,39 @@ class APIClient {
             };
             img.src = frameBase64;
         });
+    }
+    
+    buildMultiFrameChatContext(userMessage) {
+        let context = `ANÁLISIS MULTI-FRAME: El usuario ha analizado ${this.frameCollection.length} frames y hace una pregunta.\n\n`;
+        context += `Pregunta: ${userMessage}\n\n`;
+        context += `IMPORTANTE: Recibirás ${this.frameCollection.length} imágenes. Analiza TODAS y responde la pregunta considerando información de todos los frames.\n\n`;
+        
+        if (this.lastResults) {
+            context += 'CONTEXTO DEL ANÁLISIS PREVIO:\n';
+            if (this.lastResults.summary) {
+                context += `Resumen: ${this.lastResults.summary.substring(0, 500)}\n\n`;
+            }
+            if (this.lastResults.combined_geolocation) {
+                context += `Geolocalización: ${JSON.stringify(this.lastResults.combined_geolocation).substring(0, 300)}\n\n`;
+            }
+        }
+        
+        if (this.chatHistory.length > 0) {
+            context += 'HISTORIAL DE CONVERSACIÓN:\n';
+            this.chatHistory.slice(-4).forEach(msg => {
+                context += `${msg.role === 'user' ? 'Usuario' : 'Asistente'}: ${msg.content}\n`;
+            });
+            context += '\n';
+        }
+        
+        context += 'INSTRUCCIONES:\n';
+        context += '- Analiza TODAS las imágenes que recibes\n';
+        context += '- Si preguntan "qué ves en cada frame", describe cada frame por separado\n';
+        context += '- Si preguntan algo específico (color, objeto, texto), búscalo en TODOS los frames\n';
+        context += '- Numera tus respuestas si describes múltiples frames: "Frame 1: ..., Frame 2: ..."\n';
+        context += '- Sé específico y conciso\n';
+        
+        return context;
     }
     
     buildChatContext(userMessage, roi = null) {

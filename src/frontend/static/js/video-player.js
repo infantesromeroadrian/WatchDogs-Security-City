@@ -121,6 +121,11 @@ class VideoPlayer {
             window.roiSelector.setFrame(this.capturedFrame, canvas.width, canvas.height);
         }
         
+        // Notify multi-frame analyzer
+        if (window.multiFrameAnalyzer) {
+            window.multiFrameAnalyzer.setCurrentFrame(this.capturedFrame);
+        }
+        
         console.log('📸 Frame captured:', canvas.width, 'x', canvas.height);
         
         // Show success feedback

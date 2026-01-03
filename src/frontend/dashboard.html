@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Monitoreo - WatchDogs OSINT</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #667eea;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #10b981;
+            animation: pulse 2s infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .metric-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .metric-card h3 {
+            color: #667eea;
+            font-size: 16px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .agent-icon {
+            font-size: 24px;
+        }
+
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .metric-row:last-child {
+            border-bottom: none;
+        }
+
+        .metric-label {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .metric-value {
+            font-weight: bold;
+            color: #333;
+            font-size: 16px;
+        }
+
+        .metric-value.success {
+            color: #10b981;
+        }
+
+        .metric-value.error {
+            color: #ef4444;
+        }
+
+        .metric-value.warning {
+            color: #f59e0b;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.3s ease;
+        }
+
+        .cache-stats {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .system-health {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .health-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .health-badge.healthy {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .health-badge.degraded {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .refresh-button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        .refresh-button:hover {
+            background: #5568d3;
+        }
+
+        .last-update {
+            color: #999;
+            font-size: 12px;
+            text-align: right;
+            margin-top: 10px;
+        }
+
+        .no-data {
+            text-align: center;
+            color: #999;
+            padding: 40px;
+            font-size: 14px;
+        }
+
+        .auto-refresh {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .auto-refresh input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .auto-refresh label {
+            color: #666;
+            font-size: 14px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎯 Dashboard de Monitoreo - WatchDogs OSINT <span class="status-indicator"></span></h1>
+            <p class="subtitle">Monitoreo en tiempo real de agentes y sistema</p>
+        </header>
+
+        <div class="system-health" id="systemHealth">
+            <h3>Estado del Sistema</h3>
+            <p>Cargando...</p>
+        </div>
+
+        <div class="metrics-grid" id="metricsGrid">
+            <!-- Agent cards will be inserted here -->
+        </div>
+
+        <div class="cache-stats" id="cacheStats">
+            <h3>📦 Estadísticas de Cache</h3>
+            <p class="no-data">Cargando estadísticas de cache...</p>
+        </div>
+
+        <div class="system-health">
+            <button class="refresh-button" onclick="refreshMetrics()">🔄 Actualizar Métricas</button>
+            <div class="auto-refresh">
+                <input type="checkbox" id="autoRefresh" checked>
+                <label for="autoRefresh">Auto-actualizar cada 5 segundos</label>
+            </div>
+            <div class="last-update" id="lastUpdate"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin + '/api';
+        let autoRefreshInterval = null;
+
+        // Icons for each agent
+        const agentIcons = {
+            'vision': '🔍',
+            'ocr': '📝',
+            'detection': '🎯',
+            'geolocation': '🌍'
+        };
+
+        async function fetchMetrics() {
+            try {
+                const response = await fetch(`${API_BASE}/metrics`);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('Error fetching metrics:', error);
+                return null;
+            }
+        }
+
+        async function fetchHealth() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('Error fetching health:', error);
+                return null;
+            }
+        }
+
+        async function fetchCacheStats() {
+            try {
+                const response = await fetch(`${API_BASE}/cache-stats`);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('Error fetching cache stats:', error);
+                return null;
+            }
+        }
+
+        function renderAgentMetrics(metrics) {
+            const grid = document.getElementById('metricsGrid');
+            
+            if (!metrics || Object.keys(metrics).length === 0) {
+                grid.innerHTML = '<div class="metric-card"><p class="no-data">No hay métricas disponibles aún. Ejecuta algunos análisis primero.</p></div>';
+                return;
+            }
+
+            grid.innerHTML = '';
+
+            for (const [agentName, stats] of Object.entries(metrics)) {
+                const icon = agentIcons[agentName] || '🤖';
+                const successRate = (stats.success_rate * 100).toFixed(1);
+                const avgLatency = stats.avg_latency_ms.toFixed(2);
+
+                const card = document.createElement('div');
+                card.className = 'metric-card';
+                card.innerHTML = `
+                    <h3><span class="agent-icon">${icon}</span> ${agentName.toUpperCase()}</h3>
+                    
+                    <div class="metric-row">
+                        <span class="metric-label">Total Llamadas</span>
+                        <span class="metric-value">${stats.total_calls}</span>
+                    </div>
+                    
+                    <div class="metric-row">
+                        <span class="metric-label">Éxitos</span>
+                        <span class="metric-value success">${stats.success_count}</span>
+                    </div>
+                    
+                    <div class="metric-row">
+                        <span class="metric-label">Errores</span>
+                        <span class="metric-value error">${stats.error_count}</span>
+                    </div>
+                    
+                    <div class="metric-row">
+                        <span class="metric-label">Timeouts</span>
+                        <span class="metric-value warning">${stats.timeout_count}</span>
+                    </div>
+                    
+                    <div class="metric-row">
+                        <span class="metric-label">Tasa de Éxito</span>
+                        <span class="metric-value success">${successRate}%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${successRate}%"></div>
+                    </div>
+                    
+                    <div class="metric-row">
+                        <span class="metric-label">Latencia Promedio</span>
+                        <span class="metric-value">${avgLatency} ms</span>
+                    </div>
+                    
+                    <div class="metric-row">
+                        <span class="metric-label">Latencia Mínima</span>
+                        <span class="metric-value">${stats.min_latency_ms === Infinity ? 'N/A' : stats.min_latency_ms.toFixed(2)} ms</span>
+                    </div>
+                    
+                    <div class="metric-row">
+                        <span class="metric-label">Latencia Máxima</span>
+                        <span class="metric-value">${stats.max_latency_ms.toFixed(2)} ms</span>
+                    </div>
+                `;
+                grid.appendChild(card);
+            }
+        }
+
+        function renderSystemHealth(health) {
+            const healthDiv = document.getElementById('systemHealth');
+            
+            if (!health) {
+                healthDiv.innerHTML = '<h3>Estado del Sistema</h3><p class="no-data">No se pudo obtener el estado del sistema</p>';
+                return;
+            }
+
+            const statusClass = health.status === 'healthy' ? 'healthy' : 'degraded';
+            const statusText = health.status === 'healthy' ? '✅ Saludable' : '⚠️ Degradado';
+
+            healthDiv.innerHTML = `
+                <h3>Estado del Sistema <span class="health-badge ${statusClass}">${statusText}</span></h3>
+                <div class="metric-row">
+                    <span class="metric-label">Servicio</span>
+                    <span class="metric-value">${health.service}</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Timestamp</span>
+                    <span class="metric-value">${new Date(health.timestamp).toLocaleString('es-ES')}</span>
+                </div>
+                ${health.checks ? Object.entries(health.checks).map(([key, value]) => `
+                    <div class="metric-row">
+                        <span class="metric-label">${key.replace(/_/g, ' ')}</span>
+                        <span class="metric-value ${value ? 'success' : 'error'}">${value ? '✅' : '❌'}</span>
+                    </div>
+                `).join('') : ''}
+            `;
+        }
+
+        function renderCacheStats(stats) {
+            const cacheDiv = document.getElementById('cacheStats');
+            
+            if (!stats || !stats.enabled) {
+                cacheDiv.innerHTML = '<h3>📦 Estadísticas de Cache</h3><p class="no-data">Cache deshabilitado</p>';
+                return;
+            }
+
+            cacheDiv.innerHTML = `
+                <h3>📦 Estadísticas de Cache</h3>
+                <div class="metric-row">
+                    <span class="metric-label">Entradas en Cache</span>
+                    <span class="metric-value">${stats.total_entries}</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Tamaño Máximo</span>
+                    <span class="metric-value">${stats.max_size}</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Utilización</span>
+                    <span class="metric-value">${stats.utilization_pct.toFixed(1)}%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: ${stats.utilization_pct}%"></div>
+                </div>
+            `;
+        }
+
+        async function refreshMetrics() {
+            console.log('🔄 Refreshing metrics...');
+            
+            const [metrics, health, cache] = await Promise.all([
+                fetchMetrics(),
+                fetchHealth(),
+                fetchCacheStats()
+            ]);
+
+            renderAgentMetrics(metrics);
+            renderSystemHealth(health);
+            renderCacheStats(cache);
+
+            const now = new Date().toLocaleString('es-ES');
+            document.getElementById('lastUpdate').textContent = `Última actualización: ${now}`;
+        }
+
+        // Auto-refresh toggle
+        document.getElementById('autoRefresh').addEventListener('change', (e) => {
+            if (e.target.checked) {
+                autoRefreshInterval = setInterval(refreshMetrics, 5000);
+                console.log('✅ Auto-refresh enabled');
+            } else {
+                if (autoRefreshInterval) {
+                    clearInterval(autoRefreshInterval);
+                    autoRefreshInterval = null;
+                }
+                console.log('❌ Auto-refresh disabled');
+            }
+        });
+
+        // Initial load
+        refreshMetrics();
+
+        // Start auto-refresh by default
+        autoRefreshInterval = setInterval(refreshMetrics, 5000);
+    </script>
+</body>
+</html>

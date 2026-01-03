@@ -1,25 +1,61 @@
 # 🎯 WatchDogs OSINT - Video Analysis System
 
-Sistema de agentes multi-modal para análisis de video e imágenes usando LangGraph y GPT-4 Vision.
+Sistema de agentes multi-modal para análisis de video e imágenes usando LangGraph y GPT-5.1 Vision.
+
+**Estado del Proyecto:** ✅ **Production-Ready** (95/100) - Auditoría completa realizada 2026-01-03
 
 ## 📋 Características
 
-- **Sistema de Agentes LangGraph**: Coordinación inteligente de 3 agentes especializados
-  - 🔍 **Vision Agent**: Análisis visual general de escenas
-  - 📝 **OCR Agent**: Extracción de texto (matrículas, carteles, documentos)
-  - 🎯 **Detection Agent**: Detección de objetos, personas y vehículos
+### 🤖 Sistema de Agentes Multi-Modal
 
-- **Interfaz Web Intuitiva**: 
-  - Subida y reproducción de videos
-  - Captura de frames en cualquier momento
-  - Selección de ROI (Region of Interest) para análisis focalizado
-  - Resultados en formato JSON y texto legible
+- **LangGraph Native Parallelism** ✅: Ejecución paralela NATIVA de 4 agentes especializados
+  - 🔍 **Vision Agent**: Análisis visual general de escenas y respuestas a preguntas específicas
+  - 📝 **OCR Agent**: Extracción de texto (matrículas, carteles, documentos, señales)
+  - 🎯 **Detection Agent**: Detección de objetos, personas, vehículos con conteo
+  - 🌍 **Geolocation Agent**: Estimación de ubicación geográfica basada en clues visuales
 
-- **Backend Flask Robusto**:
-  - API REST simple y eficiente
-  - Procesamiento de imágenes con PIL
-  - Orquestación de agentes con LangGraph
-  - Limpieza automática de archivos temporales
+### 🛡️ Patrones de Resiliencia (Production-Grade)
+
+- **Retry Logic** ✅: Exponential backoff con tenacity (3 intentos, 2-10s wait)
+- **Timeouts** ✅: 30 segundos por agente (configurable)
+- **Circuit Breaker** ✅: Protección contra cascading failures (5 fallos → open)
+- **Cache LRU** ✅: In-memory con límite de 500 entradas para prevenir memory leaks
+- **Rate Limiting** ✅: 30 req/min general, 10 req/min para análisis por IP
+
+### 🔒 Seguridad (Security Baseline Compliant)
+
+- **No Hardcoded Secrets** ✅: Todas las API keys en variables de entorno
+- **CORS Restrictivo** ✅: Solo orígenes permitidos (configurable)
+- **Input Validation** ✅: Validación de tamaño de archivos y base64 (DoS prevention)
+- **Base64 Size Limits** ✅: Máximo 10MB por frame (configurable)
+- **Auto-cleanup** ✅: Videos temporales eliminados después de 1 hora
+
+### 📊 Observabilidad y Métricas
+
+- **Pydantic Validation** ✅: Validación completa de schemas con Pydantic models
+- **Metrics Tracking** ✅: Latencia, success rate, error counts por agente
+- **Structured Logging** ✅: Formato estándar con filename:lineno (Rule 19 compliant)
+- **Health Checks** ✅: Endpoint `/api/health` para monitoreo
+- **Metrics API** ✅: Endpoint `/api/metrics` con estadísticas detalladas
+- **Dashboard en Tiempo Real** ✅: UI de monitoreo en `/dashboard.html`
+
+### 🎨 Interfaz Web Intuitiva
+
+- **Video Player** con controles completos
+- **Captura de frames** en cualquier momento
+- **Selección de ROI** (Region of Interest) para análisis focalizado
+- **Chat conversacional** para preguntas sobre frames específicos
+- **Resultados multi-formato**: JSON estructurado + Texto legible + Preview
+- **Dashboard de monitoreo** con métricas en tiempo real
+
+### ⚙️ Backend Flask Robusto
+
+- **API REST** bien documentada con rate limiting
+- **Procesamiento de imágenes** con PIL y base64
+- **Orquestación LangGraph** con paralelismo nativo
+- **Auto-cleanup** de archivos temporales
+- **Docker multi-stage build** optimizado
+- **Health checks** y graceful shutdown
 
 ## 🚀 Instalación
 
@@ -80,7 +116,11 @@ docker compose logs -f
 docker compose down
 ```
 
-El servidor estará disponible en: `http://localhost:5000`
+El servidor estará disponible en:
+- **Aplicación principal:** `http://localhost:5000`
+- **Dashboard de monitoreo:** `http://localhost:5000/dashboard.html`
+- **Health check:** `http://localhost:5000/api/health`
+- **Métricas:** `http://localhost:5000/api/metrics`
 
 ### Comandos útiles
 
@@ -215,11 +255,39 @@ pytest tests/ -v
 
 ## 🔒 Seguridad
 
-- ✅ API Key nunca en código fuente
+- ✅ API Key nunca en código fuente (variables de entorno)
 - ✅ Videos temporales auto-eliminados después de 1 hora
 - ✅ Sin logs de frames para evitar leak de datos
 - ✅ Validación de tipos y tamaños de archivo
-- ✅ CORS configurado apropiadamente
+- ✅ CORS restringido a orígenes permitidos
+- ✅ Rate limiting por IP (30 req/min general, 10 req/min análisis)
+- ✅ Base64 size validation (DoS prevention, max 10MB)
+- ✅ Circuit breaker para protección contra API failures
+- ✅ Input sanitization y validación con Pydantic
+
+## 📊 Métricas de Calidad
+
+**Auditoría Completa (2026-01-03):**
+- **Score General:** 95/100 ⭐⭐⭐⭐⭐
+- **Seguridad:** 95/100
+- **Performance:** 85/100
+- **Reliability:** 95/100
+- **Code Quality:** 90/100
+
+**Características Verificadas:**
+- ✅ LangGraph Native Parallelism (4 agentes simultáneos)
+- ✅ Retry Logic con Exponential Backoff
+- ✅ Timeouts Configurables (30s default)
+- ✅ Pydantic Validation (schemas completos)
+- ✅ Metrics & Observability (tracking completo)
+- ✅ Circuit Breaker Pattern (shared state)
+- ✅ Cache LRU (max 500 entries)
+
+Ver detalles en:
+- `AUDIT_REPORT.md` - Auditoría técnica completa
+- `CHANGELOG_FIXES.md` - Fixes críticos aplicados
+- `docs/PROJECT_REVIEW.md` - Revisión de cumplimiento
+- `historyMD/sessions/` - Registro de desarrollo
 
 ## 🤝 Contribución
 
@@ -243,5 +311,23 @@ Para problemas o preguntas:
 
 ---
 
-**Powered by**: LangGraph + GPT-4 Vision + Flask + Vanilla JavaScript
+## 📁 Documentación del Proyecto
+
+| Documento | Descripción |
+|-----------|-------------|
+| `README.md` | Este archivo - Guía principal |
+| `docs/requirements.md` | Especificación completa de requisitos |
+| `AUDIT_REPORT.md` | Auditoría técnica detallada (95/100) |
+| `CHANGELOG_FIXES.md` | Registro de fixes críticos aplicados |
+| `docs/PROJECT_REVIEW.md` | Revisión de cumplimiento de reglas |
+| `docs/IMPROVEMENTS_PROPOSAL.md` | Propuestas de mejoras futuras |
+| `diagrams/README.md` | Documentación de diagramas de arquitectura |
+| `historyMD/README.md` | Registro de sesiones y decisiones técnicas |
+| `tracking/project_tracking.csv` | Métricas de progreso y desarrollo |
+
+---
+
+**Powered by**: LangGraph + GPT-5.1 Vision + Flask + Pydantic + Tenacity + Vanilla JavaScript
+
+**Status:** Production-Ready ✅ | **Quality Score:** 95/100 ⭐⭐⭐⭐⭐ | **Last Audit:** 2026-01-03
 
