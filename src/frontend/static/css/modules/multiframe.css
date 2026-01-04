@@ -1,0 +1,112 @@
+/* Multi-Frame Analysis */
+.multi-frame-section {
+    margin-top: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: rgba(42, 42, 62, 0.6);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+}
+
+.multi-frame-section h3 {
+    color: var(--accent-primary);
+    font-size: 1.2rem;
+    margin-bottom: var(--spacing-sm);
+}
+
+.multi-frame-controls {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+    flex-wrap: wrap;
+}
+
+.frame-collection-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: var(--spacing-sm);
+    max-height: 200px;
+    overflow-y: auto;
+    padding: var(--spacing-sm);
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: var(--radius-sm);
+}
+
+.frame-collection-grid:empty::before {
+    content: "No hay frames en la colección. Captura frames y añádelos con el botón '➕ Añadir Frame'";
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    display: block;
+    text-align: center;
+    padding: var(--spacing-lg);
+}
+
+.frame-thumbnail {
+    position: relative;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    border: 2px solid var(--accent-primary);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    cursor: pointer;
+}
+
+.frame-thumbnail:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 210, 255, 0.3);
+}
+
+.frame-thumbnail img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.frame-thumbnail-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(to bottom, transparent 60%, rgba(0,0,0,0.7) 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 5px;
+}
+
+.frame-thumbnail-number {
+    color: var(--accent-primary);
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.frame-thumbnail-remove {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: var(--error-color);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.frame-thumbnail:hover .frame-thumbnail-remove {
+    opacity: 1;
+}
+
+.frame-thumbnail-remove:hover {
+    background: #ff5252;
+}
+
+#frameCount {
+    font-weight: bold;
+    color: var(--accent-primary);
+}

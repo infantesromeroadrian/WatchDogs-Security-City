@@ -1,28 +1,24 @@
 """
-Secure Authentication Service
-SECURITY-HARDENED - Production-ready authentication
+Main authentication service orchestrator
 """
 
 import logging
-import hashlib
-import secrets
 import json
 import os
-from datetime import datetime, timedelta
+import secrets
+from datetime import datetime
 from typing import Dict, Optional, Tuple
 from pathlib import Path
+
+from .password_handler import hash_password, validate_password_strength
+from .session_manager import SessionManager
+from .lockout_manager import LockoutManager
 
 logger = logging.getLogger(__name__)
 
 
 class AuthService:
     """Security-hardened authentication service"""
-
-    # Security constants
-    MAX_LOGIN_ATTEMPTS = 5
-    LOCKOUT_DURATION = timedelta(minutes=15)
-    SESSION_DURATION = timedelta(hours=24)
-    MIN_PASSWORD_LENGTH = 12
 
     def __init__(self, storage_file: Optional[str] = None):
         # Persistent storage
@@ -31,10 +27,12 @@ class AuthService:
         )
         self.storage_path = Path(self.storage_file)
 
-        # In-memory caches
-        self.users = {}
-        self.sessions = {}
-        self.failed_attempts = {}  # Track failed login attempts
+        # In-memory user storage
+        self.users: Dict = {}
+
+        # Managers
+        self.session_manager = SessionManager()
+        self.lockout_manager = LockoutManager()
 
         # Load from disk
         self._load_from_disk()
@@ -87,61 +85,6 @@ class AuthService:
         self.register_user(admin_username, admin_password, role="admin")
         logger.info(f"🔐 Default admin user created: {admin_username}")
 
-    def hash_password(
-        self, password: str, salt: Optional[str] = None
-    ) -> Tuple[str, str]:
-        """
-        Hash password with salt using PBKDF2-HMAC-SHA256.
-
-        Args:
-            password: Plain text password
-            salt: Optional salt (generated if not provided)
-
-        Returns:
-            Tuple of (hashed_password, salt)
-        """
-        if not salt:
-            salt = secrets.token_hex(32)
-
-        # Use PBKDF2 with 100,000 iterations (OWASP recommendation)
-        hashed = hashlib.pbkdf2_hmac(
-            "sha256",
-            password.encode("utf-8"),
-            salt.encode("utf-8"),
-            100000,  # iterations
-        )
-
-        return hashed.hex(), salt
-
-    def validate_password_strength(self, password: str) -> Tuple[bool, str]:
-        """
-        Validate password meets security requirements.
-
-        Returns:
-            Tuple of (is_valid, error_message)
-        """
-        if len(password) < self.MIN_PASSWORD_LENGTH:
-            return (
-                False,
-                f"Password must be at least {self.MIN_PASSWORD_LENGTH} characters",
-            )
-
-        if not any(c.isupper() for c in password):
-            return False, "Password must contain at least one uppercase letter"
-
-        if not any(c.islower() for c in password):
-            return False, "Password must contain at least one lowercase letter"
-
-        if not any(c.isdigit() for c in password):
-            return False, "Password must contain at least one digit"
-
-        # Check for common passwords (basic check)
-        common_passwords = ["password", "admin123", "watchdogs", "12345678"]
-        if password.lower() in common_passwords:
-            return False, "Password is too common"
-
-        return True, ""
-
     def register_user(
         self, username: str, password: str, role: str = "analyst"
     ) -> Tuple[bool, str]:
@@ -165,7 +108,7 @@ class AuthService:
             return False, "User already exists"
 
         # Validate password strength
-        is_valid, error_msg = self.validate_password_strength(password)
+        is_valid, error_msg = validate_password_strength(password)
         if not is_valid:
             return False, error_msg
 
@@ -174,7 +117,7 @@ class AuthService:
             return False, "Invalid role"
 
         # Hash password
-        hashed_pw, salt = self.hash_password(password)
+        hashed_pw, salt = hash_password(password)
 
         # Create user
         self.users[username] = {
@@ -195,57 +138,9 @@ class AuthService:
         logger.info(f"✅ User registered: {username} ({role})")
         return True, "User registered successfully"
 
-    def _check_account_lockout(self, username: str) -> Tuple[bool, str]:
-        """
-        Check if account is locked due to failed attempts.
-
-        Returns:
-            Tuple of (is_locked, message)
-        """
-        if username not in self.users:
-            return False, ""
-
-        user = self.users[username]
-
-        # Check if account is locked
-        if user.get("locked_until"):
-            locked_until = datetime.fromisoformat(user["locked_until"])
-            if datetime.now() < locked_until:
-                remaining = (locked_until - datetime.now()).seconds // 60
-                return True, f"Account locked. Try again in {remaining} minutes"
-            else:
-                # Unlock account
-                user["locked_until"] = None
-                user["failed_login_attempts"] = 0
-                self._save_to_disk()
-
-        return False, ""
-
-    def _record_failed_attempt(self, username: str):
-        """Record failed login attempt and lock if necessary"""
-        if username not in self.users:
-            return
-
-        user = self.users[username]
-        user["failed_login_attempts"] = user.get("failed_login_attempts", 0) + 1
-
-        # Lock account if max attempts exceeded
-        if user["failed_login_attempts"] >= self.MAX_LOGIN_ATTEMPTS:
-            user["locked_until"] = (datetime.now() + self.LOCKOUT_DURATION).isoformat()
-            logger.warning(f"🔒 Account locked due to failed attempts: {username}")
-
-        self._save_to_disk()
-
-    def _reset_failed_attempts(self, username: str):
-        """Reset failed login attempts counter"""
-        if username in self.users:
-            self.users[username]["failed_login_attempts"] = 0
-            self.users[username]["locked_until"] = None
-            self._save_to_disk()
-
     def authenticate(
         self, username: str, password: str, ip_address: Optional[str] = None
-    ) -> Tuple[Optional[str], str]:
+    ) -> Optional[str]:
         """
         Authenticate user and create session.
 
@@ -255,7 +150,7 @@ class AuthService:
             ip_address: Optional IP address for session binding
 
         Returns:
-            Tuple of (session_token, error_message)
+            Session token or None if authentication failed
         """
         # Check if user exists
         if username not in self.users:
@@ -263,43 +158,37 @@ class AuthService:
                 f"⚠️ Authentication attempt for non-existent user: {username}"
             )
             # Don't reveal if user exists (security)
-            return None, "Invalid credentials"
+            return None
 
         user = self.users[username]
 
         # Check if account is active
         if not user.get("is_active", True):
             logger.warning(f"⚠️ Authentication attempt for disabled user: {username}")
-            return None, "Account disabled"
+            return None
 
         # Check account lockout
-        is_locked, lock_message = self._check_account_lockout(username)
+        is_locked, lock_message = self.lockout_manager.check_lockout(user)
         if is_locked:
-            return None, lock_message
+            return None
 
         # Hash provided password with stored salt
-        hashed_pw, _ = self.hash_password(password, user["salt"])
+        hashed_pw, _ = hash_password(password, user["salt"])
 
         # Compare hashes (constant-time comparison)
         if not secrets.compare_digest(hashed_pw, user["password_hash"]):
             logger.warning(f"⚠️ Failed login attempt for {username}")
-            self._record_failed_attempt(username)
-            return None, "Invalid credentials"
+            self.lockout_manager.record_failure(user, username)
+            self._save_to_disk()
+            return None
 
         # Reset failed attempts on successful login
-        self._reset_failed_attempts(username)
+        self.lockout_manager.reset_attempts(user)
 
-        # Create session token (cryptographically secure)
-        session_token = secrets.token_urlsafe(32)
-
-        # Store session
-        self.sessions[session_token] = {
-            "username": username,
-            "role": user["role"],
-            "created_at": datetime.now(),
-            "expires_at": datetime.now() + self.SESSION_DURATION,
-            "ip_address": ip_address,
-        }
+        # Create session
+        session_token = self.session_manager.create_session(
+            username, user["role"], ip_address
+        )
 
         # Update last login
         user["last_login"] = datetime.now().isoformat()
@@ -308,65 +197,38 @@ class AuthService:
         logger.info(
             f"✅ User authenticated: {username} from IP {ip_address or 'unknown'}"
         )
-        return session_token, ""
+        return session_token
 
     def validate_session(
         self, session_token: str, ip_address: Optional[str] = None
     ) -> Optional[Dict]:
-        """Validate session token - SECURITY: No sensitive data exposed"""
-        if session_token not in self.sessions:
-            return None
-
-        session = self.sessions[session_token]
-
-        # Check expiration
-        if datetime.now() > session["expires_at"]:
-            del self.sessions[session_token]
-            logger.info(f"🕐 Session expired for {session['username']}")
-            return None
-
-        # Optional: Check IP binding (commented out for ease of use)
-        # Uncomment in production if needed
-        # if ip_address and session.get('ip_address') != ip_address:
-        #     logger.warning(f"⚠️ IP mismatch detected for session")
-        #     return None
-
-        # ✅ SECURE: Only return necessary data
-        return {"username": session["username"], "role": session["role"]}
+        """Validate session token"""
+        return self.session_manager.validate_session(session_token, ip_address)
 
     def logout(self, session_token: str) -> bool:
         """Logout user and invalidate session"""
-        if session_token in self.sessions:
-            username = self.sessions[session_token]["username"]
-            del self.sessions[session_token]
-            logger.info(f"👋 User logged out: {username}")
-            return True
-        return False
+        success = self.session_manager.logout(session_token)
+        if success:
+            logger.info("👋 User logged out")
+        return success
 
     def get_user_stats(self, username: str) -> Optional[Dict]:
         """
-        Get user statistics - SECURITY FIXED
+        Get user statistics - SECURITY FIXED.
 
-        ✅ ONLY returns safe, non-sensitive information
-        ❌ NO password_hash, salt, or internal data exposed
+        Returns only safe, non-sensitive information.
         """
         if username not in self.users:
             return None
 
         user = self.users[username]
 
-        # ✅ SECURE: Return ONLY safe public data
+        # Return ONLY safe public data
         return {
             "username": username,
             "role": user["role"],
             "analysis_count": user.get("analysis_count", 0),
             "last_login": user.get("last_login"),
-            # ❌ Explicitly NOT including:
-            # - password_hash
-            # - salt
-            # - failed_login_attempts
-            # - locked_until
-            # - is_active (could reveal account status)
         }
 
     def increment_analysis_count(self, username: str):

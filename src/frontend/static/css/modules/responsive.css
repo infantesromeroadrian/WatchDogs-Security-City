@@ -1,0 +1,66 @@
+/* Responsive Breakpoints */
+@media (max-width: 768px) {
+    body {
+        padding: var(--spacing-xs);
+    }
+    
+    header {
+        padding: var(--spacing-md);
+    }
+    
+    section {
+        padding: var(--spacing-sm);
+    }
+    
+    .controls,
+    .actions {
+        flex-direction: column;
+    }
+    
+    .btn {
+        width: 100%;
+    }
+    
+    .tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+    }
+    
+    #chatMessages {
+        max-height: 200px;
+    }
+    
+    .message.user {
+        margin-left: var(--spacing-xs);
+    }
+    
+    .message.assistant {
+        margin-right: var(--spacing-xs);
+    }
+    
+    .multi-frame-controls {
+        flex-direction: column;
+    }
+    
+    .multi-frame-controls button {
+        width: 100%;
+    }
+    
+    .frame-collection-grid {
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    }
+}
+
+@media (max-width: 480px) {
+    header h1 {
+        font-size: 1.5rem;
+    }
+    
+    section h2 {
+        font-size: 1.2rem;
+    }
+    
+    .video-container {
+        max-height: 50vh;
+    }
+}

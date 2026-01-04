@@ -1,32 +1,15 @@
 """
-Professional PDF Report Generation Service
-Creates forensic-grade reports without external APIs
+PDF report section builders
 """
 
 import logging
-import io
 from datetime import datetime
 from typing import Dict, Any, List, Optional
 
 try:
     from reportlab.lib import colors
-    from reportlab.lib.pagesizes import letter, A4
-    from reportlab.platypus import (
-        SimpleDocTemplate,
-        Table,
-        TableStyle,
-        Paragraph,
-        Spacer,
-        Image as RLImage,
-        PageBreak,
-    )
-    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.platypus import Table, TableStyle, Paragraph, Spacer, PageBreak
     from reportlab.lib.units import inch
-    from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_JUSTIFY
-    import matplotlib
-
-    matplotlib.use("Agg")  # Non-interactive backend
-    import matplotlib.pyplot as plt
 
     REPORT_AVAILABLE = True
 except ImportError:
@@ -35,115 +18,20 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-class ReportService:
-    """Generate professional PDF reports"""
+class ReportSectionBuilder:
+    """Builds individual sections of PDF reports"""
 
-    def __init__(self):
-        if not REPORT_AVAILABLE:
-            logger.warning(
-                "⚠️ Report libraries not available. Install: pip install reportlab matplotlib"
-            )
-
-        self.styles = getSampleStyleSheet() if REPORT_AVAILABLE else None
-
-        if REPORT_AVAILABLE:
-            # Custom styles
-            self.styles.add(
-                ParagraphStyle(
-                    name="CustomTitle",
-                    parent=self.styles["Heading1"],
-                    fontSize=24,
-                    textColor=colors.HexColor("#1a1a2e"),
-                    spaceAfter=30,
-                    alignment=TA_CENTER,
-                )
-            )
-
-            self.styles.add(
-                ParagraphStyle(
-                    name="SectionHeader",
-                    parent=self.styles["Heading2"],
-                    fontSize=14,
-                    textColor=colors.HexColor("#00d2ff"),
-                    spaceAfter=12,
-                    spaceBefore=12,
-                )
-            )
-
-    def generate_analysis_report(
-        self,
-        analysis_results: Dict[str, Any],
-        metadata: Optional[Dict[str, Any]] = None,
-        evidence_id: Optional[str] = None,
-    ) -> bytes:
+    def __init__(self, styles):
         """
-        Generate comprehensive PDF report.
+        Initialize section builder.
 
         Args:
-            analysis_results: Results from multi-agent analysis
-            metadata: Optional metadata from metadata_service
-            evidence_id: Optional evidence ID for forensics
-
-        Returns:
-            PDF bytes
+            styles: ReportLab StyleSheet
         """
-        if not REPORT_AVAILABLE:
-            raise RuntimeError("Report libraries not available")
+        self.styles = styles
 
-        buffer = io.BytesIO()
-        doc = SimpleDocTemplate(
-            buffer,
-            pagesize=letter,
-            rightMargin=72,
-            leftMargin=72,
-            topMargin=72,
-            bottomMargin=18,
-        )
-
-        # Container for elements
-        elements = []
-
-        # Header
-        elements.extend(self._create_header(evidence_id))
-
-        # Executive Summary
-        elements.extend(self._create_executive_summary(analysis_results))
-
-        # Technical Analysis
-        elements.extend(self._create_technical_analysis(analysis_results))
-
-        # Geolocation Section
-        if (
-            "geolocation" in analysis_results
-            or "combined_geolocation" in analysis_results
-        ):
-            elements.extend(self._create_geolocation_section(analysis_results))
-
-        # Metadata Section
-        if metadata:
-            elements.extend(self._create_metadata_section(metadata))
-
-        # Forensic Evidence
-        if metadata and "forensics" in metadata:
-            elements.extend(
-                self._create_forensic_section(metadata["forensics"], evidence_id)
-            )
-
-        # Footer
-        elements.extend(self._create_footer())
-
-        # Build PDF
-        doc.build(elements)
-
-        pdf_bytes = buffer.getvalue()
-        buffer.close()
-
-        logger.info(f"📄 PDF report generated: {len(pdf_bytes)} bytes")
-
-        return pdf_bytes
-
-    def _create_header(self, evidence_id: Optional[str]) -> List:
-        """Create report header"""
+    def create_header(self, evidence_id: Optional[str]) -> List:
+        """Create report header section"""
         elements = []
 
         # Title
@@ -183,7 +71,7 @@ class ReportService:
 
         return elements
 
-    def _create_executive_summary(self, results: Dict[str, Any]) -> List:
+    def create_executive_summary(self, results: Dict[str, Any]) -> List:
         """Create executive summary section"""
         elements = []
 
@@ -198,7 +86,7 @@ class ReportService:
 
         return elements
 
-    def _create_technical_analysis(self, results: Dict[str, Any]) -> List:
+    def create_technical_analysis(self, results: Dict[str, Any]) -> List:
         """Create technical analysis section"""
         elements = []
 
@@ -233,8 +121,8 @@ class ReportService:
 
         return elements
 
-    def _create_geolocation_section(self, results: Dict[str, Any]) -> List:
-        """Create geolocation section"""
+    def create_geolocation_section(self, results: Dict[str, Any]) -> List:
+        """Create geolocation intelligence section"""
         elements = []
 
         elements.append(
@@ -268,8 +156,8 @@ class ReportService:
 
         return elements
 
-    def _create_metadata_section(self, metadata: Dict[str, Any]) -> List:
-        """Create metadata section"""
+    def create_metadata_section(self, metadata: Dict[str, Any]) -> List:
+        """Create technical metadata section"""
         elements = []
 
         elements.append(Paragraph("Technical Metadata", self.styles["SectionHeader"]))
@@ -317,7 +205,7 @@ class ReportService:
 
         return elements
 
-    def _create_forensic_section(
+    def create_forensic_section(
         self, forensics: Dict[str, Any], evidence_id: Optional[str]
     ) -> List:
         """Create forensic evidence section"""
@@ -361,8 +249,8 @@ class ReportService:
 
         return elements
 
-    def _create_footer(self) -> List:
-        """Create report footer"""
+    def create_footer(self) -> List:
+        """Create report footer section"""
         elements = []
 
         elements.append(Spacer(1, 0.5 * inch))
@@ -420,7 +308,3 @@ class ReportService:
             if summary_parts
             else "Analysis complete. See detailed sections below."
         )
-
-
-# Global instance
-report_service = ReportService()
