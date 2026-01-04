@@ -23,10 +23,7 @@ class ROISelector {
     }
     
     init() {
-        // Clear ROI button
-        this.clearRoiBtn.addEventListener('click', () => {
-            this.clearROI();
-        });
+        this.clearRoiBtn.addEventListener('click', () => this.clearROI());
         
         // Canvas events
         this.canvas.addEventListener('mousedown', (e) => this.startDrawing(e));
@@ -34,32 +31,18 @@ class ROISelector {
         this.canvas.addEventListener('mouseup', (e) => this.stopDrawing(e));
         this.canvas.addEventListener('mouseleave', () => this.stopDrawing());
         
-        // Touch events for mobile
-        this.canvas.addEventListener('touchstart', (e) => {
+        // Touch events for mobile (convert to mouse events)
+        const touchToMouse = (e, type) => {
             e.preventDefault();
-            const touch = e.touches[0];
-            const mouseEvent = new MouseEvent('mousedown', {
-                clientX: touch.clientX,
-                clientY: touch.clientY
-            });
-            this.canvas.dispatchEvent(mouseEvent);
-        });
-        
-        this.canvas.addEventListener('touchmove', (e) => {
-            e.preventDefault();
-            const touch = e.touches[0];
-            const mouseEvent = new MouseEvent('mousemove', {
-                clientX: touch.clientX,
-                clientY: touch.clientY
-            });
-            this.canvas.dispatchEvent(mouseEvent);
-        });
-        
-        this.canvas.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            const mouseEvent = new MouseEvent('mouseup', {});
-            this.canvas.dispatchEvent(mouseEvent);
-        });
+            const touch = e.touches?.[0];
+            this.canvas.dispatchEvent(new MouseEvent(type, {
+                clientX: touch?.clientX,
+                clientY: touch?.clientY
+            }));
+        };
+        this.canvas.addEventListener('touchstart', (e) => touchToMouse(e, 'mousedown'));
+        this.canvas.addEventListener('touchmove', (e) => touchToMouse(e, 'mousemove'));
+        this.canvas.addEventListener('touchend', (e) => { e.preventDefault(); this.stopDrawing(); });
     }
     
     setFrame(frameBase64, width, height) {
