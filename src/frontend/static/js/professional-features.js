@@ -40,10 +40,19 @@ class ProfessionalFeatures {
     async extractMetadata() {
         try {
             // Get current frame from apiClient
-            const frame = window.apiClient.currentFrame;
+            const frame = window.apiClient?.currentFrame;
             
             if (!frame) {
-                this.showToast('⚠️ No frame available. Analyze an image first.', 'warning');
+                this.showToast(
+                    '⚠️ No hay frame disponible. Por favor:\n' +
+                    '1️⃣ Captura un frame del video (📸 Capturar Frame)\n' +
+                    '2️⃣ Analiza el frame (🔍 Analizar Frame)\n' +
+                    '3️⃣ Luego extrae metadata',
+                    'warning'
+                );
+                console.warn('❌ extractMetadata called but no frame available');
+                console.log('   - apiClient exists:', !!window.apiClient);
+                console.log('   - currentFrame exists:', !!window.apiClient?.currentFrame);
                 return;
             }
             
@@ -182,10 +191,19 @@ class ProfessionalFeatures {
     async generatePDF() {
         try {
             // Get analysis results from apiClient
-            const analysisResults = window.apiClient.lastResults;
+            const analysisResults = window.apiClient?.lastResults;
             
             if (!analysisResults) {
-                this.showToast('⚠️ No analysis results. Analyze an image first.', 'warning');
+                this.showToast(
+                    '⚠️ No hay resultados de análisis disponibles. Por favor:\n' +
+                    '1️⃣ Captura un frame del video (📸 Capturar Frame)\n' +
+                    '2️⃣ Analiza el frame (🔍 Analizar Frame)\n' +
+                    '3️⃣ Luego genera el reporte PDF',
+                    'warning'
+                );
+                console.warn('❌ generatePDF called but no analysis results');
+                console.log('   - apiClient exists:', !!window.apiClient);
+                console.log('   - lastResults exists:', !!window.apiClient?.lastResults);
                 return;
             }
             
@@ -238,11 +256,20 @@ class ProfessionalFeatures {
     async generateEvidence() {
         try {
             // Get frame and analysis results
-            const frame = window.apiClient.currentFrame;
-            const analysisResults = window.apiClient.lastResults;
+            const frame = window.apiClient?.currentFrame;
+            const analysisResults = window.apiClient?.lastResults;
             
             if (!frame || !analysisResults) {
-                this.showToast('⚠️ No frame or analysis results available.', 'warning');
+                this.showToast(
+                    '⚠️ No hay frame o resultados de análisis disponibles. Por favor:\n' +
+                    '1️⃣ Captura un frame del video (📸 Capturar Frame)\n' +
+                    '2️⃣ Analiza el frame (🔍 Analizar Frame)\n' +
+                    '3️⃣ Luego genera el paquete de evidencia',
+                    'warning'
+                );
+                console.warn('❌ generateEvidence called but data missing');
+                console.log('   - frame exists:', !!frame);
+                console.log('   - analysisResults exists:', !!analysisResults);
                 return;
             }
             

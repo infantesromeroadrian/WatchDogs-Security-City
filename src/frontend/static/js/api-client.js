@@ -143,15 +143,25 @@ class APIClient {
     
     async analyzeFrame() {
         try {
-            // Get captured frame from video player
-            const frame = window.videoPlayer.getCapturedFrame();
-            if (!frame) {
-                alert('⚠️ Por favor captura un frame primero');
+            // DEFENSIVE: Verify videoPlayer exists
+            if (!window.videoPlayer) {
+                alert('❌ Error: Video player no inicializado. Recarga la página.');
+                console.error('❌ CRITICAL: videoPlayer not initialized!');
                 return;
             }
             
+            // Get captured frame from video player
+            const frame = window.videoPlayer.getCapturedFrame();
+            if (!frame) {
+                alert('⚠️ Por favor captura un frame primero usando el botón "📸 Capturar Frame"');
+                console.warn('❌ No frame captured. User needs to capture frame first.');
+                return;
+            }
+            
+            console.log('✅ Frame obtained from videoPlayer');
+            
             // Get ROI if selected
-            const roi = window.roiSelector.getROI();
+            const roi = window.roiSelector?.getROI();
             
             // Show loading
             this.showLoading();
@@ -227,10 +237,21 @@ class APIClient {
     
     displayResults(results) {
         this.lastResults = results;
-        this.currentFrame = window.videoPlayer.getCapturedFrame();
+        
+        // DEFENSIVE: Ensure frame is captured before storing
+        const capturedFrame = window.videoPlayer?.getCapturedFrame();
+        if (!capturedFrame) {
+            console.error('❌ CRITICAL: No frame available from videoPlayer!');
+            this.showError('Error interno: No se pudo obtener el frame capturado. Intenta capturar el frame nuevamente.');
+            return;
+        }
+        
+        this.currentFrame = capturedFrame;
         this.currentROI = window.roiSelector.getROI();  // Store ROI for chat
         this.isMultiFrameAnalysis = false;  // Single frame analysis
         this.frameCollection = null;  // Clear multi-frame collection
+        
+        console.log('✅ Frame stored in apiClient:', this.currentFrame ? 'YES' : 'NO');
         
         // Hide loading
         this.loadingIndicator.style.display = 'none';

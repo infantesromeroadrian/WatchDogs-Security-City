@@ -116,17 +116,27 @@ class VideoPlayer {
         // Store captured frame as base64
         this.capturedFrame = canvas.toDataURL('image/png');
         
+        // DEFENSIVE: Verify frame was captured
+        if (!this.capturedFrame || this.capturedFrame.length === 0) {
+            console.error('❌ CRITICAL: Frame capture failed!');
+            alert('❌ Error al capturar el frame. Intenta nuevamente.');
+            return;
+        }
+        
+        console.log('📸 Frame captured successfully:', canvas.width, 'x', canvas.height);
+        console.log('   - Frame size (base64):', (this.capturedFrame.length / 1024).toFixed(2), 'KB');
+        
         // Initialize ROI selector with captured frame
         if (window.roiSelector) {
             window.roiSelector.setFrame(this.capturedFrame, canvas.width, canvas.height);
+            console.log('✅ ROI selector updated with frame');
         }
         
         // Notify multi-frame analyzer
         if (window.multiFrameAnalyzer) {
             window.multiFrameAnalyzer.setCurrentFrame(this.capturedFrame);
+            console.log('✅ Multi-frame analyzer updated with frame');
         }
-        
-        console.log('📸 Frame captured:', canvas.width, 'x', canvas.height);
         
         // Show success feedback
         this.captureBtn.textContent = '✅ Frame Capturado';
@@ -136,6 +146,9 @@ class VideoPlayer {
     }
     
     getCapturedFrame() {
+        if (!this.capturedFrame) {
+            console.warn('⚠️ getCapturedFrame called but no frame captured');
+        }
         return this.capturedFrame;
     }
     
