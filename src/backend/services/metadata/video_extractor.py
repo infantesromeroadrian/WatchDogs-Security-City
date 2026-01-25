@@ -2,10 +2,10 @@
 Video metadata extraction
 """
 
-import logging
 import hashlib
+import logging
 from datetime import datetime
-from typing import Dict, Any
+from typing import Any
 
 try:
     import ffmpeg
@@ -21,7 +21,7 @@ class VideoMetadataExtractor:
     """Extract metadata from video files"""
 
     @staticmethod
-    def extract_video_metadata(video_path: str) -> Dict[str, Any]:
+    def extract_video_metadata(video_path: str) -> dict[str, Any]:
         """
         Extract metadata from video file using ffprobe.
 
@@ -47,9 +47,7 @@ class VideoMetadataExtractor:
             # Get file hash
             with open(video_path, "rb") as f:
                 video_bytes = f.read()
-                metadata["forensics"]["sha256"] = hashlib.sha256(
-                    video_bytes
-                ).hexdigest()
+                metadata["forensics"]["sha256"] = hashlib.sha256(video_bytes).hexdigest()
                 metadata["forensics"]["md5"] = hashlib.md5(video_bytes).hexdigest()
                 metadata["forensics"]["size_bytes"] = len(video_bytes)
 
@@ -97,7 +95,7 @@ class VideoMetadataExtractor:
                 f"✅ Video metadata extracted: {metadata['format'].get('format_name', 'unknown')}"
             )
 
-        except Exception as e:
+        except (OSError, IOError, KeyError, ValueError) as e:
             logger.error(f"❌ Video metadata extraction error: {e}")
             metadata["error"] = str(e)
 

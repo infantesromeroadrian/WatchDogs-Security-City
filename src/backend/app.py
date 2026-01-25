@@ -4,22 +4,22 @@ Main API server with Blueprint-based routes.
 """
 
 import logging
+
 from flask import Flask, send_from_directory
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
+# Import blueprints
+from .api import analysis_bp, auth_bp, professional_bp, system_bp
 from .config import (
+    ALLOWED_ORIGINS,
     FLASK_DEBUG,
     FLASK_HOST,
     FLASK_PORT,
     MAX_CONTENT_LENGTH,
-    ALLOWED_ORIGINS,
     RATE_LIMIT_PER_MINUTE,
 )
-
-# Import blueprints
-from .api import analysis_bp, professional_bp, auth_bp, system_bp
 
 # Configure logging (following rule 19)
 logger = logging.getLogger(__name__)

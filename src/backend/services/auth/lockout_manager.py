@@ -4,7 +4,6 @@ Account lockout management
 
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +15,7 @@ LOCKOUT_DURATION = timedelta(minutes=15)
 class LockoutManager:
     """Manages account lockout after failed login attempts"""
 
-    def check_lockout(self, user_data: Dict) -> Tuple[bool, str]:
+    def check_lockout(self, user_data: dict) -> tuple[bool, str]:
         """
         Check if account is locked due to failed attempts.
 
@@ -32,14 +31,13 @@ class LockoutManager:
             if datetime.now() < locked_until:
                 remaining = (locked_until - datetime.now()).seconds // 60
                 return True, f"Account locked. Try again in {remaining} minutes"
-            else:
-                # Unlock account
-                user_data["locked_until"] = None
-                user_data["failed_login_attempts"] = 0
+            # Unlock account
+            user_data["locked_until"] = None
+            user_data["failed_login_attempts"] = 0
 
         return False, ""
 
-    def record_failure(self, user_data: Dict, username: str) -> bool:
+    def record_failure(self, user_data: dict, username: str) -> bool:
         """
         Record failed login attempt and lock if necessary.
 
@@ -50,9 +48,7 @@ class LockoutManager:
         Returns:
             True if account was locked
         """
-        user_data["failed_login_attempts"] = (
-            user_data.get("failed_login_attempts", 0) + 1
-        )
+        user_data["failed_login_attempts"] = user_data.get("failed_login_attempts", 0) + 1
 
         # Lock account if max attempts exceeded
         if user_data["failed_login_attempts"] >= MAX_LOGIN_ATTEMPTS:
@@ -62,7 +58,7 @@ class LockoutManager:
 
         return False
 
-    def reset_attempts(self, user_data: Dict):
+    def reset_attempts(self, user_data: dict):
         """Reset failed login attempts counter"""
         user_data["failed_login_attempts"] = 0
         user_data["locked_until"] = None

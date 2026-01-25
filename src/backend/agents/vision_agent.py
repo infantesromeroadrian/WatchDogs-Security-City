@@ -3,30 +3,38 @@ Vision Agent for general scene analysis using GPT-5.1.
 """
 
 import logging
-from typing import Dict, Any
-from langchain_openai import ChatOpenAI
+from typing import Any
+
 from langchain_core.messages import HumanMessage
+from langchain_openai import ChatOpenAI
 
 from ..config import (
-    OPENAI_API_KEY,
-    OPENAI_MODEL,
-    OPENAI_MAX_TOKENS,
-    OPENAI_TEMPERATURE,
-    AGENT_TIMEOUT_SECONDS,
     AGENT_RETRY_MAX_ATTEMPTS,
-    AGENT_RETRY_MIN_WAIT,
     AGENT_RETRY_MAX_WAIT,
+    AGENT_RETRY_MIN_WAIT,
+    AGENT_TIMEOUT_SECONDS,
     CACHE_ENABLED,
     CACHE_TTL_SECONDS,
     CIRCUIT_BREAKER_ENABLED,
     METRICS_ENABLED,
+    OPENAI_API_KEY,
+    OPENAI_MAX_TOKENS,
+    OPENAI_MODEL,
+    OPENAI_TEMPERATURE,
 )
+from ..models.agent_results import VisionResult
+from ..utils.cache_utils import get_cache_key, get_cached_result, set_cached_result
+from ..utils.circuit_breaker import CircuitBreaker, CircuitBreakerOpenError
+from ..utils.metrics_utils import track_agent_metrics, _noop_decorator
 from ..utils.retry_utils import agent_retry
 from ..utils.timeout_utils import with_timeout
-from ..utils.cache_utils import get_cache_key, get_cached_result, set_cached_result
-from ..utils.metrics_utils import track_agent_metrics, _noop_decorator
-from ..utils.circuit_breaker import CircuitBreaker, CircuitBreakerOpenError
-from ..models.agent_results import VisionResult
+from ..exceptions import (
+    AgentValidationError,
+    OpenAIAPIError,
+    OpenAIRateLimitError,
+    OpenAITimeoutError,
+    PydanticValidationError,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +67,7 @@ class VisionAgent:
 
         logger.info("ℹ️ VisionAgent initialized")
 
-    def _analyze_internal(self, image_base64: str, context: str = "") -> Dict[str, Any]:
+    def _analyze_internal(self, image_base64: str, context: str = "") -> dict[str, Any]:
         """Internal analysis method (wrapped with retry/timeout)."""
         logger.info("ℹ️ Starting general vision analysis...")
 
@@ -149,9 +157,7 @@ Sé objetivo y factual en tu análisis. RESPONDE EN ESPAÑOL."""
         min_wait=AGENT_RETRY_MIN_WAIT,
         max_wait=AGENT_RETRY_MAX_WAIT,
     )
-    def _analyze_with_protection(
-        self, image_base64: str, context: str = ""
-    ) -> Dict[str, Any]:
+    def _analyze_with_protection(self, image_base64: str, context: str = "") -> dict[str, Any]:
         """Analyze with retry, timeout, and circuit breaker protection."""
         if self.breaker:
             try:
@@ -168,7 +174,7 @@ Sé objetivo y factual en tu análisis. RESPONDE EN ESPAÑOL."""
         else:
             return self._analyze_internal(image_base64, context)
 
-    def analyze(self, image_base64: str, context: str = "") -> Dict[str, Any]:
+    def analyze(self, image_base64: str, context: str = "") -> dict[str, Any]:
         """
         Analyze image for general scene understanding.
 
@@ -200,7 +206,7 @@ Sé objetivo y factual en tu análisis. RESPONDE EN ESPAÑOL."""
             try:
                 validated = VisionResult(**result)
                 return validated.model_dump()
-            except Exception as validation_error:
+            except PydanticValidationError as validation_error:
                 logger.warning(
                     f"⚠️ Result validation failed: {validation_error}, returning raw result"
                 )
@@ -214,11 +220,19 @@ Sé objetivo y factual en tu análisis. RESPONDE EN ESPAÑOL."""
                 "error": str(e),
                 "analysis": "Vision analysis timed out",
             }
-        except Exception as e:
-            logger.error(f"❌ Vision analysis failed: {e}")
+        except (OpenAIRateLimitError, OpenAITimeoutError, OpenAIAPIError) as e:
+            logger.error(f"❌ OpenAI API error in vision analysis: {e}")
             return {
                 "agent": "vision",
                 "status": "error",
-                "error": str(e),
-                "analysis": "Vision analysis failed",
+                "error": f"OpenAI API error: {e}",
+                "analysis": "Vision analysis failed due to API error",
+            }
+        except (ValueError, TypeError) as e:
+            logger.error(f"❌ Invalid input to vision analysis: {e}")
+            return {
+                "agent": "vision",
+                "status": "error",
+                "error": f"Invalid input: {e}",
+                "analysis": "Vision analysis failed due to invalid input",
             }

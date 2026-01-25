@@ -1,16 +1,15 @@
 """
-EXIF data parsing and extraction
+EXIF metadata extraction for images.
 """
 
 import logging
-from typing import Dict, Any, Optional
+from datetime import datetime
+from typing import Any
 
-try:
-    import piexif
+from PIL import Image, UnidentifiedImageError
+from PIL.ExifTags import TAGS
 
-    PIEXIF_AVAILABLE = True
-except ImportError:
-    PIEXIF_AVAILABLE = False
+from ...exceptions import MetadataExtractionError
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +18,7 @@ class ExifParser:
     """Parse EXIF data from images"""
 
     @staticmethod
-    def parse_exif(exif_data: Dict) -> Dict[str, Any]:
+    def parse_exif(exif_data: dict) -> dict[str, Any]:
         """Parse raw EXIF data"""
         parsed = {}
 
@@ -44,7 +43,7 @@ class ExifParser:
         return parsed
 
     @staticmethod
-    def extract_camera_info(exif_0th: Dict) -> Dict[str, str]:
+    def extract_camera_info(exif_0th: dict) -> dict[str, str]:
         """Extract camera information from EXIF"""
         if not PIEXIF_AVAILABLE:
             return {}
@@ -52,24 +51,18 @@ class ExifParser:
         camera = {}
 
         if piexif.ImageIFD.Make in exif_0th:
-            camera["make"] = exif_0th[piexif.ImageIFD.Make].decode(
-                "utf-8", errors="ignore"
-            )
+            camera["make"] = exif_0th[piexif.ImageIFD.Make].decode("utf-8", errors="ignore")
 
         if piexif.ImageIFD.Model in exif_0th:
-            camera["model"] = exif_0th[piexif.ImageIFD.Model].decode(
-                "utf-8", errors="ignore"
-            )
+            camera["model"] = exif_0th[piexif.ImageIFD.Model].decode("utf-8", errors="ignore")
 
         if piexif.ImageIFD.Software in exif_0th:
-            camera["software"] = exif_0th[piexif.ImageIFD.Software].decode(
-                "utf-8", errors="ignore"
-            )
+            camera["software"] = exif_0th[piexif.ImageIFD.Software].decode("utf-8", errors="ignore")
 
         return camera
 
     @staticmethod
-    def extract_gps_info(gps_data: Dict) -> Optional[Dict[str, Any]]:
+    def extract_gps_info(gps_data: dict) -> dict[str, Any] | None:
         """Extract GPS coordinates from EXIF"""
         if not PIEXIF_AVAILABLE:
             return None
@@ -78,13 +71,8 @@ class ExifParser:
             gps_info = {}
 
             # Latitude
-            if (
-                piexif.GPSIFD.GPSLatitude in gps_data
-                and piexif.GPSIFD.GPSLatitudeRef in gps_data
-            ):
-                lat = ExifParser._convert_to_degrees(
-                    gps_data[piexif.GPSIFD.GPSLatitude]
-                )
+            if piexif.GPSIFD.GPSLatitude in gps_data and piexif.GPSIFD.GPSLatitudeRef in gps_data:
+                lat = ExifParser._convert_to_degrees(gps_data[piexif.GPSIFD.GPSLatitude])
                 lat_ref = gps_data[piexif.GPSIFD.GPSLatitudeRef].decode("utf-8")
 
                 if lat_ref == "S":
@@ -93,13 +81,8 @@ class ExifParser:
                 gps_info["latitude"] = lat
 
             # Longitude
-            if (
-                piexif.GPSIFD.GPSLongitude in gps_data
-                and piexif.GPSIFD.GPSLongitudeRef in gps_data
-            ):
-                lon = ExifParser._convert_to_degrees(
-                    gps_data[piexif.GPSIFD.GPSLongitude]
-                )
+            if piexif.GPSIFD.GPSLongitude in gps_data and piexif.GPSIFD.GPSLongitudeRef in gps_data:
+                lon = ExifParser._convert_to_degrees(gps_data[piexif.GPSIFD.GPSLongitude])
                 lon_ref = gps_data[piexif.GPSIFD.GPSLongitudeRef].decode("utf-8")
 
                 if lon_ref == "W":
@@ -123,7 +106,7 @@ class ExifParser:
 
             return gps_info if gps_info else None
 
-        except Exception as e:
+        except (KeyError, ValueError, TypeError, ZeroDivisionError) as e:
             logger.debug(f"GPS extraction failed: {e}")
             return None
 
@@ -137,7 +120,7 @@ class ExifParser:
         return d + (m / 60.0) + (s / 3600.0)
 
     @staticmethod
-    def extract_datetime_info(exif_data: Dict) -> Dict[str, str]:
+    def extract_datetime_info(exif_data: dict) -> dict[str, str]:
         """Extract datetime information"""
         if not PIEXIF_AVAILABLE:
             return {}
@@ -145,13 +128,9 @@ class ExifParser:
         datetime_info = {}
 
         if piexif.ExifIFD.DateTimeOriginal in exif_data:
-            datetime_info["original"] = exif_data[
-                piexif.ExifIFD.DateTimeOriginal
-            ].decode("utf-8")
+            datetime_info["original"] = exif_data[piexif.ExifIFD.DateTimeOriginal].decode("utf-8")
 
         if piexif.ExifIFD.DateTimeDigitized in exif_data:
-            datetime_info["digitized"] = exif_data[
-                piexif.ExifIFD.DateTimeDigitized
-            ].decode("utf-8")
+            datetime_info["digitized"] = exif_data[piexif.ExifIFD.DateTimeDigitized].decode("utf-8")
 
         return datetime_info

@@ -5,9 +5,8 @@ Caching utilities for agent results with LRU eviction.
 import hashlib
 import logging
 import time
-from typing import Any, Optional
 from collections import OrderedDict
-from datetime import datetime
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -28,12 +27,23 @@ def get_image_hash(image_base64: str) -> str:
 
     Returns:
         SHA256 hash (first 16 chars)
+
+    Raises:
+        ValueError: If image_base64 is not a valid string
     """
+    # Defensive type check - protect against malformed input
+    if not isinstance(image_base64, str):
+        logger.error(f"❌ get_image_hash received invalid type: {type(image_base64).__name__}")
+        raise ValueError(f"Expected base64 string, got {type(image_base64).__name__}")
+
+    if not image_base64 or len(image_base64) < 50:
+        logger.error(
+            f"❌ get_image_hash received empty or too short string: {len(image_base64) if image_base64 else 0}"
+        )
+        raise ValueError("Image data is empty or invalid")
+
     # Remove data URI prefix if present
-    if "," in image_base64:
-        image_data = image_base64.split(",")[1]
-    else:
-        image_data = image_base64
+    image_data = image_base64.split(",")[1] if "," in image_base64 else image_base64
 
     hash_obj = hashlib.sha256(image_data.encode())
     return hash_obj.hexdigest()[:16]
@@ -56,9 +66,7 @@ def get_cache_key(image_base64: str, agent_name: str, context: str = "") -> str:
     return f"{agent_name}:{image_hash}:{context_hash}"
 
 
-def get_cached_result(
-    cache_key: str, ttl_seconds: int = 3600
-) -> Optional[dict[str, Any]]:
+def get_cached_result(cache_key: str, ttl_seconds: int = 3600) -> dict[str, Any] | None:
     """
     Get cached result if available and not expired.
 
@@ -73,13 +81,12 @@ def get_cached_result(
         return None
 
     # Check TTL
-    if cache_key in _cache_ttl:
-        if time.time() > _cache_ttl[cache_key]:
-            # Expired, remove
-            del _cache[cache_key]
-            del _cache_ttl[cache_key]
-            logger.debug(f"🗑️ Cache expired for key: {cache_key[:20]}...")
-            return None
+    if cache_key in _cache_ttl and time.time() > _cache_ttl[cache_key]:
+        # Expired, remove
+        del _cache[cache_key]
+        del _cache_ttl[cache_key]
+        logger.debug(f"🗑️ Cache expired for key: {cache_key[:20]}...")
+        return None
 
     # Move to end (mark as recently used in LRU)
     _cache.move_to_end(cache_key)
@@ -88,9 +95,7 @@ def get_cached_result(
     return _cache[cache_key].copy()
 
 
-def set_cached_result(
-    cache_key: str, result: dict[str, Any], ttl_seconds: int = 3600
-) -> None:
+def set_cached_result(cache_key: str, result: dict[str, Any], ttl_seconds: int = 3600) -> None:
     """
     Store result in cache with LRU eviction.
 
@@ -104,11 +109,8 @@ def set_cached_result(
         # Remove oldest (first item in OrderedDict)
         oldest_key = next(iter(_cache))
         del _cache[oldest_key]
-        if oldest_key in _cache_ttl:
-            del _cache_ttl[oldest_key]
-        logger.debug(
-            f"🗑️ LRU eviction: removed {oldest_key[:20]}... (cache at max size)"
-        )
+        _cache_ttl.pop(oldest_key, None)
+        logger.debug(f"🗑️ LRU eviction: removed {oldest_key[:20]}... (cache at max size)")
 
     _cache[cache_key] = result.copy()
     _cache_ttl[cache_key] = time.time() + ttl_seconds
@@ -146,8 +148,6 @@ def get_cache_stats() -> dict[str, Any]:
         "active_entries": active,
         "expired_entries": expired,
         "max_size": MAX_CACHE_SIZE,
-        "utilization_pct": (len(_cache) / MAX_CACHE_SIZE) * 100
-        if MAX_CACHE_SIZE > 0
-        else 0,
+        "utilization_pct": (len(_cache) / MAX_CACHE_SIZE) * 100 if MAX_CACHE_SIZE > 0 else 0,
         "memory_usage_mb": round(memory_mb, 2),
     }

@@ -4,11 +4,14 @@ Geolocation service for generating maps and geocoding.
 
 import logging
 import os
-from typing import Dict, Any, Optional, Tuple
 from pathlib import Path
+from typing import Any
+
 import folium
+from geopy.exc import GeocoderServiceError, GeocoderTimedOut
 from geopy.geocoders import Nominatim
-from geopy.exc import GeocoderTimedOut, GeocoderServiceError
+
+from ..exceptions import GeolocationError
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +31,7 @@ class GeolocationService:
         longitude: float,
         zoom_start: int = 15,
         marker_popup: str = "Location",
-        output_path: Optional[str] = None,
+        output_path: str | None = None,
     ) -> str:
         """
         Generate interactive HTML map with marker.
@@ -66,7 +69,7 @@ class GeolocationService:
                 color="blue",
                 fill=True,
                 fillOpacity=0.2,
-                popup=f"Approximate area (~100m radius)",
+                popup="Approximate area (~100m radius)",
             ).add_to(m)
 
             # Generate output path
@@ -81,13 +84,17 @@ class GeolocationService:
 
             return str(output_path)
 
-        except Exception as e:
-            logger.error(f"❌ Map generation failed: {e}")
-            raise ValueError(f"Failed to generate map: {e}")
+        except PermissionError as e:
+            logger.error(f"❌ Permission denied creating map: {e}")
+            raise GeolocationError(f"Permission denied: {e}") from e
+        except (OSError, IOError) as e:
+            logger.error(f"❌ Failed to save map file: {e}")
+            raise GeolocationError(f"Failed to save map: {e}") from e
+        except (ValueError, TypeError) as e:
+            logger.error(f"❌ Invalid coordinates for map: {e}")
+            raise ValueError(f"Invalid coordinates: {e}") from e
 
-    def geocode_address(
-        self, address: str, timeout: int = 10
-    ) -> Optional[Dict[str, Any]]:
+    def geocode_address(self, address: str, timeout: int = 10) -> dict[str, Any] | None:
         """
         Convert address to coordinates using Nominatim.
 
@@ -112,9 +119,8 @@ class GeolocationService:
                 }
                 logger.info(f"✅ Geocoded: {location.address}")
                 return result
-            else:
-                logger.warning(f"⚠️ No results for: {address}")
-                return None
+            logger.warning(f"⚠️ No results for: {address}")
+            return None
 
         except GeocoderTimedOut:
             logger.error(f"⏱️ Geocoding timeout for: {address}")
@@ -122,13 +128,13 @@ class GeolocationService:
         except GeocoderServiceError as e:
             logger.error(f"❌ Geocoding service error: {e}")
             return None
-        except Exception as e:
-            logger.error(f"❌ Geocoding failed: {e}")
+        except (ValueError, TypeError) as e:
+            logger.error(f"❌ Invalid geocoding parameters: {e}")
             return None
 
     def reverse_geocode(
         self, latitude: float, longitude: float, timeout: int = 10
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """
         Convert coordinates to address (reverse geocoding).
 
@@ -158,24 +164,21 @@ class GeolocationService:
                 }
                 logger.info(f"✅ Reverse geocoded: {location.address}")
                 return result
-            else:
-                logger.warning(f"⚠️ No results for coordinates: {latitude}, {longitude}")
-                return None
+            logger.warning(f"⚠️ No results for coordinates: {latitude}, {longitude}")
+            return None
 
         except GeocoderTimedOut:
-            logger.error(f"⏱️ Reverse geocoding timeout")
+            logger.error("⏱️ Reverse geocoding timeout")
             return None
         except GeocoderServiceError as e:
             logger.error(f"❌ Reverse geocoding service error: {e}")
             return None
-        except Exception as e:
-            logger.error(f"❌ Reverse geocoding failed: {e}")
+        except (ValueError, TypeError) as e:
+            logger.error(f"❌ Invalid coordinates for reverse geocoding: {e}")
             return None
 
     @staticmethod
-    def validate_coordinates(
-        latitude: float, longitude: float
-    ) -> Tuple[bool, Optional[str]]:
+    def validate_coordinates(latitude: float, longitude: float) -> tuple[bool, str | None]:
         """
         Validate coordinate ranges.
 
@@ -186,9 +189,7 @@ class GeolocationService:
         Returns:
             Tuple of (is_valid, error_message)
         """
-        if not isinstance(latitude, (int, float)) or not isinstance(
-            longitude, (int, float)
-        ):
+        if not isinstance(latitude, (int, float)) or not isinstance(longitude, (int, float)):
             return False, "Coordinates must be numeric"
 
         if not -90 <= latitude <= 90:
@@ -199,9 +200,7 @@ class GeolocationService:
 
         return True, None
 
-    def enrich_geolocation_result(
-        self, geolocation_data: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def enrich_geolocation_result(self, geolocation_data: dict[str, Any]) -> dict[str, Any]:
         """
         Enrich geolocation result with geocoding and map generation.
 
@@ -235,7 +234,7 @@ class GeolocationService:
                         )
                         enriched["map_path"] = map_path
                         enriched["map_url"] = f"/maps/{os.path.basename(map_path)}"
-                    except Exception as e:
+                    except (GeolocationError, ValueError, OSError) as e:
                         logger.warning(f"⚠️ Map generation failed: {e}")
 
                     # Reverse geocode for detailed address
@@ -277,7 +276,7 @@ class GeolocationService:
                         )
                         enriched["map_path"] = map_path
                         enriched["map_url"] = f"/maps/{os.path.basename(map_path)}"
-                    except Exception as e:
+                    except (GeolocationError, ValueError, OSError) as e:
                         logger.warning(f"⚠️ Map generation failed: {e}")
 
         return enriched

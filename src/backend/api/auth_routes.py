@@ -3,7 +3,8 @@ Authentication routes: login, logout
 """
 
 import logging
-from flask import Blueprint, request, jsonify
+
+from flask import Blueprint, jsonify, request
 
 from ..services.auth import auth_service
 
@@ -30,9 +31,7 @@ def login():
         data = request.get_json()
 
         if not data or "username" not in data or "password" not in data:
-            return jsonify(
-                {"success": False, "error": "Missing username or password"}
-            ), 400
+            return jsonify({"success": False, "error": "Missing username or password"}), 400
 
         username = data["username"]
         password = data["password"]
@@ -46,11 +45,9 @@ def login():
         # Get user stats
         user_stats = auth_service.get_user_stats(username)
 
-        return jsonify(
-            {"success": True, "session_token": session_token, "user": user_stats}
-        ), 200
+        return jsonify({"success": True, "session_token": session_token, "user": user_stats}), 200
 
-    except Exception as e:
+    except (ValueError, TypeError, KeyError) as e:
         logger.error(f"❌ Login error: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
@@ -78,6 +75,6 @@ def logout():
 
         return jsonify({"success": True, "message": "Logged out successfully"}), 200
 
-    except Exception as e:
+    except (ValueError, TypeError, KeyError) as e:
         logger.error(f"❌ Logout error: {e}")
         return jsonify({"success": False, "error": str(e)}), 500

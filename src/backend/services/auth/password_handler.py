@@ -4,13 +4,12 @@ Password hashing and validation
 
 import hashlib
 import secrets
-from typing import Tuple
 
 # Security constants
 MIN_PASSWORD_LENGTH = 12
 
 
-def hash_password(password: str, salt: str | None = None) -> Tuple[str, str]:
+def hash_password(password: str, salt: str | None = None) -> tuple[str, str]:
     """
     Hash password with salt using PBKDF2-HMAC-SHA256.
 
@@ -35,7 +34,7 @@ def hash_password(password: str, salt: str | None = None) -> Tuple[str, str]:
     return hashed.hex(), salt
 
 
-def validate_password_strength(password: str) -> Tuple[bool, str]:
+def validate_password_strength(password: str) -> tuple[bool, str]:
     """
     Validate password meets security requirements.
 

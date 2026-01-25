@@ -40,6 +40,410 @@
     display: block;
 }
 
+/* =============================================================================
+   CIA INTEL DASHBOARD - 7 Agent Cards
+   ============================================================================= */
+
+.intel-dashboard {
+    padding: var(--spacing-sm);
+}
+
+/* Privacy Warning Banner */
+.privacy-warning {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+    background: linear-gradient(135deg, rgba(255, 170, 0, 0.15), rgba(255, 100, 100, 0.1));
+    border: 1px solid rgba(255, 170, 0, 0.4);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+
+.privacy-warning .warning-icon {
+    font-size: 1.3rem;
+    flex-shrink: 0;
+}
+
+.privacy-warning .warning-text {
+    flex: 1;
+    color: var(--text-primary);
+}
+
+.privacy-warning .warning-text strong {
+    color: #ffaa00;
+}
+
+.privacy-warning .warning-text a {
+    color: var(--accent-primary);
+    text-decoration: none;
+    margin-left: var(--spacing-xs);
+}
+
+.privacy-warning .warning-text a:hover {
+    text-decoration: underline;
+}
+
+.privacy-warning .dismiss-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.privacy-warning .dismiss-btn:hover {
+    opacity: 1;
+    color: #ff4444;
+}
+
+.privacy-warning.dismissed {
+    display: none;
+}
+
+/* Summary Banner */
+.intel-summary {
+    background: linear-gradient(135deg, rgba(0, 210, 255, 0.15), rgba(118, 75, 162, 0.15));
+    border: 1px solid rgba(0, 210, 255, 0.3);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+}
+
+.summary-status {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-size: 1.1rem;
+}
+
+.status-indicator {
+    font-size: 1.2rem;
+    animation: pulse 2s infinite;
+}
+
+.status-indicator.success { color: #00ff88; }
+.status-indicator.warning { color: #ffaa00; }
+.status-indicator.error { color: #ff4444; }
+.status-indicator.processing { color: #00d2ff; }
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* Agent Cards Grid */
+.agent-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+}
+
+.agent-card {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.agent-card:hover {
+    border-color: rgba(0, 210, 255, 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0, 210, 255, 0.15);
+}
+
+/* CIA-Level cards have special styling */
+.agent-card.cia-level {
+    border-color: rgba(255, 100, 100, 0.3);
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.3), rgba(100, 50, 50, 0.1));
+}
+
+.agent-card.cia-level:hover {
+    border-color: rgba(255, 100, 100, 0.6);
+    box-shadow: 0 4px 20px rgba(255, 100, 100, 0.15);
+}
+
+/* Wide card for Context Intel */
+.agent-card.wide {
+    grid-column: span 2;
+}
+
+@media (max-width: 768px) {
+    .agent-card.wide {
+        grid-column: span 1;
+    }
+}
+
+/* Agent Header */
+.agent-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: rgba(0, 0, 0, 0.2);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.agent-icon {
+    font-size: 1.3rem;
+}
+
+.agent-header h4 {
+    flex: 1;
+    margin: 0;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+}
+
+/* Badges */
+.confidence-badge,
+.text-badge,
+.person-count-badge,
+.integrity-badge {
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: bold;
+}
+
+.confidence-badge {
+    background: rgba(0, 210, 255, 0.2);
+    color: #00d2ff;
+}
+
+.confidence-badge.high { background: rgba(0, 255, 136, 0.2); color: #00ff88; }
+.confidence-badge.medium { background: rgba(255, 170, 0, 0.2); color: #ffaa00; }
+.confidence-badge.low { background: rgba(255, 68, 68, 0.2); color: #ff4444; }
+
+.text-badge {
+    background: rgba(118, 75, 162, 0.2);
+    color: #a855f7;
+}
+
+.text-badge.has-text {
+    background: rgba(0, 255, 136, 0.2);
+    color: #00ff88;
+}
+
+.person-count-badge {
+    background: rgba(255, 100, 150, 0.2);
+    color: #ff6496;
+}
+
+.integrity-badge {
+    background: rgba(100, 200, 100, 0.2);
+    color: #64c864;
+}
+
+.integrity-badge.authentic { background: rgba(0, 255, 136, 0.2); color: #00ff88; }
+.integrity-badge.suspicious { background: rgba(255, 170, 0, 0.2); color: #ffaa00; }
+.integrity-badge.manipulated { background: rgba(255, 68, 68, 0.2); color: #ff4444; }
+
+.cia-badge {
+    background: linear-gradient(135deg, #ff4444, #aa2222);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+}
+
+/* Agent Content */
+.agent-content {
+    padding: var(--spacing-md);
+    max-height: 250px;
+    overflow-y: auto;
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+
+.agent-content .placeholder {
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.agent-content p {
+    margin: 0 0 var(--spacing-xs) 0;
+}
+
+.agent-content ul {
+    margin: var(--spacing-xs) 0;
+    padding-left: var(--spacing-md);
+}
+
+.agent-content li {
+    margin-bottom: var(--spacing-xs);
+}
+
+/* Location display for Geolocation */
+.location-display {
+    background: rgba(0, 210, 255, 0.1);
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+}
+
+.location-display .location-main {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: var(--accent-primary);
+}
+
+.location-display .location-detail {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+/* Person cards for Face Analysis */
+.person-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+}
+
+.person-chip {
+    background: rgba(255, 100, 150, 0.15);
+    border: 1px solid rgba(255, 100, 150, 0.3);
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: 0.8rem;
+}
+
+/* Verdict display for Forensic Analysis */
+.verdict-display {
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+    text-align: center;
+}
+
+.verdict-display.authentic {
+    background: rgba(0, 255, 136, 0.15);
+    border: 1px solid rgba(0, 255, 136, 0.3);
+    color: #00ff88;
+}
+
+.verdict-display.suspicious {
+    background: rgba(255, 170, 0, 0.15);
+    border: 1px solid rgba(255, 170, 0, 0.3);
+    color: #ffaa00;
+}
+
+.verdict-display.manipulated {
+    background: rgba(255, 68, 68, 0.15);
+    border: 1px solid rgba(255, 68, 68, 0.3);
+    color: #ff4444;
+}
+
+.verdict-text {
+    font-size: 1.1rem;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.verdict-score {
+    font-size: 0.9rem;
+    margin-top: var(--spacing-xs);
+}
+
+/* Temporal analysis display */
+.temporal-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+}
+
+.temporal-item {
+    background: rgba(0, 210, 255, 0.1);
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    text-align: center;
+}
+
+.temporal-label {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+}
+
+.temporal-value {
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: var(--accent-primary);
+}
+
+/* Key Inferences Panel */
+.key-inferences-panel {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(0, 210, 255, 0.2);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    margin-top: var(--spacing-md);
+}
+
+.key-inferences-panel h4 {
+    margin: 0 0 var(--spacing-sm) 0;
+    color: var(--accent-primary);
+}
+
+.inferences-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.inference-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: var(--radius-sm);
+}
+
+.inference-order {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--accent-primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
+.inference-text {
+    flex: 1;
+    font-size: 0.9rem;
+}
+
+.inference-confidence {
+    font-size: 0.8rem;
+    font-weight: bold;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: rgba(0, 210, 255, 0.2);
+    color: var(--accent-primary);
+}
+
+.inference-confidence.high { background: rgba(0, 255, 136, 0.2); color: #00ff88; }
+.inference-confidence.medium { background: rgba(255, 170, 0, 0.2); color: #ffaa00; }
+.inference-confidence.low { background: rgba(255, 68, 68, 0.2); color: #ff4444; }
+
 .results-text,
 .results-json {
     background: rgba(0, 0, 0, 0.2);

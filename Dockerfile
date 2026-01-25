@@ -26,6 +26,22 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app
 
+# Install system dependencies for OpenCV and other libraries
+# libgl1: OpenGL support for OpenCV
+# libglib2.0-0: GLib support
+# libxcb1, libx11-6: X11 libraries (needed even for headless OpenCV)
+# ffmpeg: Video processing
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgl1 \
+    libglib2.0-0 \
+    libxcb1 \
+    libx11-6 \
+    libxext6 \
+    libxrender1 \
+    ffmpeg \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
 # Create non-root user
 RUN useradd -m -u 1000 -s /bin/bash watchdogs && \
     mkdir -p /app/data/temp && \

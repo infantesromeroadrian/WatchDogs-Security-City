@@ -5,7 +5,7 @@ Max: 200 lines
 """
 
 import logging
-from typing import Dict, Any
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -23,8 +23,8 @@ class MultiFrameHandler:
         self.single_frame_analyzer = single_frame_analyzer
 
     def analyze_multi_frame(
-        self, frames: list[Dict[str, str]], enable_context_accumulation: bool = True
-    ) -> Dict[str, Any]:
+        self, frames: list[dict[str, str]], enable_context_accumulation: bool = True
+    ) -> dict[str, Any]:
         """
         Analyze multiple frames with accumulated context for enhanced OSINT.
 
@@ -64,9 +64,7 @@ class MultiFrameHandler:
                     accumulated_detections,
                 )
 
-                logger.info(
-                    f"  🖼️ Analyzing frame {idx + 1}/{len(frames)}: {description}"
-                )
+                logger.info(f"  🖼️ Analyzing frame {idx + 1}/{len(frames)}: {description}")
 
                 # Analyze frame
                 result = self.single_frame_analyzer(frame_base64, context)
@@ -94,28 +92,33 @@ class MultiFrameHandler:
             combined_geolocation = self._combine_geolocation_results(individual_results)
 
             # Generate summary
-            summary = self._generate_multi_frame_summary(
-                individual_results, combined_geolocation
-            )
+            summary = self._generate_multi_frame_summary(individual_results, combined_geolocation)
 
-            logger.info(
-                f"✅ Multi-frame analysis complete ({len(frames)} frames processed)"
-            )
+            logger.info(f"✅ Multi-frame analysis complete ({len(frames)} frames processed)")
 
+            # Build response in format expected by frontend (same as single-frame)
             return {
-                "individual_results": individual_results,
-                "combined_geolocation": combined_geolocation,
-                "summary": summary,
-                "total_frames": len(frames),
-                "context_accumulation_enabled": enable_context_accumulation,
+                "text": summary,  # Human-readable text report
+                "json": {  # Structured JSON data
+                    "individual_results": individual_results,
+                    "combined_geolocation": combined_geolocation,
+                    "total_frames": len(frames),
+                    "context_accumulation_enabled": enable_context_accumulation,
+                },
             }
 
-        except Exception as e:
+        except (ValueError, TypeError, KeyError, AttributeError) as e:
             logger.error(f"❌ Multi-frame analysis failed: {e}")
+            error_text = f"⚠️ Error en análisis multi-frame: {e!s}"
             return {
-                "error": str(e),
-                "individual_results": individual_results if individual_results else [],
-                "total_frames": len(frames),
+                "text": error_text,
+                "json": {
+                    "error": str(e),
+                    "individual_results": individual_results
+                    if "individual_results" in locals()
+                    else [],
+                    "total_frames": len(frames),
+                },
             }
 
     @staticmethod
@@ -150,7 +153,7 @@ class MultiFrameHandler:
 
     @staticmethod
     def _extract_clues_from_result(
-        result: Dict[str, Any],
+        result: dict[str, Any],
         idx: int,
         geo_clues: list,
         ocr_texts: list,
@@ -180,7 +183,7 @@ class MultiFrameHandler:
                 detections.append(f"Frame {idx + 1}: {analysis[:150]}")
 
     @staticmethod
-    def _combine_geolocation_results(individual_results: list) -> Dict[str, Any]:
+    def _combine_geolocation_results(individual_results: list) -> dict[str, Any]:
         """Combine geolocation results from multiple frames"""
         from .geolocation_combiner import GeolocationCombiner
 
@@ -188,11 +191,9 @@ class MultiFrameHandler:
 
     @staticmethod
     def _generate_multi_frame_summary(
-        individual_results: list, combined_geolocation: Dict[str, Any]
+        individual_results: list, combined_geolocation: dict[str, Any]
     ) -> str:
         """Generate human-readable summary of multi-frame analysis"""
         from .multi_frame_reporter import MultiFrameReporter
 
-        return MultiFrameReporter.generate_summary(
-            individual_results, combined_geolocation
-        )
+        return MultiFrameReporter.generate_summary(individual_results, combined_geolocation)

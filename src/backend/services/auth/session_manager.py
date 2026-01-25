@@ -4,7 +4,6 @@ Session management
 
 import secrets
 from datetime import datetime, timedelta
-from typing import Dict, Optional
 
 # Session duration
 SESSION_DURATION = timedelta(hours=24)
@@ -14,11 +13,9 @@ class SessionManager:
     """Manages user sessions"""
 
     def __init__(self):
-        self.sessions: Dict[str, Dict] = {}
+        self.sessions: dict[str, dict] = {}
 
-    def create_session(
-        self, username: str, role: str, ip_address: Optional[str] = None
-    ) -> str:
+    def create_session(self, username: str, role: str, ip_address: str | None = None) -> str:
         """
         Create new session.
 
@@ -44,9 +41,7 @@ class SessionManager:
 
         return session_token
 
-    def validate_session(
-        self, session_token: str, ip_address: Optional[str] = None
-    ) -> Optional[Dict]:
+    def validate_session(self, session_token: str, ip_address: str | None = None) -> dict | None:
         """
         Validate session token.
 
@@ -86,11 +81,7 @@ class SessionManager:
     def cleanup_expired(self):
         """Remove expired sessions"""
         now = datetime.now()
-        expired = [
-            token
-            for token, session in self.sessions.items()
-            if now > session["expires_at"]
-        ]
+        expired = [token for token, session in self.sessions.items() if now > session["expires_at"]]
 
         for token in expired:
             del self.sessions[token]

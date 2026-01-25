@@ -36,6 +36,14 @@
             <div class="video-container">
                 <video id="videoPlayer" controls></video>
                 <canvas id="roiCanvas"></canvas>
+                <!-- Zoom Controls Overlay -->
+                <div class="zoom-controls" style="position: absolute; top: 10px; right: 10px; background: rgba(0, 0, 0, 0.8); padding: 10px; border-radius: 8px; display: none; z-index: 20; border: 2px solid #00d2ff;">
+                    <div style="color: #00d2ff; font-size: 11px; text-align: center; margin-bottom: 8px; font-weight: bold;">ZOOM</div>
+                    <button id="zoomInBtn" class="btn-zoom" style="display: block; width: 100%; margin-bottom: 5px; padding: 8px 12px; background: #00d2ff; border: none; border-radius: 4px; cursor: pointer; color: white; font-weight: bold; font-size: 14px;">🔍 +</button>
+                    <button id="zoomOutBtn" class="btn-zoom" style="display: block; width: 100%; margin-bottom: 5px; padding: 8px 12px; background: #00d2ff; border: none; border-radius: 4px; cursor: pointer; color: white; font-weight: bold; font-size: 14px;">🔍 -</button>
+                    <button id="zoomResetBtn" class="btn-zoom" style="display: block; width: 100%; margin-bottom: 5px; padding: 8px 12px; background: #764ba2; border: none; border-radius: 4px; cursor: pointer; color: white; font-weight: bold; font-size: 14px;">↺ Reset</button>
+                    <div id="zoomLevel" style="color: #00ff00; font-size: 13px; text-align: center; margin-top: 8px; font-weight: bold; background: rgba(0, 255, 0, 0.1); padding: 5px; border-radius: 4px;">100%</div>
+                </div>
             </div>
 
             <div class="controls">
@@ -74,6 +82,8 @@
                 <ol>
                     <li>Reproduce el video y pausa en el momento que desees analizar</li>
                     <li>Haz clic en "Capturar Frame" para tomar una instantánea</li>
+                    <li><strong>🔍 Nuevo:</strong> Usa los botones de zoom o la rueda del ratón para ampliar detalles</li>
+                    <li>Arrastra con el mouse para mover la imagen zoomeada (pan)</li>
                     <li>Dibuja un rectángulo sobre la región que quieres analizar (opcional)</li>
                     <li>Haz clic en "Analizar" para ejecutar los agentes</li>
                 </ol>
@@ -94,13 +104,134 @@
             <div class="results-container" id="resultsContainer" style="display: none;">
                 <!-- Tabs -->
                 <div class="tabs">
-                    <button class="tab active" data-tab="text">📄 Reporte Texto</button>
+                    <button class="tab active" data-tab="intel">🕵️ CIA Intel</button>
+                    <button class="tab" data-tab="text">📄 Reporte Texto</button>
                     <button class="tab" data-tab="json">📋 Datos JSON</button>
                     <button class="tab" data-tab="preview">🖼️ Preview</button>
                 </div>
 
                 <!-- Tab Contents -->
-                <div class="tab-content active" id="textTab">
+                <!-- CIA Intel Tab (NEW - CIA-Level Dashboard) -->
+                <div class="tab-content active" id="intelTab">
+                    <div class="intel-dashboard">
+                        <!-- Privacy Warning Banner -->
+                        <div class="privacy-warning" id="privacyWarning">
+                            <span class="warning-icon">⚠️</span>
+                            <span class="warning-text">
+                                <strong>Privacy Notice:</strong> This analysis may process biometric data (face analysis) 
+                                and infer sensitive information. Ensure you have appropriate consent or legal basis 
+                                before analyzing images containing identifiable persons.
+                                <a href="#" id="privacyLearnMore">[Learn More]</a>
+                            </span>
+                            <button class="dismiss-btn" id="dismissPrivacyWarning">×</button>
+                        </div>
+
+                        <!-- Summary Banner -->
+                        <div class="intel-summary" id="intelSummary">
+                            <div class="summary-status">
+                                <span class="status-indicator" id="analysisStatus">●</span>
+                                <span id="summaryText">Analysis in progress...</span>
+                            </div>
+                        </div>
+
+                        <!-- Agent Cards Grid -->
+                        <div class="agent-cards-grid">
+                            <!-- Vision Agent Card -->
+                            <div class="agent-card" id="visionCard">
+                                <div class="agent-header">
+                                    <span class="agent-icon">👁️</span>
+                                    <h4>Vision Agent</h4>
+                                    <span class="confidence-badge" id="visionConfidence">-</span>
+                                </div>
+                                <div class="agent-content" id="visionContent">
+                                    <p class="placeholder">Awaiting analysis...</p>
+                                </div>
+                            </div>
+
+                            <!-- OCR Agent Card -->
+                            <div class="agent-card" id="ocrCard">
+                                <div class="agent-header">
+                                    <span class="agent-icon">📝</span>
+                                    <h4>OCR Agent</h4>
+                                    <span class="text-badge" id="ocrTextBadge">No text</span>
+                                </div>
+                                <div class="agent-content" id="ocrContent">
+                                    <p class="placeholder">Awaiting analysis...</p>
+                                </div>
+                            </div>
+
+                            <!-- Detection Agent Card -->
+                            <div class="agent-card" id="detectionCard">
+                                <div class="agent-header">
+                                    <span class="agent-icon">🎯</span>
+                                    <h4>Detection Agent</h4>
+                                    <span class="confidence-badge" id="detectionConfidence">-</span>
+                                </div>
+                                <div class="agent-content" id="detectionContent">
+                                    <p class="placeholder">Awaiting analysis...</p>
+                                </div>
+                            </div>
+
+                            <!-- Geolocation Agent Card -->
+                            <div class="agent-card" id="geolocationCard">
+                                <div class="agent-header">
+                                    <span class="agent-icon">📍</span>
+                                    <h4>Geolocation Agent</h4>
+                                    <span class="confidence-badge" id="geoConfidence">-</span>
+                                </div>
+                                <div class="agent-content" id="geolocationContent">
+                                    <p class="placeholder">Awaiting analysis...</p>
+                                </div>
+                            </div>
+
+                            <!-- Face Analysis Agent Card (CIA-Level) -->
+                            <div class="agent-card cia-level" id="faceAnalysisCard">
+                                <div class="agent-header">
+                                    <span class="agent-icon">👤</span>
+                                    <h4>Face Analysis</h4>
+                                    <span class="cia-badge">CIA</span>
+                                    <span class="person-count-badge" id="personCount">0</span>
+                                </div>
+                                <div class="agent-content" id="faceAnalysisContent">
+                                    <p class="placeholder">Awaiting analysis...</p>
+                                </div>
+                            </div>
+
+                            <!-- Forensic Analysis Agent Card (CIA-Level) -->
+                            <div class="agent-card cia-level" id="forensicAnalysisCard">
+                                <div class="agent-header">
+                                    <span class="agent-icon">🔬</span>
+                                    <h4>Forensic Analysis</h4>
+                                    <span class="cia-badge">CIA</span>
+                                    <span class="integrity-badge" id="integrityScore">-</span>
+                                </div>
+                                <div class="agent-content" id="forensicAnalysisContent">
+                                    <p class="placeholder">Awaiting analysis...</p>
+                                </div>
+                            </div>
+
+                            <!-- Context Intel Agent Card (CIA-Level) -->
+                            <div class="agent-card cia-level wide" id="contextIntelCard">
+                                <div class="agent-header">
+                                    <span class="agent-icon">🌐</span>
+                                    <h4>Context Intelligence</h4>
+                                    <span class="cia-badge">CIA</span>
+                                </div>
+                                <div class="agent-content" id="contextIntelContent">
+                                    <p class="placeholder">Awaiting analysis...</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Key Inferences Panel -->
+                        <div class="key-inferences-panel" id="keyInferencesPanel" style="display: none;">
+                            <h4>🔑 Key Intelligence Inferences</h4>
+                            <div class="inferences-list" id="inferencesList"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="textTab">
                     <pre id="textResults" class="results-text"></pre>
                 </div>
 

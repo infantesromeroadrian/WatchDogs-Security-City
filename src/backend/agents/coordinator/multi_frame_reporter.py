@@ -5,7 +5,7 @@ Max: 150 lines
 """
 
 import logging
-from typing import Dict, Any
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -14,9 +14,7 @@ class MultiFrameReporter:
     """Generates human-readable summaries for multi-frame analysis"""
 
     @staticmethod
-    def generate_summary(
-        individual_results: list, combined_geolocation: Dict[str, Any]
-    ) -> str:
+    def generate_summary(individual_results: list, combined_geolocation: dict[str, Any]) -> str:
         """
         Generate human-readable summary of multi-frame analysis.
 
@@ -37,9 +35,7 @@ class MultiFrameReporter:
         ]
 
         # Geolocation summary
-        summary_lines.extend(
-            MultiFrameReporter._format_geolocation_summary(combined_geolocation)
-        )
+        summary_lines.extend(MultiFrameReporter._format_geolocation_summary(combined_geolocation))
 
         # Frame by frame summary
         summary_lines.extend(
@@ -51,16 +47,14 @@ class MultiFrameReporter:
             ]
         )
 
-        summary_lines.extend(
-            MultiFrameReporter._format_frame_summaries(individual_results)
-        )
+        summary_lines.extend(MultiFrameReporter._format_frame_summaries(individual_results))
 
         summary_lines.extend(["=" * 80, "FIN DEL RESUMEN", "=" * 80])
 
         return "\n".join(summary_lines)
 
     @staticmethod
-    def _format_geolocation_summary(combined_geolocation: Dict[str, Any]) -> list[str]:
+    def _format_geolocation_summary(combined_geolocation: dict[str, Any]) -> list[str]:
         """Format combined geolocation summary section"""
         lines = [
             "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
@@ -81,9 +75,7 @@ class MultiFrameReporter:
         else:
             lines.append("⚠️ No se pudo determinar ubicación específica")
 
-        lines.append(
-            f"Nivel de confianza: {combined_geolocation.get('confidence', 'UNKNOWN')}"
-        )
+        lines.append(f"Nivel de confianza: {combined_geolocation.get('confidence', 'UNKNOWN')}")
         lines.append("")
 
         # Key clues
@@ -115,13 +107,9 @@ class MultiFrameReporter:
                 lines.append(f"  ✓ Vision: {agents['vision'].get('status', 'unknown')}")
             if agents.get("ocr"):
                 has_text = agents["ocr"].get("has_text", False)
-                lines.append(
-                    f"  ✓ OCR: {'Texto encontrado' if has_text else 'Sin texto'}"
-                )
+                lines.append(f"  ✓ OCR: {'Texto encontrado' if has_text else 'Sin texto'}")
             if agents.get("detection"):
-                lines.append(
-                    f"  ✓ Detection: {agents['detection'].get('status', 'unknown')}"
-                )
+                lines.append(f"  ✓ Detection: {agents['detection'].get('status', 'unknown')}")
 
             lines.append("")
 

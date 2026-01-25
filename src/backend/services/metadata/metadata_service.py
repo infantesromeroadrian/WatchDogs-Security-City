@@ -2,12 +2,12 @@
 Main metadata extraction orchestrator
 """
 
-import logging
-import hashlib
 import base64
+import hashlib
 import io
+import logging
 from datetime import datetime
-from typing import Dict, Any
+from typing import Any
 
 try:
     import piexif
@@ -35,7 +35,7 @@ class MetadataService:
         self.exif_parser = ExifParser()
         self.video_extractor = VideoMetadataExtractor()
 
-    def extract_image_metadata(self, image_base64: str) -> Dict[str, Any]:
+    def extract_image_metadata(self, image_base64: str) -> dict[str, Any]:
         """
         Extract comprehensive metadata from base64 image.
 
@@ -87,8 +87,8 @@ class MetadataService:
 
                     # Camera info
                     if "0th" in exif_dict:
-                        metadata["exif"]["camera"] = (
-                            self.exif_parser.extract_camera_info(exif_dict["0th"])
+                        metadata["exif"]["camera"] = self.exif_parser.extract_camera_info(
+                            exif_dict["0th"]
                         )
 
                     # GPS info
@@ -99,24 +99,24 @@ class MetadataService:
 
                     # Datetime info
                     if "Exif" in exif_dict:
-                        metadata["exif"]["datetime"] = (
-                            self.exif_parser.extract_datetime_info(exif_dict["Exif"])
+                        metadata["exif"]["datetime"] = self.exif_parser.extract_datetime_info(
+                            exif_dict["Exif"]
                         )
 
-                except Exception as e:
+                except (OSError, IOError, KeyError, ValueError) as e:
                     logger.debug(f"Piexif extraction failed (normal for non-JPEG): {e}")
 
             logger.info(
                 f"✅ Metadata extracted: {metadata['technical']['format']}, {metadata['technical']['size']}"
             )
 
-        except Exception as e:
+        except (OSError, IOError, KeyError, ValueError) as e:
             logger.error(f"❌ Metadata extraction error: {e}")
             metadata["error"] = str(e)
 
         return metadata
 
-    def extract_video_metadata(self, video_path: str) -> Dict[str, Any]:
+    def extract_video_metadata(self, video_path: str) -> dict[str, Any]:
         """
         Extract metadata from video file.
 
@@ -129,8 +129,8 @@ class MetadataService:
         return self.video_extractor.extract_video_metadata(video_path)
 
     def generate_evidence_package(
-        self, frame_base64: str, analysis_results: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, frame_base64: str, analysis_results: dict[str, Any]
+    ) -> dict[str, Any]:
         """
         Generate forensic evidence package with chain of custody.
 

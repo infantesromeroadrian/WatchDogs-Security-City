@@ -2,17 +2,16 @@
 Main authentication service orchestrator
 """
 
-import logging
 import json
+import logging
 import os
 import secrets
 from datetime import datetime
-from typing import Dict, Optional, Tuple
 from pathlib import Path
 
+from .lockout_manager import LockoutManager
 from .password_handler import hash_password, validate_password_strength
 from .session_manager import SessionManager
-from .lockout_manager import LockoutManager
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +19,7 @@ logger = logging.getLogger(__name__)
 class AuthService:
     """Security-hardened authentication service"""
 
-    def __init__(self, storage_file: Optional[str] = None):
+    def __init__(self, storage_file: str | None = None):
         # Persistent storage
         self.storage_file = storage_file or os.getenv(
             "AUTH_STORAGE_FILE", "data/.auth_storage.json"
@@ -28,7 +27,7 @@ class AuthService:
         self.storage_path = Path(self.storage_file)
 
         # In-memory user storage
-        self.users: Dict = {}
+        self.users: dict = {}
 
         # Managers
         self.session_manager = SessionManager()
@@ -45,13 +44,13 @@ class AuthService:
         """Load users from persistent storage"""
         try:
             if self.storage_path.exists():
-                with open(self.storage_path, "r") as f:
+                with open(self.storage_path) as f:
                     data = json.load(f)
                     self.users = data.get("users", {})
                     logger.info(f"✅ Loaded {len(self.users)} users from disk")
             else:
                 logger.info("📝 No existing auth storage found, starting fresh")
-        except Exception as e:
+        except (ValueError, TypeError, KeyError) as e:
             logger.error(f"❌ Error loading auth storage: {e}")
             self.users = {}
 
@@ -66,7 +65,7 @@ class AuthService:
                 json.dump({"users": self.users}, f, indent=2)
 
             logger.debug("💾 Auth data saved to disk")
-        except Exception as e:
+        except (ValueError, TypeError, KeyError) as e:
             logger.error(f"❌ Error saving auth storage: {e}")
 
     def _create_default_admin(self):
@@ -87,7 +86,7 @@ class AuthService:
 
     def register_user(
         self, username: str, password: str, role: str = "analyst"
-    ) -> Tuple[bool, str]:
+    ) -> tuple[bool, str]:
         """
         Register a new user with security validation.
 
@@ -139,8 +138,8 @@ class AuthService:
         return True, "User registered successfully"
 
     def authenticate(
-        self, username: str, password: str, ip_address: Optional[str] = None
-    ) -> Optional[str]:
+        self, username: str, password: str, ip_address: str | None = None
+    ) -> str | None:
         """
         Authenticate user and create session.
 
@@ -154,9 +153,7 @@ class AuthService:
         """
         # Check if user exists
         if username not in self.users:
-            logger.warning(
-                f"⚠️ Authentication attempt for non-existent user: {username}"
-            )
+            logger.warning(f"⚠️ Authentication attempt for non-existent user: {username}")
             # Don't reveal if user exists (security)
             return None
 
@@ -168,7 +165,7 @@ class AuthService:
             return None
 
         # Check account lockout
-        is_locked, lock_message = self.lockout_manager.check_lockout(user)
+        is_locked, _lock_message = self.lockout_manager.check_lockout(user)
         if is_locked:
             return None
 
@@ -186,22 +183,16 @@ class AuthService:
         self.lockout_manager.reset_attempts(user)
 
         # Create session
-        session_token = self.session_manager.create_session(
-            username, user["role"], ip_address
-        )
+        session_token = self.session_manager.create_session(username, user["role"], ip_address)
 
         # Update last login
         user["last_login"] = datetime.now().isoformat()
         self._save_to_disk()
 
-        logger.info(
-            f"✅ User authenticated: {username} from IP {ip_address or 'unknown'}"
-        )
+        logger.info(f"✅ User authenticated: {username} from IP {ip_address or 'unknown'}")
         return session_token
 
-    def validate_session(
-        self, session_token: str, ip_address: Optional[str] = None
-    ) -> Optional[Dict]:
+    def validate_session(self, session_token: str, ip_address: str | None = None) -> dict | None:
         """Validate session token"""
         return self.session_manager.validate_session(session_token, ip_address)
 
@@ -212,7 +203,7 @@ class AuthService:
             logger.info("👋 User logged out")
         return success
 
-    def get_user_stats(self, username: str) -> Optional[Dict]:
+    def get_user_stats(self, username: str) -> dict | None:
         """
         Get user statistics - SECURITY FIXED.
 

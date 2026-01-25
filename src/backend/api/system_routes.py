@@ -4,12 +4,13 @@ System routes: health, metrics, video upload
 
 import logging
 from datetime import datetime
-from flask import Blueprint, request, jsonify
 
-from ..config import VIDEO_RETENTION_HOURS, METRICS_ENABLED
+from flask import Blueprint, jsonify, request
+
+from ..config import METRICS_ENABLED, VIDEO_RETENTION_HOURS
 from ..services.video_service import VideoService
-from ..utils.metrics_utils import get_agent_metrics
 from ..utils.cache_utils import get_cache_stats
+from ..utils.metrics_utils import get_agent_metrics
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +63,7 @@ def upload_video():
 
         return jsonify(result), 200
 
-    except Exception as e:
+    except (ValueError, TypeError, KeyError) as e:
         logger.error(f"❌ Upload error: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
@@ -86,6 +87,6 @@ def get_metrics():
             }
         ), 200
 
-    except Exception as e:
+    except (ValueError, TypeError, KeyError) as e:
         logger.error(f"❌ Error getting metrics: {e}")
         return jsonify({"success": False, "error": str(e)}), 500

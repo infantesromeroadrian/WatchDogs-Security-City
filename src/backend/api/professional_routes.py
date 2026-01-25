@@ -2,10 +2,11 @@
 Professional OSINT routes: metadata, PDF reports, evidence packages
 """
 
-import logging
 import io
+import logging
 from datetime import datetime
-from flask import Blueprint, request, jsonify, send_file
+
+from flask import Blueprint, jsonify, request, send_file
 
 from ..services.metadata import metadata_service
 from ..services.report import report_service
@@ -16,9 +17,7 @@ logger = logging.getLogger(__name__)
 professional_bp = Blueprint("professional", __name__)
 
 
-def validate_base64_size(
-    base64_string: str, max_mb: int = 10
-) -> tuple[bool, str | None]:
+def validate_base64_size(base64_string: str, max_mb: int = 10) -> tuple[bool, str | None]:
     """Validate base64 size"""
     max_bytes = max_mb * 1024 * 1024
     if len(base64_string) > max_bytes:
@@ -61,7 +60,7 @@ def extract_metadata():
 
         return jsonify({"success": True, "metadata": metadata}), 200
 
-    except Exception as e:
+    except (ValueError, TypeError, KeyError) as e:
         logger.error(f"❌ Metadata extraction error: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
@@ -84,9 +83,7 @@ def generate_pdf_report():
         data = request.get_json()
 
         if not data or "analysis_results" not in data:
-            return jsonify(
-                {"success": False, "error": "No analysis results provided"}
-            ), 400
+            return jsonify({"success": False, "error": "No analysis results provided"}), 400
 
         analysis_results = data["analysis_results"]
         metadata = data.get("metadata")
@@ -117,7 +114,7 @@ def generate_pdf_report():
             download_name=filename,
         )
 
-    except Exception as e:
+    except (ValueError, TypeError, KeyError) as e:
         logger.error(f"❌ PDF generation error: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
@@ -139,9 +136,7 @@ def generate_evidence_package():
         data = request.get_json()
 
         if not data or "frame" not in data or "analysis_results" not in data:
-            return jsonify(
-                {"success": False, "error": "Missing frame or analysis results"}
-            ), 400
+            return jsonify({"success": False, "error": "Missing frame or analysis results"}), 400
 
         frame_base64 = data["frame"]
         analysis_results = data["analysis_results"]
@@ -162,6 +157,6 @@ def generate_evidence_package():
 
         return jsonify({"success": True, "evidence_package": package}), 200
 
-    except Exception as e:
+    except (ValueError, TypeError, KeyError) as e:
         logger.error(f"❌ Evidence package error: {e}")
         return jsonify({"success": False, "error": str(e)}), 500

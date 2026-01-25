@@ -49,6 +49,8 @@ desktop.ini
 # Project specific
 data/temp/*
 !data/temp/.gitkeep
+data/.auth_storage.json
+data/*.db
 
 # Logs
 *.log
@@ -58,6 +60,7 @@ logs/
 .pytest_cache/
 .coverage
 htmlcov/
+coverage.xml
 
 # Jupyter
 .ipynb_checkpoints
@@ -70,11 +73,8 @@ package-lock.json
 .cursor/
 cursor/
 
-# Project directories
-historyMD/
-history/
+# Project directories (kept for reference, can be removed if not used)
 tickets/
-tracking/
 
 # Docker
 docker-compose.override.yml

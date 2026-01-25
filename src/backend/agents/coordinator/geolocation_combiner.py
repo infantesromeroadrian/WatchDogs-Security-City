@@ -5,7 +5,7 @@ Max: 100 lines
 """
 
 import logging
-from typing import Dict, Any
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +14,7 @@ class GeolocationCombiner:
     """Combines geolocation results from multiple frames"""
 
     @staticmethod
-    def combine_results(individual_results: list) -> Dict[str, Any]:
+    def combine_results(individual_results: list) -> dict[str, Any]:
         """
         Combine geolocation results from multiple frames.
 
@@ -57,11 +57,10 @@ class GeolocationCombiner:
                 "total_clues_found": len(all_clues),
                 "confidence": "MEDIUM" if len(all_clues) > 5 else "LOW",
             }
-        else:
-            return {
-                "combined_clues": all_clues,
-                "most_likely_location": None,
-                "total_clues_found": len(all_clues),
-                "confidence": "VERY LOW",
-                "note": "No se pudo determinar ubicación con certeza",
-            }
+        return {
+            "combined_clues": all_clues,
+            "most_likely_location": None,
+            "total_clues_found": len(all_clues),
+            "confidence": "VERY LOW",
+            "note": "No se pudo determinar ubicación con certeza",
+        }

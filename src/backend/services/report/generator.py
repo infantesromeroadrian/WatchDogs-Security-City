@@ -2,24 +2,24 @@
 Main PDF report generator orchestrator
 """
 
-import logging
 import io
-from typing import Dict, Any, Optional
+import logging
+from typing import Any
 
 try:
-    from reportlab.platypus import SimpleDocTemplate
+    import matplotlib as mpl
     from reportlab.lib.pagesizes import letter
-    import matplotlib
+    from reportlab.platypus import SimpleDocTemplate
 
-    matplotlib.use("Agg")  # Non-interactive backend
+    mpl.use("Agg")  # Non-interactive backend
     import matplotlib.pyplot as plt
 
     REPORT_AVAILABLE = True
 except ImportError:
     REPORT_AVAILABLE = False
 
-from .styles import get_report_styles
 from .sections import ReportSectionBuilder
+from .styles import get_report_styles
 
 logger = logging.getLogger(__name__)
 
@@ -40,9 +40,9 @@ class ReportService:
 
     def generate_analysis_report(
         self,
-        analysis_results: Dict[str, Any],
-        metadata: Optional[Dict[str, Any]] = None,
-        evidence_id: Optional[str] = None,
+        analysis_results: dict[str, Any],
+        metadata: dict[str, Any] | None = None,
+        evidence_id: str | None = None,
     ) -> bytes:
         """
         Generate comprehensive PDF report.
@@ -75,27 +75,37 @@ class ReportService:
         elements = []
         elements.extend(self.section_builder.create_header(evidence_id))
         elements.extend(self.section_builder.create_executive_summary(analysis_results))
-        elements.extend(
-            self.section_builder.create_technical_analysis(analysis_results)
-        )
+        elements.extend(self.section_builder.create_technical_analysis(analysis_results))
 
-        # Optional sections
-        if (
-            "geolocation" in analysis_results
-            or "combined_geolocation" in analysis_results
-        ):
-            elements.extend(
-                self.section_builder.create_geolocation_section(analysis_results)
-            )
+        # Original sections
+        if "geolocation" in analysis_results or "combined_geolocation" in analysis_results:
+            elements.extend(self.section_builder.create_geolocation_section(analysis_results))
 
+        # =================================================================
+        # CIA-Level Agent Sections
+        # =================================================================
+
+        # Face Analysis Section (Person Identification)
+        if "face_analysis" in analysis_results:
+            elements.extend(self.section_builder.create_face_analysis_section(analysis_results))
+
+        # Forensic Analysis Section (Image Authenticity)
+        if "forensic_analysis" in analysis_results:
+            elements.extend(self.section_builder.create_forensic_analysis_section(analysis_results))
+
+        # Context Intelligence Section (Temporal/Cultural Analysis)
+        if "context_intel" in analysis_results:
+            elements.extend(self.section_builder.create_context_intel_section(analysis_results))
+
+        # =================================================================
+        # Metadata and Forensic Evidence (file hashes, etc.)
+        # =================================================================
         if metadata:
             elements.extend(self.section_builder.create_metadata_section(metadata))
 
         if metadata and "forensics" in metadata:
             elements.extend(
-                self.section_builder.create_forensic_section(
-                    metadata["forensics"], evidence_id
-                )
+                self.section_builder.create_forensic_section(metadata["forensics"], evidence_id)
             )
 
         elements.extend(self.section_builder.create_footer())

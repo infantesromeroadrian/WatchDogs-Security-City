@@ -1,39 +1,43 @@
 """
 Utility functions for the WatchDogs OSINT system.
 """
-from .image_utils import verify_image_size
-from .retry_utils import agent_retry
-from .timeout_utils import with_timeout, TimeoutError
+
 from .cache_utils import (
-    get_image_hash, get_cache_key, get_cached_result, 
-    set_cached_result, clear_cache, get_cache_stats
+    clear_cache,
+    get_cache_key,
+    get_cache_stats,
+    get_cached_result,
+    get_image_hash,
+    set_cached_result,
 )
-from .metrics_utils import track_agent_metrics, get_agent_metrics, reset_metrics, _noop_decorator
 from .circuit_breaker import CircuitBreaker, CircuitBreakerOpenError, circuit_breaker
+from .image_utils import verify_image_size
+from .metrics_utils import _noop_decorator, get_agent_metrics, reset_metrics, track_agent_metrics
+from .retry_utils import agent_retry
+from .timeout_utils import TimeoutError, with_timeout
 
 __all__ = [
-    # Image utils
-    "verify_image_size",
-    # Retry utils
-    "agent_retry",
-    # Timeout utils
-    "with_timeout",
-    "TimeoutError",
-    # Cache utils
-    "get_image_hash",
-    "get_cache_key",
-    "get_cached_result",
-    "set_cached_result",
-    "clear_cache",
-    "get_cache_stats",
-    # Metrics utils
-    "track_agent_metrics",
-    "get_agent_metrics",
-    "reset_metrics",
-    "_noop_decorator",
     # Circuit breaker
     "CircuitBreaker",
     "CircuitBreakerOpenError",
-    "circuit_breaker"
+    "TimeoutError",
+    "_noop_decorator",
+    # Retry utils
+    "agent_retry",
+    "circuit_breaker",
+    "clear_cache",
+    "get_agent_metrics",
+    "get_cache_key",
+    "get_cache_stats",
+    "get_cached_result",
+    # Cache utils
+    "get_image_hash",
+    "reset_metrics",
+    "set_cached_result",
+    # Metrics utils
+    "track_agent_metrics",
+    # Image utils
+    "verify_image_size",
+    # Timeout utils
+    "with_timeout",
 ]
-

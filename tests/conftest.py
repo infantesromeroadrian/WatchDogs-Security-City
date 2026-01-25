@@ -1,118 +1,191 @@
 """
-Pytest configuration and fixtures for WatchDogs tests.
+Pytest configuration and fixtures for WatchDogs Security City tests.
 """
 
+import base64
+from pathlib import Path
+from typing import Generator
+
 import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from fastapi.testclient import TestClient
+from flask import Flask
+from flask.testing import FlaskClient
 
-from src.database.models import Base
-from src.database.connection import get_db
-from src.api.main import app
+# ============================================================================
+# Sample Test Data
+# ============================================================================
+
+# Minimal 1x1 white PNG image (base64)
+SAMPLE_IMAGE_BASE64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+
+SAMPLE_ANALYSIS_RESULT = {
+    "agent": "vision",
+    "status": "success",
+    "analysis": "Test analysis result",
+    "confidence": "high",
+}
 
 
-# ==========================================
-# Database Fixtures
-# ==========================================
+# ============================================================================
+# Flask Application Fixtures
+# ============================================================================
+
 
 @pytest.fixture(scope="session")
-def test_engine():
-    """Create a test database engine."""
-    # Use in-memory SQLite for tests
-    engine = create_engine("sqlite:///:memory:", echo=False)
-    Base.metadata.create_all(engine)
-    yield engine
-    engine.dispose()
+def app() -> Generator[Flask, None, None]:
+    """
+    Create and configure a Flask application for testing.
 
+    Yields:
+        Configured Flask application instance
+    """
+    # Import app here to avoid circular imports
+    from src.backend.app import app as flask_app
 
-@pytest.fixture(scope="function")
-def test_db(test_engine):
-    """Create a test database session."""
-    TestingSessionLocal = sessionmaker(
-        autocommit=False,
-        autoflush=False,
-        bind=test_engine,
+    # Configure for testing
+    flask_app.config.update(
+        {
+            "TESTING": True,
+            "DEBUG": False,
+            "WTF_CSRF_ENABLED": False,  # Disable CSRF for testing
+        }
     )
-    
-    db = TestingSessionLocal()
-    
-    try:
-        yield db
-    finally:
-        db.close()
+
+    yield flask_app
 
 
 @pytest.fixture(scope="function")
-def override_get_db(test_db):
-    """Override the get_db dependency for tests."""
-    def _override_get_db():
-        try:
-            yield test_db
-        finally:
-            test_db.close()
-    
-    app.dependency_overrides[get_db] = _override_get_db
-    yield
-    app.dependency_overrides.clear()
+def client(app: Flask) -> FlaskClient:
+    """
+    Create a test client for the Flask application.
+
+    Args:
+        app: Flask application fixture
+
+    Returns:
+        Flask test client
+    """
+    return app.test_client()
 
 
-# ==========================================
-# API Client Fixtures
-# ==========================================
-
-@pytest.fixture(scope="function")
-def client(override_get_db):
-    """Create a test client for API testing."""
-    with TestClient(app) as test_client:
-        yield test_client
-
-
-# ==========================================
+# ============================================================================
 # Mock Data Fixtures
-# ==========================================
+# ============================================================================
+
 
 @pytest.fixture
-def mock_video_data():
-    """Mock video data for testing."""
+def sample_image_base64() -> str:
+    """Provide a sample base64-encoded image for testing."""
+    return SAMPLE_IMAGE_BASE64
+
+
+@pytest.fixture
+def sample_image_bytes() -> bytes:
+    """Provide sample image bytes for testing."""
+    # Decode the base64 image
+    base64_data = SAMPLE_IMAGE_BASE64.split(",")[1]
+    return base64.b64decode(base64_data)
+
+
+@pytest.fixture
+def sample_analysis_result() -> dict:
+    """Provide a sample analysis result for testing."""
+    return SAMPLE_ANALYSIS_RESULT.copy()
+
+
+@pytest.fixture
+def mock_video_path(tmp_path: Path) -> Path:
+    """
+    Create a mock video file path for testing.
+
+    Args:
+        tmp_path: Pytest temporary directory
+
+    Returns:
+        Path to mock video file
+    """
+    video_file = tmp_path / "test_video.mp4"
+    video_file.write_bytes(b"fake video content")
+    return video_file
+
+
+# ============================================================================
+# Agent Mocking Fixtures
+# ============================================================================
+
+
+@pytest.fixture
+def mock_vision_response():
+    """Mock response from Vision Agent."""
     return {
-        "source_path": "/test/video.mp4",
-        "source_type": "file",
-        "filename": "test_video.mp4",
-        "duration_seconds": 60.0,
-        "fps": 30,
-        "resolution": "1920x1080",
+        "agent": "vision",
+        "status": "success",
+        "analysis": "Urban street scene with vehicles and buildings",
+        "confidence": "high",
     }
 
 
 @pytest.fixture
-def mock_face_encoding():
-    """Mock face encoding (128D vector)."""
-    import numpy as np
-    return np.random.rand(128).tolist()
-
-
-@pytest.fixture
-def mock_frame_data():
-    """Mock frame data for testing."""
+def mock_ocr_response():
+    """Mock response from OCR Agent."""
     return {
-        "frame_number": 100,
-        "timestamp_ms": 3333,
-        "storage_path": "test/frame_100.jpg",
-        "has_faces": True,
+        "agent": "ocr",
+        "status": "success",
+        "analysis": "Detected text: STOP, Main Street, 123",
+        "has_text": True,
+        "confidence": "high",
     }
 
 
-# ==========================================
-# Test Utilities
-# ==========================================
+@pytest.fixture
+def mock_detection_response():
+    """Mock response from Detection Agent."""
+    return {
+        "agent": "detection",
+        "status": "success",
+        "analysis": "Detected: 2 vehicles, 1 traffic sign",
+        "confidence": "high",
+    }
+
 
 @pytest.fixture
-def create_test_video(test_db, mock_video_data):
-    """Create a test video in the database."""
-    from src.database import crud, schemas
-    
-    video_create = schemas.VideoCreate(**mock_video_data)
-    video = crud.create_video(test_db, video_create)
-    return video
+def mock_geolocation_response():
+    """Mock response from Geolocation Agent."""
+    return {
+        "agent": "geolocation",
+        "status": "success",
+        "analysis": "Location analysis based on visual clues",
+        "confidence": "medium",
+        "location": {
+            "country": "Spain",
+            "city": "Madrid",
+            "district": "Centro",
+        },
+        "coordinates": {"lat": 40.4168, "lon": -3.7038},
+        "key_clues": ["Spanish traffic signs", "European architecture"],
+    }
 
+
+# ============================================================================
+# Environment Setup Fixtures
+# ============================================================================
+
+
+@pytest.fixture(autouse=True)
+def setup_test_environment(monkeypatch, tmp_path):
+    """
+    Automatically setup test environment for all tests.
+
+    Args:
+        monkeypatch: Pytest monkeypatch fixture
+        tmp_path: Pytest temporary directory
+    """
+    # Set test environment variables
+    monkeypatch.setenv("FLASK_ENV", "testing")
+    monkeypatch.setenv("CACHE_ENABLED", "False")  # Disable cache in tests
+    monkeypatch.setenv("METRICS_ENABLED", "False")  # Disable metrics in tests
+    monkeypatch.setenv("CIRCUIT_BREAKER_ENABLED", "False")  # Disable circuit breaker
+
+    # Set temp path for uploads
+    test_temp_path = tmp_path / "temp"
+    test_temp_path.mkdir(exist_ok=True)
+    monkeypatch.setenv("TEMP_VIDEO_PATH", str(test_temp_path))
