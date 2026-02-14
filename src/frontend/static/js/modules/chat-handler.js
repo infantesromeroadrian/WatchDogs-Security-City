@@ -91,6 +91,21 @@ export class ChatHandler {
             // Add assistant response
             this.addMessage('assistant', data.response);
             
+            // Emit location events for any extracted coordinates
+            if (data.extracted_locations && data.extracted_locations.length > 0) {
+                data.extracted_locations.forEach(loc => {
+                    window.dispatchEvent(new CustomEvent('watchdogs:location-found', {
+                        detail: {
+                            lat: loc.lat,
+                            lon: loc.lon,
+                            label: loc.label || `${loc.lat.toFixed(4)}, ${loc.lon.toFixed(4)}`,
+                            confidence_radius: loc.confidence_radius_meters,
+                            source: 'chat'
+                        }
+                    }));
+                });
+            }
+            
             // Update chat history
             this.chatHistory.push({
                 role: 'user',

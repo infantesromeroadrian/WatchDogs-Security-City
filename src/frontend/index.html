@@ -9,6 +9,7 @@
     <meta name="robots" content="noindex, nofollow">
     <title>WatchDogs - Video Analysis System</title>
     <link rel="stylesheet" href="static/css/style.css">
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.css" rel="stylesheet">
 </head>
 <body>
     <div class="container">
@@ -19,12 +20,12 @@
             <div id="connectionStatus" class="connection-status" role="status" aria-live="polite"></div>
         </header>
 
-        <!-- Video Upload Section -->
+        <!-- Media Upload Section -->
         <section class="upload-section" role="region" aria-labelledby="upload-heading">
-            <h2 id="upload-heading">📤 1. Cargar Video</h2>
+            <h2 id="upload-heading">📤 1. Cargar Video o Imagen</h2>
             <div class="upload-area">
-                <input type="file" id="videoInput" accept="video/*" aria-label="Seleccionar archivo de video" hidden>
-                <button id="uploadBtn" class="btn btn-primary" aria-describedby="uploadStatus">Seleccionar Video</button>
+                <input type="file" id="videoInput" accept="video/*,image/*" aria-label="Seleccionar archivo de video o imagen" hidden>
+                <button id="uploadBtn" class="btn btn-primary" aria-describedby="uploadStatus">Seleccionar Video / Imagen</button>
                 <p id="uploadStatus" class="status-text" role="status" aria-live="polite"></p>
             </div>
         </section>
@@ -291,7 +292,26 @@
         </section>
     </div>
 
+    <!-- Fullscreen Map Overlay -->
+    <div id="mapFullscreenOverlay">
+        <div class="map-fullscreen-layout">
+            <div class="map-fullscreen-main">
+                <div id="fullMapContainer" style="width:100%;height:100%;"></div>
+            </div>
+            <div class="map-sidebar">
+                <div class="map-sidebar-header">
+                    <h3>📍 Ubicaciones detectadas</h3>
+                    <button class="map-close-btn" title="Cerrar">&times;</button>
+                </div>
+                <div class="map-marker-list" id="markerList">
+                    <div class="map-no-markers">Sin ubicaciones detectadas todavia</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.js"></script>
     <script src="static/js/video-player.js"></script>
     <script src="static/js/roi-selector.js"></script>
     <!-- API Client with ES6 Modules -->
