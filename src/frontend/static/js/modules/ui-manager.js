@@ -126,7 +126,7 @@ For more information, consult your organization's Data Protection Officer.
     showLoading() {
         this.analysisSection.style.display = 'block';
         this.loadingIndicator.style.display = 'block';
-        this.resultsContainer.style.display = 'none';
+        this.resultsContainer.style.display = 'block';
         
         // Reset CIA Intel dashboard
         this.resetIntelDashboard();
@@ -206,6 +206,64 @@ For more information, consult your organization's Data Protection Officer.
         this.renderKeyInferences(agents.context_intel);
         
         console.log('📊 CIA Intel Dashboard rendered with 7 agents');
+    }
+
+    updateAgentCard(agentName, result) {
+        /**
+         * Update a single agent card when its SSE event arrives.
+         * Called progressively as each agent completes.
+         */
+        if (!result) return;
+
+        // Map agent names to render methods
+        const renderMap = {
+            vision: data => this.renderVisionCard(data),
+            ocr: data => this.renderOCRCard(data),
+            detection: data => this.renderDetectionCard(data),
+            geolocation: data => this.renderGeolocationCard(data),
+            face_analysis: data => this.renderFaceAnalysisCard(data),
+            forensic_analysis: data => this.renderForensicAnalysisCard(data),
+            context_intel: data => this.renderContextIntelCard(data)
+        };
+
+        const renderer = renderMap[agentName];
+        if (renderer) {
+            renderer(result);
+            console.log(`Agent card updated: ${agentName}`);
+        } else {
+            console.warn(`Unknown agent: ${agentName}`);
+        }
+
+        // Update key inferences if context_intel just completed
+        if (agentName === 'context_intel') {
+            this.renderKeyInferences(result);
+        }
+
+        const agentIds = [
+            'visionContent',
+            'ocrContent',
+            'detectionContent',
+            'geolocationContent',
+            'faceAnalysisContent',
+            'forensicAnalysisContent',
+            'contextIntelContent'
+        ];
+        const totalCount = agentIds.length;
+        const completedCount = agentIds.filter(id => {
+            const content = document.getElementById(id);
+            if (!content) return false;
+            return !(content.innerHTML || '').includes('Awaiting analysis...');
+        }).length;
+
+        if (this.analysisStatus) {
+            this.analysisStatus.className = completedCount === totalCount
+                ? 'status-indicator success'
+                : 'status-indicator processing';
+        }
+
+        if (this.summaryText) {
+            this.summaryText.textContent = `Analysis in progress: ${completedCount}/${totalCount} agents completed`;
+        }
     }
     
     updateSummaryStatus(agents) {
@@ -306,6 +364,20 @@ For more information, consult your organization's Data Protection Officer.
             if (badge && data.confidence) {
                 badge.textContent = data.confidence;
                 badge.className = `confidence-badge ${this.getConfidenceClass(data.confidence)}`;
+            }
+            
+            // Emit location event for interactive map
+            const coords = data.coordinates;
+            if (coords && coords.lat != null && coords.lon != null) {
+                window.dispatchEvent(new CustomEvent('watchdogs:location-found', {
+                    detail: {
+                        lat: coords.lat,
+                        lon: coords.lon,
+                        label: `${city}, ${country}`,
+                        confidence_radius: coords.confidence_radius_meters,
+                        source: 'analysis'
+                    }
+                }));
             }
         } else {
             content.innerHTML = `<p class="placeholder">Error: ${data.error || 'Unknown error'}</p>`;

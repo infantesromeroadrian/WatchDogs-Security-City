@@ -4,6 +4,7 @@
  */
 
 import { ChatHandler } from './modules/chat-handler.js';
+import { MapHandler } from './modules/map-handler.js';
 import { UIManager } from './modules/ui-manager.js';
 import { ImageUtils } from './modules/image-utils.js';
 
@@ -11,7 +12,7 @@ class APIClient {
     constructor() {
         // Dynamic base URL (works in Docker and local)
         this.baseURL = window.location.origin + '/api';
-        this.timeout = 60000; // 60 seconds timeout for analysis
+        this.timeout = 120000; // 2 minutes — generous for Groq cloud API with 7 agents
         
         // DOM elements
         this.analyzeBtn = document.getElementById('analyzeBtn');
@@ -28,6 +29,7 @@ class APIClient {
         this.chatHandler = new ChatHandler(this);
         this.uiManager = new UIManager(this);
         this.imageUtils = new ImageUtils();
+        this.mapHandler = new MapHandler();
         
         // Expose imageUtils globally for other modules
         window.imageUtils = this.imageUtils;
@@ -38,6 +40,9 @@ class APIClient {
     init() {
         // Check backend connection on load
         this.checkBackendConnection();
+        
+        // Init map (async, non-blocking)
+        this.mapHandler.init();
         
         // Analyze button
         this.analyzeBtn.addEventListener('click', () => {
@@ -86,49 +91,47 @@ class APIClient {
         try {
             // DEFENSIVE: Verify videoPlayer exists
             if (!window.videoPlayer) {
-                alert('❌ Error: Video player no inicializado. Recarga la página.');
-                console.error('❌ CRITICAL: videoPlayer not initialized!');
+                alert('Error: Video player no inicializado. Recarga la pagina.');
+                console.error('CRITICAL: videoPlayer not initialized!');
                 return;
             }
-            
+
             // Get captured frame from video player
             const frame = window.videoPlayer.getCapturedFrame();
             if (!frame) {
-                alert('⚠️ Por favor captura un frame primero usando el botón "📸 Capturar Frame"');
-                console.warn('❌ No frame captured. User needs to capture frame first.');
+                alert('Por favor captura un frame primero usando el boton "Capturar Frame"');
+                console.warn('No frame captured. User needs to capture frame first.');
                 return;
             }
-            
-            console.log('✅ Frame obtained from videoPlayer');
-            
+
+            console.log('Frame obtained from videoPlayer');
+
             // Get ROI if selected
             const roi = window.roiSelector?.getROI();
-            
+
             // Show loading via UIManager
             this.uiManager.showLoading();
-            
-            console.log('🚀 Sending frame for analysis...');
+
+            console.log('Sending frame for streaming analysis...');
             if (roi) {
-                console.log('📐 ROI Details:', JSON.stringify(roi, null, 2));
-                console.log(`   - Position: (${roi.x}, ${roi.y})`);
-                console.log(`   - Size: ${roi.width} x ${roi.height}`);
+                console.log('ROI Details:', JSON.stringify(roi, null, 2));
             } else {
-                console.log('📐 ROI: Full frame (no ROI selected)');
+                console.log('ROI: Full frame (no ROI selected)');
             }
-            
+
             // Prepare request payload
             const payload = {
                 frame: frame,
                 roi: roi || null,
-                context: ''  // Optional context can be added later
+                context: ''
             };
-            
-            // Send request to backend with timeout
+
+            // Send request to SSE streaming endpoint
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), this.timeout);
-            
+
             try {
-                const response = await fetch(`${this.baseURL}/analyze-frame`, {
+                const response = await fetch(`${this.baseURL}/analyze-frame-stream`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -136,33 +139,94 @@ class APIClient {
                     body: JSON.stringify(payload),
                     signal: controller.signal
                 });
-                
+
                 clearTimeout(timeoutId);
-                
+
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                
-                const data = await response.json();
-                
-                if (!data.success) {
-                    throw new Error(data.error || 'Analysis failed');
+
+                if (!response.body) {
+                    throw new Error('Streaming response body is not available');
                 }
-                
-                console.log('✅ Analysis complete');
-                this.displayResults(data.results);
-                
+
+                // Parse SSE stream
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+                let finalReport = null;
+                let agentsCompleted = 0;
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+
+                    // Parse SSE events from buffer
+                    // SSE format: "event: type\ndata: json\n\n"
+                    const events = buffer.split('\n\n');
+                    // Keep the last potentially incomplete event in the buffer
+                    buffer = events.pop() || '';
+
+                    for (const eventStr of events) {
+                        if (!eventStr.trim()) continue;
+
+                        const lines = eventStr.split('\n');
+                        let eventType = '';
+                        let eventData = '';
+
+                        for (const line of lines) {
+                            if (line.startsWith('event: ')) {
+                                eventType = line.slice(7);
+                            } else if (line.startsWith('data: ')) {
+                                eventData = line.slice(6);
+                            }
+                        }
+
+                        if (!eventData) continue;
+
+                        try {
+                            const parsed = JSON.parse(eventData);
+
+                            if (eventType === 'agent_update') {
+                                agentsCompleted++;
+                                console.log(`Agent completed (${agentsCompleted}): ${parsed.agent}`);
+                                this.uiManager.updateAgentCard(parsed.agent, parsed.result);
+                            } else if (eventType === 'complete') {
+                                console.log('Analysis complete - all agents finished');
+                                finalReport = parsed.final_report;
+                            } else if (eventType === 'error') {
+                                console.error('Stream error:', parsed.error);
+                                throw new Error(parsed.error || 'Analysis failed');
+                            }
+                        } catch (parseError) {
+                            if (parseError.message && !parseError.message.includes('JSON')) {
+                                throw parseError;
+                            }
+                            console.warn('Failed to parse SSE event:', eventStr);
+                        }
+                    }
+                }
+
+                // Display final complete results
+                if (finalReport) {
+                    this.displayResults(finalReport);
+                } else {
+                    throw new Error('Stream ended without complete event');
+                }
+
             } catch (error) {
                 clearTimeout(timeoutId);
-                
+
                 if (error.name === 'AbortError') {
-                    throw new Error('Timeout: El análisis tomó demasiado tiempo (>60s). Intenta con una región más pequeña.');
+                    throw new Error('Timeout: El analisis tomo demasiado tiempo (>2min). Verifica la conexion con el servidor LLM.');
                 }
                 throw error;
             }
-            
+
         } catch (error) {
-            console.error('❌ Analysis error:', error);
+            console.error('Analysis error:', error);
             this.uiManager.showError(error.message);
         }
     }

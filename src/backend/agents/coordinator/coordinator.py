@@ -13,6 +13,7 @@ CIA-Level OSINT Analysis with 6 parallel agents:
 """
 
 import logging
+from collections.abc import Generator
 from typing import Any
 
 from ...utils.image_utils import verify_image_size
@@ -108,10 +109,69 @@ class CoordinatorAgent:
             )
 
         except (ValueError, TypeError, KeyError, AttributeError) as e:
-            logger.error(f"❌ Coordinated analysis failed: {e}")
+            logger.error("❌ Coordinated analysis failed: %s", e)
             return {
                 "json": {"status": "error", "error": str(e)},
                 "text": f"Error en análisis: {e!s}",
+            }
+
+    def analyze_frame_stream(
+        self,
+        image_base64: str,
+        context: str = "",
+        agents_to_run: list[AgentType] | None = None,
+    ) -> Generator[dict[str, Any], None, None]:
+        """
+        Stream analysis results as each agent completes.
+
+        Yields per-agent update dicts as they finish:
+            {"event": "agent_update", "agent": "vision", "result": {...}}
+            {"event": "agent_update", "agent": "ocr", "result": {...}}
+            ...
+            {"event": "complete", "final_report": {"json": {...}, "text": "..."}}
+        """
+        try:
+            verify_image_size(image_base64, "COORDINATOR")
+
+            logger.info("Starting streaming CIA-level coordinated frame analysis...")
+
+            if agents_to_run is None:
+                agents_to_run = DEFAULT_AGENTS.copy()
+
+            initial_state: AnalysisState = {
+                "image_base64": image_base64,
+                "context": context,
+                "agents_to_run": agents_to_run,
+                "vision_result": None,
+                "ocr_result": None,
+                "detection_result": None,
+                "geolocation_result": None,
+                "face_analysis_result": None,
+                "forensic_analysis_result": None,
+                "context_intel_result": None,
+                "final_report": None,
+            }
+
+            for update in self.graph.stream(initial_state, stream_mode="updates"):
+                for node_name, node_output in update.items():
+                    if node_name == "combine":
+                        final_report = node_output.get("final_report")
+                        if final_report:
+                            yield {"event": "complete", "final_report": final_report}
+                    else:
+                        result_key = f"{node_name}_result"
+                        result_data = node_output.get(result_key)
+                        yield {
+                            "event": "agent_update",
+                            "agent": node_name,
+                            "result": result_data,
+                        }
+
+        except (ValueError, TypeError, KeyError, AttributeError) as e:
+            logger.error("Streaming analysis failed: %s", e)
+            yield {
+                "event": "error",
+                "error": str(e),
             }
 
     def analyze_multi_frame(
