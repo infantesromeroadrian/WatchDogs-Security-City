@@ -51,16 +51,12 @@ class AgentRunners:
         Returns:
             Dict with vision_result key
         """
-        if "vision" not in state.get("agents_to_run", ["vision", "ocr", "detection"]):
-            logger.info("⏭️ Skipping Vision Agent (not in agents_to_run)")
-            return {"vision_result": None}
-
         try:
             logger.info("🔍 Running Vision Agent (native parallel)...")
             result = self.vision_agent.analyze(state["image_base64"], state.get("context", ""))
             return {"vision_result": result}
         except AgentTimeoutError as e:
-            logger.warning(f"⏱️ Vision agent timeout: {e}")
+            logger.warning("⏱️ Vision agent timeout: %s", e)
             return {
                 "vision_result": {
                     "agent": "vision",
@@ -70,7 +66,7 @@ class AgentRunners:
                 }
             }
         except (ValueError, TypeError, KeyError, AttributeError, RuntimeError) as e:
-            logger.error(f"❌ Vision agent error: {e}")
+            logger.error("❌ Vision agent error: %s", e)
             return {
                 "vision_result": {
                     "agent": "vision",
@@ -90,16 +86,12 @@ class AgentRunners:
         Returns:
             Dict with ocr_result key
         """
-        if "ocr" not in state.get("agents_to_run", ["vision", "ocr", "detection"]):
-            logger.info("⏭️ Skipping OCR Agent (not in agents_to_run)")
-            return {"ocr_result": None}
-
         try:
             logger.info("📝 Running OCR Agent (native parallel)...")
             result = self.ocr_agent.analyze(state["image_base64"], state.get("context", ""))
             return {"ocr_result": result}
         except AgentTimeoutError as e:
-            logger.warning(f"⏱️ OCR agent timeout: {e}")
+            logger.warning("⏱️ OCR agent timeout: %s", e)
             return {
                 "ocr_result": {
                     "agent": "ocr",
@@ -110,7 +102,7 @@ class AgentRunners:
                 }
             }
         except (ValueError, TypeError, KeyError, AttributeError, RuntimeError) as e:
-            logger.error(f"❌ OCR agent error: {e}")
+            logger.error("❌ OCR agent error: %s", e)
             return {
                 "ocr_result": {
                     "agent": "ocr",
@@ -131,16 +123,12 @@ class AgentRunners:
         Returns:
             Dict with detection_result key
         """
-        if "detection" not in state.get("agents_to_run", ["vision", "ocr", "detection"]):
-            logger.info("⏭️ Skipping Detection Agent (not in agents_to_run)")
-            return {"detection_result": None}
-
         try:
             logger.info("🎯 Running Detection Agent (native parallel)...")
             result = self.detection_agent.analyze(state["image_base64"], state.get("context", ""))
             return {"detection_result": result}
         except AgentTimeoutError as e:
-            logger.warning(f"⏱️ Detection agent timeout: {e}")
+            logger.warning("⏱️ Detection agent timeout: %s", e)
             return {
                 "detection_result": {
                     "agent": "detection",
@@ -150,7 +138,7 @@ class AgentRunners:
                 }
             }
         except (ValueError, TypeError, KeyError, AttributeError, RuntimeError) as e:
-            logger.error(f"❌ Detection agent error: {e}")
+            logger.error("❌ Detection agent error: %s", e)
             return {
                 "detection_result": {
                     "agent": "detection",
@@ -170,12 +158,6 @@ class AgentRunners:
         Returns:
             Dict with geolocation_result key (enriched with geocoding/maps)
         """
-        if "geolocation" not in state.get(
-            "agents_to_run", ["vision", "ocr", "detection", "geolocation"]
-        ):
-            logger.info("⏭️ Skipping Geolocation Agent (not in agents_to_run)")
-            return {"geolocation_result": None}
-
         try:
             logger.info("🌍 Running Geolocation Agent (native parallel)...")
             result = self.geolocation_agent.analyze(state["image_base64"], state.get("context", ""))
@@ -185,7 +167,7 @@ class AgentRunners:
 
             return {"geolocation_result": enriched_result}
         except AgentTimeoutError as e:
-            logger.warning(f"⏱️ Geolocation agent timeout: {e}")
+            logger.warning("⏱️ Geolocation agent timeout: %s", e)
             return {
                 "geolocation_result": {
                     "agent": "geolocation",
@@ -198,7 +180,7 @@ class AgentRunners:
                 }
             }
         except (ValueError, TypeError, KeyError, AttributeError, RuntimeError) as e:
-            logger.error(f"❌ Geolocation agent error: {e}")
+            logger.error("❌ Geolocation agent error: %s", e)
             return {
                 "geolocation_result": {
                     "agent": "geolocation",
@@ -225,10 +207,6 @@ class AgentRunners:
         Returns:
             Dict with face_analysis_result key
         """
-        if "face_analysis" not in state.get("agents_to_run", []):
-            logger.info("⏭️ Skipping Face Analysis Agent (not in agents_to_run)")
-            return {"face_analysis_result": None}
-
         try:
             logger.info("👤 Running Face Analysis Agent (native parallel)...")
             result = self.face_analysis_agent.analyze(
@@ -236,7 +214,7 @@ class AgentRunners:
             )
             return {"face_analysis_result": result}
         except AgentTimeoutError as e:
-            logger.warning(f"⏱️ Face analysis agent timeout: {e}")
+            logger.warning("⏱️ Face analysis agent timeout: %s", e)
             return {
                 "face_analysis_result": {
                     "agent": "face_analysis",
@@ -256,7 +234,7 @@ class AgentRunners:
                 }
             }
         except (ValueError, TypeError, KeyError, AttributeError, RuntimeError) as e:
-            logger.error(f"❌ Face analysis agent error: {e}")
+            logger.error("❌ Face analysis agent error: %s", e)
             return {
                 "face_analysis_result": {
                     "agent": "face_analysis",
@@ -292,10 +270,6 @@ class AgentRunners:
         Returns:
             Dict with forensic_analysis_result key
         """
-        if "forensic_analysis" not in state.get("agents_to_run", []):
-            logger.info("⏭️ Skipping Forensic Analysis Agent (not in agents_to_run)")
-            return {"forensic_analysis_result": None}
-
         try:
             logger.info("🔬 Running Forensic Analysis Agent (native parallel)...")
             result = self.forensic_analysis_agent.analyze(
@@ -303,7 +277,7 @@ class AgentRunners:
             )
             return {"forensic_analysis_result": result}
         except AgentTimeoutError as e:
-            logger.warning(f"⏱️ Forensic analysis agent timeout: {e}")
+            logger.warning("⏱️ Forensic analysis agent timeout: %s", e)
             return {
                 "forensic_analysis_result": {
                     "agent": "forensic_analysis",
@@ -325,7 +299,7 @@ class AgentRunners:
                 }
             }
         except (ValueError, TypeError, KeyError, AttributeError, RuntimeError) as e:
-            logger.error(f"❌ Forensic analysis agent error: {e}")
+            logger.error("❌ Forensic analysis agent error: %s", e)
             return {
                 "forensic_analysis_result": {
                     "agent": "forensic_analysis",
@@ -364,10 +338,6 @@ class AgentRunners:
         Returns:
             Dict with context_intel_result key
         """
-        if "context_intel" not in state.get("agents_to_run", []):
-            logger.info("⏭️ Skipping Context Intel Agent (not in agents_to_run)")
-            return {"context_intel_result": None}
-
         try:
             logger.info("🧠 Running Context Intel Agent (native parallel)...")
             result = self.context_intel_agent.analyze(
@@ -375,7 +345,7 @@ class AgentRunners:
             )
             return {"context_intel_result": result}
         except AgentTimeoutError as e:
-            logger.warning(f"⏱️ Context intel agent timeout: {e}")
+            logger.warning("⏱️ Context intel agent timeout: %s", e)
             return {
                 "context_intel_result": {
                     "agent": "context_intel",
@@ -394,7 +364,7 @@ class AgentRunners:
                 }
             }
         except (ValueError, TypeError, KeyError, AttributeError, RuntimeError) as e:
-            logger.error(f"❌ Context intel agent error: {e}")
+            logger.error("❌ Context intel agent error: %s", e)
             return {
                 "context_intel_result": {
                     "agent": "context_intel",

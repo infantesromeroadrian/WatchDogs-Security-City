@@ -9,6 +9,7 @@ CIA-Level OSINT Analysis Graph with 7 parallel agents:
 """
 
 import logging
+from typing import Sequence
 
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
@@ -20,6 +21,11 @@ from .state import AnalysisState
 logger = logging.getLogger(__name__)
 
 
+def route_to_enabled_agents(state: AnalysisState) -> Sequence[str]:
+    """Route only to agents configured in agents_to_run."""
+    return state["agents_to_run"]
+
+
 class GraphBuilder:
     """Constructs LangGraph workflow with parallel agent execution."""
 
@@ -28,7 +34,7 @@ class GraphBuilder:
         """
         Build the LangGraph workflow with native parallel execution.
 
-        Creates a graph where all 6 agents run in parallel, then converge
+        Creates a graph where enabled agents run in parallel, then converge
         to combine results into a comprehensive intelligence report.
 
         Graph structure:
@@ -36,26 +42,21 @@ class GraphBuilder:
                            │    START    │
                            └──────┬──────┘
                                   │
-            ┌─────────────────────┼─────────────────────┐
-            │           │         │         │           │
-            ▼           ▼         ▼         ▼           ▼
-        ┌───────┐ ┌─────────┐ ┌─────────┐ ┌───────────┐ ┌───────────────┐
-        │vision │ │   ocr   │ │detection│ │geolocation│ │ face_analysis │
-        └───┬───┘ └────┬────┘ └────┬────┘ └─────┬─────┘ └───────┬───────┘
-            │          │           │            │               │
-            └──────────┴─────┬─────┴────────────┴───────────────┘
-                             │                                  │
-                             ▼                                  ▼
-                        ┌─────────────────────────────────────────┐
-                        │               combine                   │
-                        └───────────────────┬─────────────────────┘
-                                            │
-                                            ▼
-                                       ┌─────────┐
-                                       │   END   │
-                                       └─────────┘
-
-        Plus forensic_analysis agent running in parallel.
+                                  ▼
+                     route_to_enabled_agents(state)
+                                  │
+                                  ▼
+                    [enabled agent nodes in parallel]
+                                  │
+                                  ▼
+                           ┌─────────────┐
+                           │   combine   │
+                           └──────┬──────┘
+                                  │
+                                  ▼
+                               ┌─────┐
+                               │ END │
+                               └─────┘
 
         Args:
             agent_runners: Instance of AgentRunners with initialized agents
@@ -63,7 +64,7 @@ class GraphBuilder:
         Returns:
             Compiled StateGraph ready for execution
         """
-        logger.info("🔧 Building LangGraph workflow with 6 parallel agents...")
+        logger.info("🔧 Building LangGraph workflow with conditional parallel routing...")
 
         # Create graph with AnalysisState schema
         workflow = StateGraph(AnalysisState)
@@ -82,15 +83,8 @@ class GraphBuilder:
         # Add result combiner node
         workflow.add_node("combine", ResultCombiner.combine_results)
 
-        # Define edges with NATIVE PARALLELISM
-        # All SEVEN agents run in parallel from START
-        workflow.add_edge(START, "vision")
-        workflow.add_edge(START, "ocr")
-        workflow.add_edge(START, "detection")
-        workflow.add_edge(START, "geolocation")
-        workflow.add_edge(START, "face_analysis")
-        workflow.add_edge(START, "forensic_analysis")
-        workflow.add_edge(START, "context_intel")
+        # Define edges with conditional native parallelism
+        workflow.add_conditional_edges(START, route_to_enabled_agents)
 
         # All agents converge to combine node
         workflow.add_edge("vision", "combine")
@@ -104,6 +98,8 @@ class GraphBuilder:
         # Combine to END
         workflow.add_edge("combine", END)
 
-        logger.info("✅ LangGraph workflow built with 7 parallel agents (CIA-level OSINT)")
+        logger.info(
+            "✅ LangGraph workflow built with conditional parallel agents (CIA-level OSINT)"
+        )
 
         return workflow.compile()
