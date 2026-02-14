@@ -11,7 +11,7 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
 # Import blueprints
-from .api import analysis_bp, auth_bp, professional_bp, system_bp
+from .api import analysis_bp, auth_bp, map_bp, professional_bp, system_bp
 from .config import (
     ALLOWED_ORIGINS,
     FLASK_DEBUG,
@@ -53,11 +53,13 @@ app.register_blueprint(system_bp, url_prefix="/api")
 app.register_blueprint(analysis_bp, url_prefix="/api")
 app.register_blueprint(professional_bp, url_prefix="/api")
 app.register_blueprint(auth_bp, url_prefix="/api/auth")
+app.register_blueprint(map_bp, url_prefix="/api")
 
 # Apply rate limiting to specific blueprints
 limiter.limit("10 per minute")(analysis_bp)
 limiter.limit("20 per minute")(professional_bp)
 limiter.limit("5 per minute")(auth_bp)
+limiter.limit("5 per minute")(map_bp)
 
 logger.info("🚀 Flask app initialized with blueprints")
 
@@ -77,14 +79,14 @@ def not_found(error):
 @app.errorhandler(500)
 def internal_error(error):
     """Handle 500 errors."""
-    logger.error(f"Internal error: {error}")
+    logger.error("Internal error: %s", error)
     return {"success": False, "error": "Internal server error"}, 500
 
 
 def run_server():
     """Run Flask development server."""
-    logger.info(f"🌐 Starting server on {FLASK_HOST}:{FLASK_PORT}")
-    logger.info(f"🔧 Debug mode: {FLASK_DEBUG}")
+    logger.info("🌐 Starting server on %s:%s", FLASK_HOST, FLASK_PORT)
+    logger.info("🔧 Debug mode: %s", FLASK_DEBUG)
 
     app.run(host=FLASK_HOST, port=FLASK_PORT, debug=FLASK_DEBUG)
 

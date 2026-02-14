@@ -19,6 +19,12 @@ services:
       - FLASK_PORT=5000
       - FLASK_DEBUG=${FLASK_DEBUG:-false}
       - TEMP_VIDEO_PATH=/app/data/temp
+      # LLM provider — Groq cloud API (Llama 4 Scout with vision)
+      - OPENAI_BASE_URL=https://api.groq.com/openai/v1
+      - OPENAI_MODEL=meta-llama/llama-4-scout-17b-16e-instruct
+      - OPENAI_API_KEY=${GROQ_API_KEY}
+      # Groq is fast — 120s is generous but safe for 7 parallel agents
+      - AGENT_TIMEOUT_SECONDS=${AGENT_TIMEOUT_SECONDS:-120}
     
     # Port mapping
     ports:
@@ -71,4 +77,3 @@ volumes:
 networks:
   watchdogs-network:
     driver: bridge
-

@@ -6,7 +6,7 @@
 # ============================================================================
 # Stage 1: Builder - Install dependencies
 # ============================================================================
-FROM python:3.11-slim AS builder
+FROM python:3.12-slim AS builder
 
 WORKDIR /build
 
@@ -19,7 +19,7 @@ RUN pip install --no-cache-dir --target=/build/deps -r requirements.txt
 # ============================================================================
 # Stage 2: Runtime - Minimal production image
 # ============================================================================
-FROM python:3.11-slim AS runtime
+FROM python:3.12-slim AS runtime
 
 # Environment configuration
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -50,11 +50,11 @@ RUN useradd -m -u 1000 -s /bin/bash watchdogs && \
 WORKDIR /app
 
 # Copy dependencies from builder
-COPY --from=builder /build/deps /usr/local/lib/python3.11/site-packages/
+COPY --from=builder /build/deps /usr/local/lib/python3.12/site-packages/
 
 # Copy application code
 COPY --chown=watchdogs:watchdogs src/ ./src/
-COPY --chown=watchdogs:watchdogs tests/ ./tests/
+COPY --chown=watchdogs:watchdogs main.py ./main.py
 COPY --chown=watchdogs:watchdogs data/ ./data/
 
 # Switch to non-root user
@@ -69,4 +69,3 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
 
 # Default command
 CMD ["python", "-m", "src.backend.app"]
-

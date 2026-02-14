@@ -19,14 +19,14 @@ TEMP_VIDEO_PATH = BASE_DIR / "data" / "temp"
 # Ensure temp directory exists
 TEMP_VIDEO_PATH.mkdir(parents=True, exist_ok=True)
 
-# OpenAI Configuration
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-if not OPENAI_API_KEY:
-    raise ValueError("❌ OPENAI_API_KEY not found in environment variables")
-
-OPENAI_MODEL = "gpt-5.1"  # GPT-5.1 multimodal with advanced vision and reasoning capabilities
-OPENAI_MAX_TOKENS = 3000
-OPENAI_TEMPERATURE = 0.3
+# LLM Configuration — supports OpenAI API and compatible servers (LM Studio, Ollama, vLLM)
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "lm-studio")
+OPENAI_BASE_URL = os.getenv(
+    "OPENAI_BASE_URL"
+)  # None → default OpenAI, or e.g. "http://host.docker.internal:1234/v1"
+OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-5.1")
+OPENAI_MAX_TOKENS = int(os.getenv("OPENAI_MAX_TOKENS", "3000"))
+OPENAI_TEMPERATURE = float(os.getenv("OPENAI_TEMPERATURE", "0.3"))
 
 # Flask Configuration
 FLASK_ENV = os.getenv("FLASK_ENV", "development")
@@ -92,25 +92,14 @@ CONTEXT_INTEL_ENABLED = os.getenv("CONTEXT_INTEL_ENABLED", "True").lower() == "t
 
 # Data Retention Policy
 # GDPR Art. 5(1)(e): Data should not be kept longer than necessary
-ANALYSIS_DATA_RETENTION_HOURS = int(os.getenv("ANALYSIS_DATA_RETENTION_HOURS", "24"))
-PURGE_BIOMETRIC_DATA_IMMEDIATELY = (
-    os.getenv("PURGE_BIOMETRIC_DATA_IMMEDIATELY", "False").lower() == "true"
-)
-
-# Consent Requirements
-# If True, requires explicit consent flag in API requests for face analysis
-REQUIRE_EXPLICIT_CONSENT_FOR_FACE_ANALYSIS = (
-    os.getenv("REQUIRE_EXPLICIT_CONSENT_FOR_FACE_ANALYSIS", "False").lower() == "true"
-)
-
-# Anonymization
-# If True, face analysis will blur/redact identifying features in reports
-ANONYMIZE_FACE_ANALYSIS_OUTPUT = (
-    os.getenv("ANONYMIZE_FACE_ANALYSIS_OUTPUT", "False").lower() == "true"
-)
+# TODO: Implement GDPR enforcement (consent, anonymization, data retention)
+# These controls should be enforced in face_agent.py and analysis_routes.py
 
 # Privacy Mode - Disables ALL sensitive analysis (face, forensic, context)
 PRIVACY_MODE = os.getenv("PRIVACY_MODE", "False").lower() == "true"
+
+# Mapbox Configuration (optional — map features degrade gracefully)
+MAPBOX_ACCESS_TOKEN = os.getenv("MAP_BOX_ACCESS_TOKEN")
 
 # Logging Configuration (following rule 19)
 LOG_LEVEL = logging.INFO if FLASK_ENV == "production" else logging.DEBUG
@@ -122,8 +111,10 @@ logging.basicConfig(level=LOG_LEVEL, format=LOG_FORMAT)
 
 logger = logging.getLogger(__name__)
 logger.info("ℹ️ Configuration loaded successfully")
-logger.info(f"ℹ️ Temp video path: {TEMP_VIDEO_PATH}")
-logger.info(f"ℹ️ OpenAI model: {OPENAI_MODEL}")
+logger.info("ℹ️ Temp video path: %s", TEMP_VIDEO_PATH)
+logger.info("ℹ️ OpenAI model: %s", OPENAI_MODEL)
+if not MAPBOX_ACCESS_TOKEN:
+    logger.warning("⚠️ MAP_BOX_ACCESS_TOKEN not found — interactive map features disabled")
 
 # Log privacy settings at startup
 if PRIVACY_MODE:
@@ -137,4 +128,4 @@ else:
     if not CONTEXT_INTEL_ENABLED:
         privacy_status.append("Context Intel: DISABLED")
     if privacy_status:
-        logger.info(f"ℹ️ Privacy settings: {', '.join(privacy_status)}")
+        logger.info("ℹ️ Privacy settings: %s", ", ".join(privacy_status))

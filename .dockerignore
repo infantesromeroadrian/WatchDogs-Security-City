@@ -24,9 +24,11 @@ ENV/
 .idea/
 .cursor/
 
-# Environment files
+# Environment files (secrets — injected via docker-compose env_file, NOT baked into image)
+.env
 .env.local
 .env.*.local
+.env.example
 
 # OS
 .DS_Store
