@@ -104,14 +104,16 @@ class MetadataService:
                         )
 
                 except (OSError, IOError, KeyError, ValueError) as e:
-                    logger.debug(f"Piexif extraction failed (normal for non-JPEG): {e}")
+                    logger.debug("Piexif extraction failed (normal for non-JPEG): %s", e)
 
             logger.info(
-                f"✅ Metadata extracted: {metadata['technical']['format']}, {metadata['technical']['size']}"
+                "✅ Metadata extracted: %s, %s",
+                metadata["technical"]["format"],
+                metadata["technical"]["size"],
             )
 
         except (OSError, IOError, KeyError, ValueError) as e:
-            logger.error(f"❌ Metadata extraction error: {e}")
+            logger.error("❌ Metadata extraction error: %s", e)
             metadata["error"] = str(e)
 
         return metadata
@@ -175,7 +177,7 @@ class MetadataService:
             },
         }
 
-        logger.info(f"📦 Evidence package generated: {evidence_id}")
+        logger.info("📦 Evidence package generated: %s", evidence_id)
 
         return package
 

@@ -54,7 +54,7 @@ def upload_video():
         if not result["success"]:
             return jsonify(result), 400
 
-        logger.info(f"✅ Video uploaded: {result['filename']}")
+        logger.info("✅ Video uploaded: %s", result["filename"])
 
         # Cleanup old videos
         deleted = video_service.cleanup_old_videos(VIDEO_RETENTION_HOURS)
@@ -64,7 +64,7 @@ def upload_video():
         return jsonify(result), 200
 
     except (ValueError, TypeError, KeyError) as e:
-        logger.error(f"❌ Upload error: {e}")
+        logger.error("❌ Upload error: %s", e)
         return jsonify({"success": False, "error": str(e)}), 500
 
 
@@ -88,5 +88,5 @@ def get_metrics():
         ), 200
 
     except (ValueError, TypeError, KeyError) as e:
-        logger.error(f"❌ Error getting metrics: {e}")
+        logger.error("❌ Error getting metrics: %s", e)
         return jsonify({"success": False, "error": str(e)}), 500

@@ -53,7 +53,7 @@ class LockoutManager:
         # Lock account if max attempts exceeded
         if user_data["failed_login_attempts"] >= MAX_LOGIN_ATTEMPTS:
             user_data["locked_until"] = (datetime.now() + LOCKOUT_DURATION).isoformat()
-            logger.warning(f"🔒 Account locked due to failed attempts: {username}")
+            logger.warning("🔒 Account locked due to failed attempts: %s", username)
             return True
 
         return False

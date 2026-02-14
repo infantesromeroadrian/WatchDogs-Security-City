@@ -114,7 +114,7 @@ class ResultCombiner:
             json_report = final_report.model_dump()
 
         except (ValueError, TypeError, KeyError) as validation_error:
-            logger.warning(f"⚠️ Result validation failed: {validation_error}, using raw results")
+            logger.warning("⚠️ Result validation failed: %s, using raw results", validation_error)
             # Fallback to raw dict structure
             json_report = ResultCombiner._build_fallback_report(
                 vision, ocr, detection, geolocation, face_analysis, forensic_analysis, context_intel

@@ -38,16 +38,16 @@ class ImageService:
 
             image_data = base64.b64decode(base64_string)
             image = Image.open(BytesIO(image_data))
-            logger.info(f"ℹ️ Image decoded successfully: {image.size}")
+            logger.info("ℹ️ Image decoded successfully: %s", image.size)
             return image
         except binascii.Error as e:
-            logger.error(f"❌ Invalid base64 encoding: {e}")
+            logger.error("❌ Invalid base64 encoding: %s", e)
             raise ValueError(f"Invalid base64 encoding: {e}") from e
         except UnidentifiedImageError as e:
-            logger.error(f"❌ Unidentified image format: {e}")
+            logger.error("❌ Unidentified image format: %s", e)
             raise ImageProcessingError(f"Cannot identify image format: {e}") from e
         except (OSError, IOError) as e:
-            logger.error(f"❌ Failed to read image data: {e}")
+            logger.error("❌ Failed to read image data: %s", e)
             raise ImageProcessingError(f"Failed to read image data: {e}") from e
 
     @staticmethod
@@ -74,13 +74,13 @@ class ImageService:
             bottom = min(y + height, img_height)
 
             cropped = image.crop((x, y, right, bottom))
-            logger.info(f"ℹ️ ROI cropped: {cropped.size}")
+            logger.info("ℹ️ ROI cropped: %s", cropped.size)
             return cropped
         except AttributeError as e:
-            logger.error(f"❌ Invalid image object: {e}")
+            logger.error("❌ Invalid image object: %s", e)
             raise TypeError(f"Expected PIL Image object, got {type(image)}") from e
         except (TypeError, ValueError) as e:
-            logger.error(f"❌ Invalid crop coordinates: {e}")
+            logger.error("❌ Invalid crop coordinates: %s", e)
             raise ValueError(f"Invalid crop coordinates: {e}") from e
 
     @staticmethod
@@ -102,10 +102,10 @@ class ImageService:
             base64_string = base64.b64encode(buffer.read()).decode("utf-8")
             return f"data:image/{format.lower()};base64,{base64_string}"
         except (OSError, IOError) as e:
-            logger.error(f"❌ Failed to save image: {e}")
+            logger.error("❌ Failed to save image: %s", e)
             raise ImageProcessingError(f"Failed to save image to buffer: {e}") from e
         except (KeyError, ValueError) as e:
-            logger.error(f"❌ Invalid image format '{format}': {e}")
+            logger.error("❌ Invalid image format '%s': %s", format, e)
             raise ValueError(f"Invalid image format '{format}': {e}") from e
 
     @staticmethod
@@ -127,7 +127,7 @@ class ImageService:
 
         # Crop ROI if coordinates provided
         logger.info("=" * 80)
-        logger.info(f"PREPARE_FOR_ANALYSIS: roi_coords = {roi_coords}")
+        logger.info("PREPARE_FOR_ANALYSIS: roi_coords = %s", roi_coords)
 
         if roi_coords:
             x = roi_coords.get("x", 0)
@@ -135,12 +135,12 @@ class ImageService:
             width = roi_coords.get("width", image.width)
             height = roi_coords.get("height", image.height)
 
-            logger.info(f"IMAGE SIZE BEFORE CROP: {image.size}")
-            logger.info(f"CROPPING TO: x={x}, y={y}, w={width}, h={height}")
+            logger.info("IMAGE SIZE BEFORE CROP: %s", image.size)
+            logger.info("CROPPING TO: x=%s, y=%s, w=%s, h=%s", x, y, width, height)
 
             image = ImageService.crop_roi(image, x, y, width, height)
 
-            logger.info(f"IMAGE SIZE AFTER CROP: {image.size}")
+            logger.info("IMAGE SIZE AFTER CROP: %s", image.size)
             logger.info("ROI EXTRACTED SUCCESSFULLY")
         else:
             logger.info("NO ROI PROVIDED - Using full frame")

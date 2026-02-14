@@ -1,17 +1,15 @@
 """
-Geolocation service for generating maps and geocoding.
+Geolocation service for geocoding and coordinate enrichment.
+
+Maps are rendered client-side via Mapbox GL JS (see MapHandler in frontend).
+This service handles server-side geocoding only (Nominatim / OpenStreetMap).
 """
 
 import logging
-import os
-from pathlib import Path
 from typing import Any
 
-import folium
 from geopy.exc import GeocoderServiceError, GeocoderTimedOut
 from geopy.geocoders import Nominatim
-
-from ..exceptions import GeolocationError
 
 logger = logging.getLogger(__name__)
 
@@ -25,75 +23,6 @@ class GeolocationService:
         self.geolocator = Nominatim(user_agent="watchdogs-osint-v1.0")
         logger.info("ℹ️ GeolocationService initialized")
 
-    @staticmethod
-    def generate_map(
-        latitude: float,
-        longitude: float,
-        zoom_start: int = 15,
-        marker_popup: str = "Location",
-        output_path: str | None = None,
-    ) -> str:
-        """
-        Generate interactive HTML map with marker.
-
-        Args:
-            latitude: Latitude coordinate
-            longitude: Longitude coordinate
-            zoom_start: Initial zoom level (default 15)
-            marker_popup: Text to show in marker popup
-            output_path: Optional custom output path
-
-        Returns:
-            Path to generated HTML file
-        """
-        try:
-            # Create map centered on coordinates
-            m = folium.Map(
-                location=[latitude, longitude],
-                zoom_start=zoom_start,
-                tiles="OpenStreetMap",
-            )
-
-            # Add marker
-            folium.Marker(
-                location=[latitude, longitude],
-                popup=marker_popup,
-                tooltip="Click for details",
-                icon=folium.Icon(color="red", icon="info-sign"),
-            ).add_to(m)
-
-            # Add circle to show approximate area
-            folium.Circle(
-                location=[latitude, longitude],
-                radius=100,  # meters
-                color="blue",
-                fill=True,
-                fillOpacity=0.2,
-                popup="Approximate area (~100m radius)",
-            ).add_to(m)
-
-            # Generate output path
-            if not output_path:
-                maps_dir = Path("data/maps")
-                maps_dir.mkdir(parents=True, exist_ok=True)
-                output_path = maps_dir / f"map_{latitude}_{longitude}.html"
-
-            # Save map
-            m.save(str(output_path))
-            logger.info(f"✅ Map generated: {output_path}")
-
-            return str(output_path)
-
-        except PermissionError as e:
-            logger.error(f"❌ Permission denied creating map: {e}")
-            raise GeolocationError(f"Permission denied: {e}") from e
-        except (OSError, IOError) as e:
-            logger.error(f"❌ Failed to save map file: {e}")
-            raise GeolocationError(f"Failed to save map: {e}") from e
-        except (ValueError, TypeError) as e:
-            logger.error(f"❌ Invalid coordinates for map: {e}")
-            raise ValueError(f"Invalid coordinates: {e}") from e
-
     def geocode_address(self, address: str, timeout: int = 10) -> dict[str, Any] | None:
         """
         Convert address to coordinates using Nominatim.
@@ -106,7 +35,7 @@ class GeolocationService:
             Dict with location data or None if not found
         """
         try:
-            logger.info(f"🔍 Geocoding address: {address}")
+            logger.info("🔍 Geocoding address: %s", address)
 
             location = self.geolocator.geocode(address, timeout=timeout)
 
@@ -117,19 +46,19 @@ class GeolocationService:
                     "longitude": location.longitude,
                     "raw": location.raw,
                 }
-                logger.info(f"✅ Geocoded: {location.address}")
+                logger.info("✅ Geocoded: %s", location.address)
                 return result
-            logger.warning(f"⚠️ No results for: {address}")
+            logger.warning("⚠️ No results for: %s", address)
             return None
 
         except GeocoderTimedOut:
-            logger.error(f"⏱️ Geocoding timeout for: {address}")
+            logger.error("⏱️ Geocoding timeout for: %s", address)
             return None
         except GeocoderServiceError as e:
-            logger.error(f"❌ Geocoding service error: {e}")
+            logger.error("❌ Geocoding service error: %s", e)
             return None
         except (ValueError, TypeError) as e:
-            logger.error(f"❌ Invalid geocoding parameters: {e}")
+            logger.error("❌ Invalid geocoding parameters: %s", e)
             return None
 
     def reverse_geocode(
@@ -147,7 +76,7 @@ class GeolocationService:
             Dict with address data or None if not found
         """
         try:
-            logger.info(f"🔍 Reverse geocoding: {latitude}, {longitude}")
+            logger.info("🔍 Reverse geocoding: %s, %s", latitude, longitude)
 
             location = self.geolocator.reverse(
                 (latitude, longitude),
@@ -162,19 +91,19 @@ class GeolocationService:
                     "longitude": location.longitude,
                     "raw": location.raw,
                 }
-                logger.info(f"✅ Reverse geocoded: {location.address}")
+                logger.info("✅ Reverse geocoded: %s", location.address)
                 return result
-            logger.warning(f"⚠️ No results for coordinates: {latitude}, {longitude}")
+            logger.warning("⚠️ No results for coordinates: %s, %s", latitude, longitude)
             return None
 
         except GeocoderTimedOut:
             logger.error("⏱️ Reverse geocoding timeout")
             return None
         except GeocoderServiceError as e:
-            logger.error(f"❌ Reverse geocoding service error: {e}")
+            logger.error("❌ Reverse geocoding service error: %s", e)
             return None
         except (ValueError, TypeError) as e:
-            logger.error(f"❌ Invalid coordinates for reverse geocoding: {e}")
+            logger.error("❌ Invalid coordinates for reverse geocoding: %s", e)
             return None
 
     @staticmethod
@@ -222,32 +151,19 @@ class GeolocationService:
             lon = coords.get("lon")
 
             if lat is not None and lon is not None:
-                # Validate coordinates
                 is_valid, error = self.validate_coordinates(lat, lon)
 
                 if is_valid:
-                    # Generate map
-                    try:
-                        popup_text = f"{location_info.get('city', 'Unknown')}, {location_info.get('country', 'Unknown')}"
-                        map_path = self.generate_map(
-                            latitude=lat, longitude=lon, marker_popup=popup_text
-                        )
-                        enriched["map_path"] = map_path
-                        enriched["map_url"] = f"/maps/{os.path.basename(map_path)}"
-                    except (GeolocationError, ValueError, OSError) as e:
-                        logger.warning(f"⚠️ Map generation failed: {e}")
-
                     # Reverse geocode for detailed address
                     reverse_result = self.reverse_geocode(lat, lon)
                     if reverse_result:
                         enriched["geocoded_address"] = reverse_result["address"]
                         enriched["geocoding_raw"] = reverse_result["raw"]
                 else:
-                    logger.warning(f"⚠️ Invalid coordinates: {error}")
+                    logger.warning("⚠️ Invalid coordinates: %s", error)
 
         # Try forward geocoding if location info available but no coords
         elif location_info and not coords:
-            # Build address string from available parts
             address_parts = []
             if location_info.get("street"):
                 address_parts.append(location_info["street"])
@@ -266,17 +182,5 @@ class GeolocationService:
                         "lon": geocode_result["longitude"],
                     }
                     enriched["geocoded_address"] = geocode_result["address"]
-
-                    # Generate map with geocoded coordinates
-                    try:
-                        map_path = self.generate_map(
-                            latitude=geocode_result["latitude"],
-                            longitude=geocode_result["longitude"],
-                            marker_popup=geocode_result["address"],
-                        )
-                        enriched["map_path"] = map_path
-                        enriched["map_url"] = f"/maps/{os.path.basename(map_path)}"
-                    except (GeolocationError, ValueError, OSError) as e:
-                        logger.warning(f"⚠️ Map generation failed: {e}")
 
         return enriched

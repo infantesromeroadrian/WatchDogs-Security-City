@@ -14,12 +14,13 @@ from .circuit_breaker import CircuitBreaker, CircuitBreakerOpenError, circuit_br
 from .image_utils import verify_image_size
 from .metrics_utils import _noop_decorator, get_agent_metrics, reset_metrics, track_agent_metrics
 from .retry_utils import agent_retry
-from .timeout_utils import TimeoutError, with_timeout
+from .timeout_utils import AgentTimeoutError, TimeoutError, with_timeout
 
 __all__ = [
     # Circuit breaker
     "CircuitBreaker",
     "CircuitBreakerOpenError",
+    "AgentTimeoutError",
     "TimeoutError",
     "_noop_decorator",
     # Retry utils

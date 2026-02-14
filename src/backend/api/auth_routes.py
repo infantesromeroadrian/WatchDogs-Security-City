@@ -48,7 +48,7 @@ def login():
         return jsonify({"success": True, "session_token": session_token, "user": user_stats}), 200
 
     except (ValueError, TypeError, KeyError) as e:
-        logger.error(f"❌ Login error: {e}")
+        logger.error("❌ Login error: %s", e)
         return jsonify({"success": False, "error": str(e)}), 500
 
 
@@ -76,5 +76,5 @@ def logout():
         return jsonify({"success": True, "message": "Logged out successfully"}), 200
 
     except (ValueError, TypeError, KeyError) as e:
-        logger.error(f"❌ Logout error: {e}")
+        logger.error("❌ Logout error: %s", e)
         return jsonify({"success": False, "error": str(e)}), 500

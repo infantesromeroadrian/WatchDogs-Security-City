@@ -175,10 +175,7 @@ class ReportGenerator:
             if coords:
                 lines.append(f"\n📍 Coordenadas: {coords.get('lat')}, {coords.get('lon')}")
 
-            # Add map link if available
-            map_url = geolocation.get("map_url")
-            if map_url:
-                lines.append(f"🗺️ Mapa interactivo generado: {map_url}")
+            # Map is rendered client-side via Mapbox GL JS
         elif geolocation and geolocation.get("status") == "skipped":
             lines.append("⏭️ Geolocation Agent fue omitido")
         elif geolocation:

@@ -5,15 +5,14 @@ Video processing service for handling video uploads and frame extraction.
 import logging
 import os
 import time
-import uuid
 from pathlib import Path
 
-import cv2
 from werkzeug.datastructures import FileStorage
 from werkzeug.utils import secure_filename
 
 from ..config import ALLOWED_VIDEO_EXTENSIONS, MAX_VIDEO_SIZE_MB, TEMP_VIDEO_PATH
-from ..exceptions import VideoProcessingError
+
+MAX_VIDEO_SIZE_BYTES = MAX_VIDEO_SIZE_MB * 1024 * 1024
 
 logger = logging.getLogger(__name__)
 
@@ -87,7 +86,7 @@ class VideoService:
 
             # Save file
             file.save(str(filepath))
-            logger.info(f"ℹ️ Video saved: {filepath}")
+            logger.info("ℹ️ Video saved: %s", filepath)
 
             return {
                 "success": True,
@@ -97,10 +96,10 @@ class VideoService:
             }
 
         except PermissionError as e:
-            logger.error(f"❌ Permission denied saving video: {e}")
+            logger.error("❌ Permission denied saving video: %s", e)
             return {"success": False, "error": f"Permission denied: {e}"}
         except (OSError, IOError) as e:
-            logger.error(f"❌ Failed to save video: {e}")
+            logger.error("❌ Failed to save video: %s", e)
             return {"success": False, "error": f"Failed to save video: {e}"}
 
     @staticmethod
@@ -125,16 +124,16 @@ class VideoService:
                     if file_age < cutoff_time:
                         video_file.unlink()
                         deleted_count += 1
-                        logger.info(f"ℹ️ Deleted old video: {video_file.name}")
+                        logger.info("ℹ️ Deleted old video: %s", video_file.name)
 
             if deleted_count > 0:
-                logger.info(f"ℹ️ Cleanup complete: {deleted_count} videos deleted")
+                logger.info("ℹ️ Cleanup complete: %s videos deleted", deleted_count)
 
             return deleted_count
 
         except PermissionError as e:
-            logger.error(f"❌ Permission denied during cleanup: {e}")
+            logger.error("❌ Permission denied during cleanup: %s", e)
             return 0
         except (OSError, IOError) as e:
-            logger.error(f"❌ Cleanup failed: {e}")
+            logger.error("❌ Cleanup failed: %s", e)
             return 0

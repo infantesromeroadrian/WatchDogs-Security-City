@@ -33,12 +33,13 @@ def get_image_hash(image_base64: str) -> str:
     """
     # Defensive type check - protect against malformed input
     if not isinstance(image_base64, str):
-        logger.error(f"❌ get_image_hash received invalid type: {type(image_base64).__name__}")
+        logger.error("❌ get_image_hash received invalid type: %s", type(image_base64).__name__)
         raise ValueError(f"Expected base64 string, got {type(image_base64).__name__}")
 
     if not image_base64 or len(image_base64) < 50:
         logger.error(
-            f"❌ get_image_hash received empty or too short string: {len(image_base64) if image_base64 else 0}"
+            "❌ get_image_hash received empty or too short string: %s",
+            len(image_base64) if image_base64 else 0,
         )
         raise ValueError("Image data is empty or invalid")
 
@@ -85,13 +86,13 @@ def get_cached_result(cache_key: str, ttl_seconds: int = 3600) -> dict[str, Any]
         # Expired, remove
         del _cache[cache_key]
         del _cache_ttl[cache_key]
-        logger.debug(f"🗑️ Cache expired for key: {cache_key[:20]}...")
+        logger.debug("🗑️ Cache expired for key: %s...", cache_key[:20])
         return None
 
     # Move to end (mark as recently used in LRU)
     _cache.move_to_end(cache_key)
 
-    logger.info(f"💾 Cache hit for key: {cache_key[:20]}...")
+    logger.info("💾 Cache hit for key: %s...", cache_key[:20])
     return _cache[cache_key].copy()
 
 
@@ -110,7 +111,7 @@ def set_cached_result(cache_key: str, result: dict[str, Any], ttl_seconds: int =
         oldest_key = next(iter(_cache))
         del _cache[oldest_key]
         _cache_ttl.pop(oldest_key, None)
-        logger.debug(f"🗑️ LRU eviction: removed {oldest_key[:20]}... (cache at max size)")
+        logger.debug("🗑️ LRU eviction: removed %s... (cache at max size)", oldest_key[:20])
 
     _cache[cache_key] = result.copy()
     _cache_ttl[cache_key] = time.time() + ttl_seconds
@@ -118,7 +119,7 @@ def set_cached_result(cache_key: str, result: dict[str, Any], ttl_seconds: int =
     # Move to end (most recently used)
     _cache.move_to_end(cache_key)
 
-    logger.debug(f"💾 Cached result for key: {cache_key[:20]}... (TTL: {ttl_seconds}s)")
+    logger.debug("💾 Cached result for key: %s... (TTL: %ss)", cache_key[:20], ttl_seconds)
 
 
 def clear_cache() -> None:

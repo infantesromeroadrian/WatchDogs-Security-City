@@ -115,9 +115,9 @@ class GeolocationResponseParser:
                     if -90 <= lat <= 90 and -180 <= lon <= 180:
                         coords = {"lat": lat, "lon": lon}
                         break
-                    logger.warning(f"Coordinates out of range: {lat}, {lon}")
+                    logger.warning("Coordinates out of range: %s, %s", lat, lon)
                 except (ValueError, IndexError) as e:
-                    logger.warning(f"Failed to parse coordinates: {e}")
+                    logger.warning("Failed to parse coordinates: %s", e)
                     continue
 
         if not coords:

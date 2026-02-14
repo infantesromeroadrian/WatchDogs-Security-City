@@ -3,13 +3,14 @@ EXIF metadata extraction for images.
 """
 
 import logging
-from datetime import datetime
 from typing import Any
 
-from PIL import Image, UnidentifiedImageError
-from PIL.ExifTags import TAGS
+try:
+    import piexif
 
-from ...exceptions import MetadataExtractionError
+    PIEXIF_AVAILABLE = True
+except ImportError:
+    PIEXIF_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
@@ -101,13 +102,15 @@ class ExifParser:
 
             if gps_info:
                 logger.info(
-                    f"📍 GPS data found: {gps_info.get('latitude', 'N/A')}, {gps_info.get('longitude', 'N/A')}"
+                    "📍 GPS data found: %s, %s",
+                    gps_info.get("latitude", "N/A"),
+                    gps_info.get("longitude", "N/A"),
                 )
 
             return gps_info if gps_info else None
 
         except (KeyError, ValueError, TypeError, ZeroDivisionError) as e:
-            logger.debug(f"GPS extraction failed: {e}")
+            logger.debug("GPS extraction failed: %s", e)
             return None
 
     @staticmethod

@@ -92,11 +92,12 @@ class VideoMetadataExtractor:
                     metadata["streams"].append(stream_info)
 
             logger.info(
-                f"✅ Video metadata extracted: {metadata['format'].get('format_name', 'unknown')}"
+                "✅ Video metadata extracted: %s",
+                metadata["format"].get("format_name", "unknown"),
             )
 
         except (OSError, IOError, KeyError, ValueError) as e:
-            logger.error(f"❌ Video metadata extraction error: {e}")
+            logger.error("❌ Video metadata extraction error: %s", e)
             metadata["error"] = str(e)
 
         return metadata

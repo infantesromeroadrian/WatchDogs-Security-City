@@ -81,13 +81,3 @@ class AnalysisState(TypedDict):
     context_intel_result: dict[str, Any] | None
     # Final output
     final_report: dict[str, Any] | None
-
-
-class MultiFrameState(TypedDict):
-    """State structure for multi-frame analysis."""
-
-    frames: list[dict[str, str]]
-    current_frame_index: int
-    individual_results: list[dict[str, Any]]
-    combined_geolocation: dict[str, Any] | None
-    summary: str | None

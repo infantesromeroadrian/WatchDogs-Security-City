@@ -61,7 +61,7 @@ def extract_metadata():
         return jsonify({"success": True, "metadata": metadata}), 200
 
     except (ValueError, TypeError, KeyError) as e:
-        logger.error(f"❌ Metadata extraction error: {e}")
+        logger.error("❌ Metadata extraction error: %s", e)
         return jsonify({"success": False, "error": str(e)}), 500
 
 
@@ -105,7 +105,7 @@ def generate_pdf_report():
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"watchdogs_report_{timestamp}.pdf"
 
-        logger.info(f"✅ PDF report generated: {filename}")
+        logger.info("✅ PDF report generated: %s", filename)
 
         return send_file(
             pdf_io,
@@ -115,7 +115,7 @@ def generate_pdf_report():
         )
 
     except (ValueError, TypeError, KeyError) as e:
-        logger.error(f"❌ PDF generation error: {e}")
+        logger.error("❌ PDF generation error: %s", e)
         return jsonify({"success": False, "error": str(e)}), 500
 
 
@@ -153,10 +153,10 @@ def generate_evidence_package():
             frame_base64=frame_base64, analysis_results=analysis_results
         )
 
-        logger.info(f"✅ Evidence package generated: {package['evidence_id']}")
+        logger.info("✅ Evidence package generated: %s", package["evidence_id"])
 
         return jsonify({"success": True, "evidence_package": package}), 200
 
     except (ValueError, TypeError, KeyError) as e:
-        logger.error(f"❌ Evidence package error: {e}")
+        logger.error("❌ Evidence package error: %s", e)
         return jsonify({"success": False, "error": str(e)}), 500

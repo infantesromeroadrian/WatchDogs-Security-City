@@ -32,8 +32,8 @@ def verify_image_size(image_base64: str, agent_name: str = "Agent") -> tuple[int
 
         # Log verification info
         logger.debug("=" * 80)
-        logger.debug(f"🖼️ {agent_name} - Image Size Verification:")
-        logger.debug(f"   📏 Dimensions: {width}x{height} pixels")
+        logger.debug("🖼️ %s - Image Size Verification:", agent_name)
+        logger.debug("   📏 Dimensions: %sx%s pixels", width, height)
 
         if width < 640 or height < 360:
             logger.debug("   ✂️ STATUS: THIS IS A CROPPED ROI (smaller than full frame)")
@@ -44,5 +44,5 @@ def verify_image_size(image_base64: str, agent_name: str = "Agent") -> tuple[int
         return (width, height)
 
     except (ValueError, TypeError, RuntimeError) as e:
-        logger.warning(f"⚠️ {agent_name}: Could not decode image for size check: {e}")
+        logger.warning("⚠️ %s: Could not decode image for size check: %s", agent_name, e)
         return None

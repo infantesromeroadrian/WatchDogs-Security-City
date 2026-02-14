@@ -18,7 +18,7 @@ from ..config import (
     CIRCUIT_BREAKER_ENABLED,
     METRICS_ENABLED,
     OPENAI_API_KEY,
-    OPENAI_MAX_TOKENS,
+    OPENAI_BASE_URL,
     OPENAI_MODEL,
     OPENAI_TEMPERATURE,
 )
@@ -29,7 +29,6 @@ from ..utils.metrics_utils import track_agent_metrics, _noop_decorator
 from ..utils.retry_utils import agent_retry
 from ..utils.timeout_utils import with_timeout
 from ..exceptions import (
-    AgentValidationError,
     OpenAIAPIError,
     OpenAIRateLimitError,
     OpenAITimeoutError,
@@ -47,8 +46,8 @@ class VisionAgent:
         self.llm = ChatOpenAI(
             model=OPENAI_MODEL,
             api_key=OPENAI_API_KEY,
-            max_tokens=OPENAI_MAX_TOKENS,
             temperature=OPENAI_TEMPERATURE,
+            **({"base_url": OPENAI_BASE_URL} if OPENAI_BASE_URL else {}),
         )
 
         # Initialize circuit breaker ONCE per agent instance (shared state)
@@ -164,7 +163,7 @@ Sé objetivo y factual en tu análisis. RESPONDE EN ESPAÑOL."""
                 # Use shared circuit breaker instance
                 return self.breaker.call(self._analyze_internal, image_base64, context)
             except CircuitBreakerOpenError as e:
-                logger.error(f"❌ Circuit breaker OPEN: {e}")
+                logger.error("❌ Circuit breaker OPEN: %s", e)
                 return {
                     "agent": "vision",
                     "status": "error",
@@ -208,12 +207,12 @@ Sé objetivo y factual en tu análisis. RESPONDE EN ESPAÑOL."""
                 return validated.model_dump()
             except PydanticValidationError as validation_error:
                 logger.warning(
-                    f"⚠️ Result validation failed: {validation_error}, returning raw result"
+                    "⚠️ Result validation failed: %s, returning raw result", validation_error
                 )
                 return result
 
         except TimeoutError as e:
-            logger.error(f"⏱️ Vision analysis timeout: {e}")
+            logger.error("⏱️ Vision analysis timeout: %s", e)
             return {
                 "agent": "vision",
                 "status": "timeout",
@@ -221,7 +220,7 @@ Sé objetivo y factual en tu análisis. RESPONDE EN ESPAÑOL."""
                 "analysis": "Vision analysis timed out",
             }
         except (OpenAIRateLimitError, OpenAITimeoutError, OpenAIAPIError) as e:
-            logger.error(f"❌ OpenAI API error in vision analysis: {e}")
+            logger.error("❌ OpenAI API error in vision analysis: %s", e)
             return {
                 "agent": "vision",
                 "status": "error",
@@ -229,7 +228,7 @@ Sé objetivo y factual en tu análisis. RESPONDE EN ESPAÑOL."""
                 "analysis": "Vision analysis failed due to API error",
             }
         except (ValueError, TypeError) as e:
-            logger.error(f"❌ Invalid input to vision analysis: {e}")
+            logger.error("❌ Invalid input to vision analysis: %s", e)
             return {
                 "agent": "vision",
                 "status": "error",

@@ -18,7 +18,7 @@ from ..config import (
     CIRCUIT_BREAKER_ENABLED,
     METRICS_ENABLED,
     OPENAI_API_KEY,
-    OPENAI_MAX_TOKENS,
+    OPENAI_BASE_URL,
     OPENAI_MODEL,
 )
 from ..models.agent_results import OCRResult
@@ -45,7 +45,7 @@ class OCRAgent:
         self.llm = ChatOpenAI(
             model=OPENAI_MODEL,
             api_key=OPENAI_API_KEY,
-            max_tokens=OPENAI_MAX_TOKENS,
+            **({"base_url": OPENAI_BASE_URL} if OPENAI_BASE_URL else {}),
             temperature=0.1,  # Lower temperature for OCR accuracy
         )
 
@@ -118,7 +118,7 @@ Si el texto está en otro alfabeto, transcríbelo fielmente."""
         ocr_text = response.content
         has_text = "no se detectó texto" not in ocr_text.lower()
 
-        logger.info(f"✅ OCR extraction complete - Text found: {has_text}")
+        logger.info("✅ OCR extraction complete - Text found: %s", has_text)
 
         return {
             "agent": "ocr",
@@ -142,7 +142,7 @@ Si el texto está en otro alfabeto, transcríbelo fielmente."""
                 # Use shared circuit breaker instance
                 return self.breaker.call(self._analyze_internal, image_base64, context)
             except CircuitBreakerOpenError as e:
-                logger.error(f"❌ Circuit breaker OPEN: {e}")
+                logger.error("❌ Circuit breaker OPEN: %s", e)
                 return {
                     "agent": "ocr",
                     "status": "error",
@@ -173,11 +173,11 @@ Si el texto está en otro alfabeto, transcríbelo fielmente."""
                 validated = OCRResult(**result)
                 return validated.model_dump()
             except PydanticValidationError as validation_error:
-                logger.warning(f"⚠️ Result validation failed: {validation_error}")
+                logger.warning("⚠️ Result validation failed: %s", validation_error)
                 return result
 
         except TimeoutError as e:
-            logger.error(f"⏱️ OCR analysis timeout: {e}")
+            logger.error("⏱️ OCR analysis timeout: %s", e)
             return {
                 "agent": "ocr",
                 "status": "timeout",
@@ -186,7 +186,7 @@ Si el texto está en otro alfabeto, transcríbelo fielmente."""
                 "has_text": False,
             }
         except (OpenAIRateLimitError, OpenAITimeoutError, OpenAIAPIError) as e:
-            logger.error(f"❌ OpenAI API error in OCR analysis: {e}")
+            logger.error("❌ OpenAI API error in OCR analysis: %s", e)
             return {
                 "agent": "ocr",
                 "status": "error",
@@ -195,7 +195,7 @@ Si el texto está en otro alfabeto, transcríbelo fielmente."""
                 "has_text": False,
             }
         except (ValueError, TypeError) as e:
-            logger.error(f"❌ Invalid input to OCR analysis: {e}")
+            logger.error("❌ Invalid input to OCR analysis: %s", e)
             return {
                 "agent": "ocr",
                 "status": "error",

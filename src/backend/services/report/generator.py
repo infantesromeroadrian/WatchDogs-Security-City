@@ -7,12 +7,8 @@ import logging
 from typing import Any
 
 try:
-    import matplotlib as mpl
     from reportlab.lib.pagesizes import letter
     from reportlab.platypus import SimpleDocTemplate
-
-    mpl.use("Agg")  # Non-interactive backend
-    import matplotlib.pyplot as plt
 
     REPORT_AVAILABLE = True
 except ImportError:
@@ -116,7 +112,7 @@ class ReportService:
         pdf_bytes = buffer.getvalue()
         buffer.close()
 
-        logger.info(f"📄 PDF report generated: {len(pdf_bytes)} bytes")
+        logger.info("📄 PDF report generated: %s bytes", len(pdf_bytes))
 
         return pdf_bytes
 

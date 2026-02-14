@@ -26,6 +26,7 @@ from ...config import (
     CIRCUIT_BREAKER_ENABLED,
     METRICS_ENABLED,
     OPENAI_API_KEY,
+    OPENAI_BASE_URL,
     OPENAI_MODEL,
 )
 from ...exceptions import (
@@ -64,6 +65,7 @@ class FaceAnalysisAgent:
             model=OPENAI_MODEL,
             api_key=OPENAI_API_KEY,
             temperature=0.2,  # Low temperature for precise descriptions
+            **({"base_url": OPENAI_BASE_URL} if OPENAI_BASE_URL else {}),
         )
 
         # Initialize response parser
@@ -153,7 +155,7 @@ class FaceAnalysisAgent:
             try:
                 return self.breaker.call(self._analyze_internal, image_base64, context)
             except CircuitBreakerOpenError as e:
-                logger.error(f"❌ Circuit breaker OPEN: {e}")
+                logger.error("❌ Circuit breaker OPEN: %s", e)
                 return self._build_error_result(
                     "Circuit breaker is open - service temporarily unavailable"
                 )
@@ -193,19 +195,19 @@ class FaceAnalysisAgent:
                 validated = FaceAnalysisResult(**result)
                 return validated.model_dump()
             except PydanticValidationError as validation_error:
-                logger.warning(f"⚠️ Result validation failed: {validation_error}")
+                logger.warning("⚠️ Result validation failed: %s", validation_error)
                 return result
 
         except TimeoutError as e:
-            logger.error(f"⏱️ Face analysis timeout: {e}")
+            logger.error("⏱️ Face analysis timeout: %s", e)
             return self._build_error_result(str(e), status="timeout")
 
         except (OpenAIRateLimitError, OpenAITimeoutError, OpenAIAPIError) as e:
-            logger.error(f"❌ OpenAI API error in face analysis: {e}")
+            logger.error("❌ OpenAI API error in face analysis: %s", e)
             return self._build_error_result(f"OpenAI API error: {e}")
 
         except (ValueError, TypeError) as e:
-            logger.error(f"❌ Invalid input to face analysis: {e}")
+            logger.error("❌ Invalid input to face analysis: %s", e)
             return self._build_error_result(f"Invalid input: {e}")
 
     def _build_error_result(self, error_message: str, status: str = "error") -> dict[str, Any]:

@@ -47,11 +47,11 @@ class AuthService:
                 with open(self.storage_path) as f:
                     data = json.load(f)
                     self.users = data.get("users", {})
-                    logger.info(f"✅ Loaded {len(self.users)} users from disk")
+                    logger.info("✅ Loaded %s users from disk", len(self.users))
             else:
                 logger.info("📝 No existing auth storage found, starting fresh")
         except (ValueError, TypeError, KeyError) as e:
-            logger.error(f"❌ Error loading auth storage: {e}")
+            logger.error("❌ Error loading auth storage: %s", e)
             self.users = {}
 
     def _save_to_disk(self):
@@ -66,7 +66,7 @@ class AuthService:
 
             logger.debug("💾 Auth data saved to disk")
         except (ValueError, TypeError, KeyError) as e:
-            logger.error(f"❌ Error saving auth storage: {e}")
+            logger.error("❌ Error saving auth storage: %s", e)
 
     def _create_default_admin(self):
         """Create default admin user from environment variables"""
@@ -78,11 +78,11 @@ class AuthService:
             # Generate random password if none provided
             admin_password = secrets.token_urlsafe(16)
             logger.warning("⚠️ No ADMIN_PASSWORD set in environment!")
-            logger.warning(f"🔐 Generated random password: {admin_password}")
+            logger.warning("🔐 Generated random password: %s", admin_password)
             logger.warning("⚠️ SAVE THIS PASSWORD - it won't be shown again!")
 
         self.register_user(admin_username, admin_password, role="admin")
-        logger.info(f"🔐 Default admin user created: {admin_username}")
+        logger.info("🔐 Default admin user created: %s", admin_username)
 
     def register_user(
         self, username: str, password: str, role: str = "analyst"
@@ -103,7 +103,7 @@ class AuthService:
             return False, "Username must be at least 3 characters"
 
         if username in self.users:
-            logger.warning(f"⚠️ Registration attempt for existing user: {username}")
+            logger.warning("⚠️ Registration attempt for existing user: %s", username)
             return False, "User already exists"
 
         # Validate password strength
@@ -134,7 +134,7 @@ class AuthService:
         # Save to disk
         self._save_to_disk()
 
-        logger.info(f"✅ User registered: {username} ({role})")
+        logger.info("✅ User registered: %s (%s)", username, role)
         return True, "User registered successfully"
 
     def authenticate(
@@ -153,7 +153,7 @@ class AuthService:
         """
         # Check if user exists
         if username not in self.users:
-            logger.warning(f"⚠️ Authentication attempt for non-existent user: {username}")
+            logger.warning("⚠️ Authentication attempt for non-existent user: %s", username)
             # Don't reveal if user exists (security)
             return None
 
@@ -161,7 +161,7 @@ class AuthService:
 
         # Check if account is active
         if not user.get("is_active", True):
-            logger.warning(f"⚠️ Authentication attempt for disabled user: {username}")
+            logger.warning("⚠️ Authentication attempt for disabled user: %s", username)
             return None
 
         # Check account lockout
@@ -174,7 +174,7 @@ class AuthService:
 
         # Compare hashes (constant-time comparison)
         if not secrets.compare_digest(hashed_pw, user["password_hash"]):
-            logger.warning(f"⚠️ Failed login attempt for {username}")
+            logger.warning("⚠️ Failed login attempt for %s", username)
             self.lockout_manager.record_failure(user, username)
             self._save_to_disk()
             return None
@@ -189,7 +189,7 @@ class AuthService:
         user["last_login"] = datetime.now().isoformat()
         self._save_to_disk()
 
-        logger.info(f"✅ User authenticated: {username} from IP {ip_address or 'unknown'}")
+        logger.info("✅ User authenticated: %s from IP %s", username, ip_address or "unknown")
         return session_token
 
     def validate_session(self, session_token: str, ip_address: str | None = None) -> dict | None:

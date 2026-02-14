@@ -18,7 +18,7 @@ from ..config import (
     CIRCUIT_BREAKER_ENABLED,
     METRICS_ENABLED,
     OPENAI_API_KEY,
-    OPENAI_MAX_TOKENS,
+    OPENAI_BASE_URL,
     OPENAI_MODEL,
     OPENAI_TEMPERATURE,
 )
@@ -46,8 +46,8 @@ class DetectionAgent:
         self.llm = ChatOpenAI(
             model=OPENAI_MODEL,
             api_key=OPENAI_API_KEY,
-            max_tokens=OPENAI_MAX_TOKENS,
             temperature=OPENAI_TEMPERATURE,
+            **({"base_url": OPENAI_BASE_URL} if OPENAI_BASE_URL else {}),
         )
 
         # Initialize circuit breaker ONCE per agent instance (shared state)
@@ -131,7 +131,7 @@ Sé factual y objetivo. RESPONDE EN ESPAÑOL."""
                 # Use shared circuit breaker instance
                 return self.breaker.call(self._analyze_internal, image_base64, context)
             except CircuitBreakerOpenError as e:
-                logger.error(f"❌ Circuit breaker OPEN: {e}")
+                logger.error("❌ Circuit breaker OPEN: %s", e)
                 return {
                     "agent": "detection",
                     "status": "error",
@@ -161,11 +161,11 @@ Sé factual y objetivo. RESPONDE EN ESPAÑOL."""
                 validated = DetectionResult(**result)
                 return validated.model_dump()
             except PydanticValidationError as validation_error:
-                logger.warning(f"⚠️ Result validation failed: {validation_error}")
+                logger.warning("⚠️ Result validation failed: %s", validation_error)
                 return result
 
         except TimeoutError as e:
-            logger.error(f"⏱️ Detection analysis timeout: {e}")
+            logger.error("⏱️ Detection analysis timeout: %s", e)
             return {
                 "agent": "detection",
                 "status": "timeout",
@@ -173,7 +173,7 @@ Sé factual y objetivo. RESPONDE EN ESPAÑOL."""
                 "analysis": "Detection analysis timed out",
             }
         except (OpenAIRateLimitError, OpenAITimeoutError, OpenAIAPIError) as e:
-            logger.error(f"❌ OpenAI API error in detection analysis: {e}")
+            logger.error("❌ OpenAI API error in detection analysis: %s", e)
             return {
                 "agent": "detection",
                 "status": "error",
@@ -181,7 +181,7 @@ Sé factual y objetivo. RESPONDE EN ESPAÑOL."""
                 "analysis": "Detection analysis failed due to API error",
             }
         except (ValueError, TypeError) as e:
-            logger.error(f"❌ Invalid input to detection analysis: {e}")
+            logger.error("❌ Invalid input to detection analysis: %s", e)
             return {
                 "agent": "detection",
                 "status": "error",
