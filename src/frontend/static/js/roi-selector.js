@@ -9,6 +9,10 @@
  * - Coordinates automatically adjusted to original image scale
  */
 
+// IIFE to avoid global `const` collisions with other classic scripts
+(function() {
+'use strict';
+
 // L-2: Use global logger (set by modules/logger.js via window.__wdLog)
 const log = window.__wdLog || console;
 
@@ -498,3 +502,5 @@ class ROISelector {
 document.addEventListener('DOMContentLoaded', () => {
     window.roiSelector = new ROISelector();
 });
+
+})(); // End IIFE

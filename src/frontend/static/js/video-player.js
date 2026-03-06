@@ -5,6 +5,10 @@
  * Images are loaded directly as a captured frame — no manual capture step needed.
  */
 
+// IIFE to avoid global `const` collisions with other classic scripts
+(function() {
+'use strict';
+
 // L-2: Use global logger (set by modules/logger.js via window.__wdLog)
 const log = window.__wdLog || console;
 
@@ -439,3 +443,5 @@ class VideoPlayer {
 document.addEventListener('DOMContentLoaded', () => {
     window.videoPlayer = new VideoPlayer();
 });
+
+})(); // End IIFE
