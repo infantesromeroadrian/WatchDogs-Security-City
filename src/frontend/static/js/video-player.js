@@ -74,6 +74,24 @@ class VideoPlayer {
             this.captureBtn.disabled = false;
             log.info('Video loaded successfully');
         });
+
+        // Handle unsupported codecs / corrupt files
+        this.videoPlayer.addEventListener('error', () => {
+            const err = this.videoPlayer.error;
+            const code = err ? err.code : 0;
+            // MediaError codes: 1=ABORTED, 2=NETWORK, 3=DECODE, 4=SRC_NOT_SUPPORTED
+            if (code === 4 || code === 3) {
+                log.warn('Video codec not supported by browser, code:', code);
+                this.showUploadStatus(
+                    '⚠️ Codec de video no soportado por el navegador (H.265/VP9). ' +
+                    'Prueba con un video H.264 MP4, o sube una imagen directamente.',
+                    'error'
+                );
+            } else {
+                log.error('Video player error, code:', code, err?.message);
+                this.showUploadStatus('❌ Error al cargar el video.', 'error');
+            }
+        });
     }
 
     // ========================================================================
