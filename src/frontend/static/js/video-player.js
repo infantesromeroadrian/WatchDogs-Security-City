@@ -129,6 +129,7 @@ class VideoPlayer {
         this.playPauseBtn.style.display = '';
         this.captureBtn.style.display = '';
         this.captureBtn.disabled = true;
+        if (this.analyzeBtn) this.analyzeBtn.disabled = true;
 
         // Restore ROI canvas to absolute overlay mode
         const roiCanvas = document.getElementById('roiCanvas');
