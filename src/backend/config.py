@@ -30,7 +30,8 @@ OPENAI_TEMPERATURE = float(os.getenv("OPENAI_TEMPERATURE", "0.3"))
 
 # Flask Configuration
 FLASK_ENV = os.getenv("FLASK_ENV", "development")
-FLASK_DEBUG = os.getenv("FLASK_DEBUG", "True").lower() == "true"
+# M-2: Default to False — debug mode must be explicitly opted-in, never on by accident
+FLASK_DEBUG = os.getenv("FLASK_DEBUG", "False").lower() == "true"
 FLASK_HOST = os.getenv("FLASK_HOST", "0.0.0.0")
 FLASK_PORT = int(os.getenv("FLASK_PORT", "5000"))
 
@@ -48,6 +49,10 @@ ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:5000").split(",
 RATE_LIMIT_PER_MINUTE = int(
     os.getenv("RATE_LIMIT_PER_MINUTE", "30")
 )  # 30 requests per minute per IP
+
+# Authentication — set AUTH_ENABLED=True to enforce Bearer token auth on all endpoints
+# When False (default for local dev), endpoints are open. Enable for any exposed deployment.
+AUTH_ENABLED = os.getenv("AUTH_ENABLED", "False").lower() == "true"
 
 # Base64 Image Size Limits (for DoS prevention)
 MAX_BASE64_SIZE_MB = int(os.getenv("MAX_BASE64_SIZE_MB", "10"))  # 10MB default
@@ -113,6 +118,10 @@ logger = logging.getLogger(__name__)
 logger.info("ℹ️ Configuration loaded successfully")
 logger.info("ℹ️ Temp video path: %s", TEMP_VIDEO_PATH)
 logger.info("ℹ️ OpenAI model: %s", OPENAI_MODEL)
+if AUTH_ENABLED:
+    logger.info("🔐 AUTH_ENABLED=True — API endpoints require Bearer token")
+else:
+    logger.warning("⚠️ AUTH_ENABLED=False — API endpoints are OPEN (local dev mode)")
 if not MAPBOX_ACCESS_TOKEN:
     logger.warning("⚠️ MAP_BOX_ACCESS_TOKEN not found — interactive map features disabled")
 

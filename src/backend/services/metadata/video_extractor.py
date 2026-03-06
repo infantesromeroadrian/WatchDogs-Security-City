@@ -4,7 +4,8 @@ Video metadata extraction
 
 import hashlib
 import logging
-from datetime import datetime
+import os
+from datetime import UTC, datetime
 from typing import Any
 
 try:
@@ -15,6 +16,26 @@ except ImportError:
     FFMPEG_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
+
+
+def _parse_frame_rate(rate_str: str) -> float:
+    """Safely parse ffprobe frame rate string (e.g. '30/1') without eval().
+
+    Args:
+        rate_str: Frame rate string in 'numerator/denominator' format
+
+    Returns:
+        Parsed frame rate as float, or 0.0 on parse failure
+    """
+    try:
+        if "/" in rate_str:
+            num, den = rate_str.split("/", maxsplit=1)
+            denominator = float(den)
+            return float(num) / denominator if denominator != 0 else 0.0
+        return float(rate_str)
+    except (ValueError, ZeroDivisionError):
+        logger.warning("Could not parse frame rate: %s", rate_str)
+        return 0.0
 
 
 class VideoMetadataExtractor:
@@ -36,7 +57,7 @@ class VideoMetadataExtractor:
             "streams": [],
             "technical": {},
             "forensics": {},
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
         if not FFMPEG_AVAILABLE:
@@ -44,12 +65,14 @@ class VideoMetadataExtractor:
             return metadata
 
         try:
-            # Get file hash
+            # Get file hash — incremental to avoid loading entire file into RAM
+            sha256 = hashlib.sha256()
+            file_size = os.path.getsize(video_path)
             with open(video_path, "rb") as f:
-                video_bytes = f.read()
-                metadata["forensics"]["sha256"] = hashlib.sha256(video_bytes).hexdigest()
-                metadata["forensics"]["md5"] = hashlib.md5(video_bytes).hexdigest()
-                metadata["forensics"]["size_bytes"] = len(video_bytes)
+                for chunk in iter(lambda: f.read(65536), b""):
+                    sha256.update(chunk)
+            metadata["forensics"]["sha256"] = sha256.hexdigest()
+            metadata["forensics"]["size_bytes"] = file_size
 
             # Use ffprobe to get metadata
             probe = ffmpeg.probe(video_path)
@@ -84,7 +107,7 @@ class VideoMetadataExtractor:
                             {
                                 "width": stream.get("width", 0),
                                 "height": stream.get("height", 0),
-                                "fps": eval(stream.get("r_frame_rate", "0/1")),
+                                "fps": _parse_frame_rate(stream.get("r_frame_rate", "0/1")),
                                 "pix_fmt": stream.get("pix_fmt", "unknown"),
                             }
                         )

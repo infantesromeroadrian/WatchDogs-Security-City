@@ -3,6 +3,8 @@
  * Handles PDF report generation
  */
 
+import { log } from '../logger.js';
+
 export class PDFGenerator {
     constructor(baseURL, showToast, metadataHandler) {
         this.baseURL = baseURL;
@@ -66,7 +68,7 @@ export class PDFGenerator {
             this.showToast('✅ PDF report downloaded!', 'success');
             
         } catch (error) {
-            console.error('❌ PDF generation error:', error);
+            log.error('PDF generation error:', error);
             this.showToast(`❌ Error: ${error.message}`, 'error');
         } finally {
             this.generatePdfBtn.disabled = false;

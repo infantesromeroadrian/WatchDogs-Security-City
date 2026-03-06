@@ -3,6 +3,8 @@
  * Handles chat functionality and context building for analysis results
  */
 
+import { log } from './logger.js';
+
 export class ChatHandler {
     constructor(apiClient) {
         this.apiClient = apiClient;
@@ -19,8 +21,8 @@ export class ChatHandler {
     
     init() {
         // Verify critical DOM elements
-        if (!this.sendChat) console.error('❌ sendChat button not found');
-        if (!this.chatInput) console.error('❌ chatInput not found');
+        if (!this.sendChat) log.error('sendChat button not found');
+        if (!this.chatInput) log.error('chatInput not found');
         
         // Chat functionality
         this.sendChat?.addEventListener('click', () => this.sendMessage());
@@ -31,19 +33,20 @@ export class ChatHandler {
             }
         });
         
-        console.log('✅ Chat handler initialized');
+        log.info('Chat handler initialized');
     }
     
     async sendMessage() {
         const message = this.chatInput.value.trim();
         if (!message) return;
         
-        console.log('💬 Sending chat message:', message);
-        console.log('🔍 DEBUG sendMessage:');
-        console.log('   - isMultiFrameAnalysis:', this.apiClient.isMultiFrameAnalysis);
-        console.log('   - currentROI:', this.apiClient.currentROI ? JSON.stringify(this.apiClient.currentROI) : 'null');
-        console.log('   - currentFrame exists:', !!this.apiClient.currentFrame);
-        console.log('   - window.roiSelector.getROI():', window.roiSelector?.getROI() ? JSON.stringify(window.roiSelector.getROI()) : 'null');
+        log.debug('Sending chat message:', message);
+        log.debug('sendMessage state:', {
+            isMultiFrameAnalysis: this.apiClient.isMultiFrameAnalysis,
+            currentROI: this.apiClient.currentROI,
+            currentFrameExists: !!this.apiClient.currentFrame,
+            roiSelectorROI: window.roiSelector?.getROI() || null,
+        });
         
         // Add user message to chat
         this.addMessage('user', message);
@@ -56,7 +59,7 @@ export class ChatHandler {
         // Use CURRENT ROI from selector (not the stored one from analysis time)
         // This allows user to draw a new ROI after analysis and query about that specific region
         const currentROI = window.roiSelector?.getROI() || this.apiClient.currentROI;
-        console.log('   - Using ROI for chat:', currentROI ? JSON.stringify(currentROI) : 'null (full frame)');
+        log.debug('Using ROI for chat:', currentROI || 'full frame');
         
         const context = (this.apiClient.isMultiFrameAnalysis && this.apiClient.frameCollection)
             ? this.buildMultiFrameContext(message)
@@ -116,7 +119,7 @@ export class ChatHandler {
             });
             
         } catch (error) {
-            console.error('❌ Chat error:', error);
+            log.error('Chat error:', error);
             this.addMessage('assistant', `⚠️ Error: ${error.message}. Por favor, intenta de nuevo.`);
         }
     }
@@ -169,16 +172,16 @@ export class ChatHandler {
         
         // DEBUG: Log the frame type and value
         const frameValue = this.apiClient.currentFrame;
-        console.log('🔍 DEBUG buildSingleFrameContext:');
-        console.log('   - currentFrame type:', typeof frameValue);
-        console.log('   - currentFrame is string:', typeof frameValue === 'string');
-        console.log('   - currentFrame is null:', frameValue === null);
-        console.log('   - currentFrame length:', frameValue ? (typeof frameValue === 'string' ? frameValue.length : 'N/A (not string)') : 0);
-        console.log('   - ROI provided:', roi ? JSON.stringify(roi) : 'null');
+        log.debug('buildSingleFrameContext:', {
+            frameType: typeof frameValue,
+            isString: typeof frameValue === 'string',
+            frameLength: frameValue ? (typeof frameValue === 'string' ? frameValue.length : 'N/A') : 0,
+            roi: roi || null,
+        });
         
         // DEFENSIVE: Validate frame is a string before sending
         if (!frameValue || typeof frameValue !== 'string') {
-            console.error('❌ CRITICAL: currentFrame is not a valid string!', {
+            log.error('CRITICAL: currentFrame is not a valid string!', {
                 type: typeof frameValue,
                 value: frameValue ? (typeof frameValue === 'object' ? JSON.stringify(frameValue).substring(0, 100) : frameValue) : 'null/undefined'
             });
@@ -193,22 +196,20 @@ export class ChatHandler {
         // If ROI is selected, crop the frame to ROI
         // NOTE: cropROI returns a Promise, so we must await it!
         if (roi && this.apiClient.currentFrame && window.imageUtils) {
-            console.log('📐 ROI detected, cropping frame to ROI...');
+            log.debug('ROI detected, cropping frame to ROI...');
             try {
                 const croppedFrame = await window.imageUtils.cropROI(this.apiClient.currentFrame, roi);
                 if (croppedFrame) {
-                    console.log('✅ Frame cropped to ROI successfully');
-                    console.log('   - Original frame length:', this.apiClient.currentFrame.length);
-                    console.log('   - Cropped frame length:', croppedFrame.length);
+                    log.debug('Frame cropped to ROI:', { original: this.apiClient.currentFrame.length, cropped: croppedFrame.length });
                     payload.frame = croppedFrame;
                 } else {
-                    console.warn('⚠️ cropROI returned null, using full frame');
+                    log.warn('cropROI returned null, using full frame');
                 }
             } catch (cropError) {
-                console.error('❌ Error cropping ROI, using full frame:', cropError);
+                log.error('Error cropping ROI, using full frame:', cropError);
             }
         } else {
-            console.log('📐 No ROI selected, using full frame');
+            log.debug('No ROI selected, using full frame');
         }
         
         return payload;
@@ -221,13 +222,19 @@ export class ChatHandler {
         messageDiv.className = `chat-message ${role}-message`;
         
         const icon = role === 'user' ? '👤' : '🤖';
-        messageDiv.innerHTML = `
-            <div class="message-header">
-                <span class="message-icon">${icon}</span>
-                <span class="message-role">${role === 'user' ? 'Tú' : 'Asistente'}</span>
-            </div>
-            <div class="message-content">${this.formatMessage(content)}</div>
-        `;
+        
+        // Build DOM safely — no innerHTML with user/LLM content (XSS prevention)
+        const header = document.createElement('div');
+        header.className = 'message-header';
+        header.innerHTML = `<span class="message-icon">${icon}</span><span class="message-role">${role === 'user' ? 'Tú' : 'Asistente'}</span>`;
+        
+        const body = document.createElement('div');
+        body.className = 'message-content';
+        body.style.whiteSpace = 'pre-wrap';
+        body.textContent = content;  // Safe: textContent never executes HTML
+        
+        messageDiv.appendChild(header);
+        messageDiv.appendChild(body);
         
         this.chatMessages.appendChild(messageDiv);
         this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
@@ -242,11 +249,6 @@ export class ChatHandler {
         }
     }
     
-    formatMessage(content) {
-        // Convert line breaks to <br>
-        return content.replace(/\n/g, '<br>');
-    }
-    
     reset() {
         this.chatHistory = [];
         this.chatMessages.innerHTML = '<p style="color: var(--text-secondary); text-align: center;">El análisis está completo. Puedes hacer preguntas sobre la imagen.</p>';
@@ -255,6 +257,6 @@ export class ChatHandler {
     enable() {
         if (this.sendChat) this.sendChat.disabled = false;
         if (this.chatInput) this.chatInput.disabled = false;
-        console.log('✅ Chat enabled');
+        log.info('Chat enabled');
     }
 }

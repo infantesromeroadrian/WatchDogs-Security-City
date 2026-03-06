@@ -5,6 +5,9 @@
  * Images are loaded directly as a captured frame — no manual capture step needed.
  */
 
+// L-2: Use global logger (set by modules/logger.js via window.__wdLog)
+const log = window.__wdLog || console;
+
 class VideoPlayer {
     constructor() {
         // DOM elements
@@ -22,6 +25,8 @@ class VideoPlayer {
         this.capturedFrame = null;
         /** @type {'video'|'image'|null} */
         this.mediaType = null;
+        /** @type {string|null} H-9: Track Object URL for proper revocation */
+        this._currentObjectURL = null;
 
         this.init();
     }
@@ -67,7 +72,7 @@ class VideoPlayer {
 
         this.videoPlayer.addEventListener('loadedmetadata', () => {
             this.captureBtn.disabled = false;
-            console.log('✅ Video loaded successfully');
+            log.info('Video loaded successfully');
         });
     }
 
@@ -101,8 +106,15 @@ class VideoPlayer {
             roiCanvas.style.height = '100%';
         }
 
+        // H-9: Revoke previous Object URL before creating a new one (prevent memory leak)
+        if (this._currentObjectURL) {
+            URL.revokeObjectURL(this._currentObjectURL);
+            this._currentObjectURL = null;
+        }
+
         // Create object URL for video
         const videoURL = URL.createObjectURL(file);
+        this._currentObjectURL = videoURL;
         this.videoPlayer.src = videoURL;
 
         // Show player section
@@ -111,7 +123,7 @@ class VideoPlayer {
         // Update status
         const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
         this.showUploadStatus(`✅ Video cargado: ${file.name} (${sizeMB} MB)`, 'success');
-        console.log('📹 Video loaded:', file.name);
+        log.debug('Video loaded:', file.name);
     }
 
     // ========================================================================
@@ -129,6 +141,12 @@ class VideoPlayer {
         this.mediaType = 'image';
         this.currentVideoFile = file;
 
+        // H-9: Revoke previous Object URL when switching to image mode
+        if (this._currentObjectURL) {
+            URL.revokeObjectURL(this._currentObjectURL);
+            this._currentObjectURL = null;
+        }
+
         const reader = new FileReader();
         reader.onload = (e) => {
             const img = new Image();
@@ -142,8 +160,7 @@ class VideoPlayer {
 
                 this.capturedFrame = canvas.toDataURL('image/png');
 
-                console.log('🖼️ Image loaded as frame:', img.naturalWidth, 'x', img.naturalHeight);
-                console.log('   - Frame size (base64):', (this.capturedFrame.length / 1024).toFixed(2), 'KB');
+                log.debug('Image loaded as frame:', img.naturalWidth, 'x', img.naturalHeight, '— base64:', (this.capturedFrame.length / 1024).toFixed(2), 'KB');
 
                 // Show player section but adapt UI for image mode
                 this.playerSection.style.display = 'block';
@@ -166,7 +183,7 @@ class VideoPlayer {
                 // Feed directly into the ROI selector (which displays the frame)
                 if (window.roiSelector) {
                     window.roiSelector.setFrame(this.capturedFrame, img.naturalWidth, img.naturalHeight);
-                    console.log('✅ ROI selector updated with image');
+                    log.debug('ROI selector updated with image');
                 }
 
                 // Notify multi-frame analyzer
@@ -224,24 +241,23 @@ class VideoPlayer {
 
         // DEFENSIVE: Verify frame was captured
         if (!this.capturedFrame || this.capturedFrame.length === 0) {
-            console.error('❌ CRITICAL: Frame capture failed!');
+            log.error('CRITICAL: Frame capture failed!');
             alert('❌ Error al capturar el frame. Intenta nuevamente.');
             return;
         }
 
-        console.log('📸 Frame captured successfully:', canvas.width, 'x', canvas.height);
-        console.log('   - Frame size (base64):', (this.capturedFrame.length / 1024).toFixed(2), 'KB');
+        log.debug('Frame captured:', canvas.width, 'x', canvas.height, '— base64:', (this.capturedFrame.length / 1024).toFixed(2), 'KB');
 
         // Initialize ROI selector with captured frame
         if (window.roiSelector) {
             window.roiSelector.setFrame(this.capturedFrame, canvas.width, canvas.height);
-            console.log('✅ ROI selector updated with frame');
+            log.debug('ROI selector updated with frame');
         }
 
         // Notify multi-frame analyzer
         if (window.multiFrameAnalyzer) {
             window.multiFrameAnalyzer.setCurrentFrame(this.capturedFrame);
-            console.log('✅ Multi-frame analyzer updated with frame');
+            log.debug('Multi-frame analyzer updated with frame');
         }
 
         // Show success feedback
@@ -253,7 +269,7 @@ class VideoPlayer {
 
     getCapturedFrame() {
         if (!this.capturedFrame) {
-            console.warn('⚠️ getCapturedFrame called but no frame captured');
+            log.warn('getCapturedFrame called but no frame captured');
         }
         return this.capturedFrame;
     }

@@ -1,7 +1,8 @@
+# M-6: Removed flask-login (never imported) and flask-sqlalchemy (never imported)
+# M-7: All versions pinned to minimum known-good (use pip freeze > lockfile for exact pins)
 flask==3.0.0
 flask-cors==4.0.0
 flask-limiter==3.5.0
-flask-login>=0.6.3
 langgraph>=0.2.50
 langchain>=0.3.0
 langchain-openai>=0.2.0
@@ -24,6 +25,3 @@ reportlab>=4.0.0
 
 # Forensics
 imagehash>=4.3.1
-
-# Database
-flask-sqlalchemy>=3.1.0

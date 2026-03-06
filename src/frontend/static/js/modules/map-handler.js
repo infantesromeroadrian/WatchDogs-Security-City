@@ -7,6 +7,8 @@
  * - Listens to 'watchdogs:location-found' CustomEvents
  */
 
+import { log } from './logger.js';
+
 export class MapHandler {
     constructor() {
         /** @type {mapboxgl.Map|null} */
@@ -24,7 +26,7 @@ export class MapHandler {
         this._STYLE = 'mapbox://styles/mapbox/dark-v11';
 
         this._bindEvents();
-        console.log('🗺️ MapHandler constructed — waiting for init()');
+        log.debug('MapHandler constructed — waiting for init()');
     }
 
     // ========================================================================
@@ -41,7 +43,7 @@ export class MapHandler {
             const data = await resp.json();
 
             if (!data.success || !data.token) {
-                console.warn('⚠️ Mapbox token not available — maps disabled');
+                log.warn('Mapbox token not available — maps disabled');
                 this._renderUnavailable();
                 return;
             }
@@ -50,7 +52,7 @@ export class MapHandler {
 
             // Wait for mapboxgl to be available (loaded via CDN)
             if (typeof mapboxgl === 'undefined') {
-                console.error('❌ mapboxgl not loaded — ensure CDN script is present');
+                log.error('mapboxgl not loaded — ensure CDN script is present');
                 this._renderUnavailable();
                 return;
             }
@@ -61,9 +63,9 @@ export class MapHandler {
             this._initFullscreenOverlay();
 
             this.ready = true;
-            console.log('✅ MapHandler initialised with Mapbox GL JS');
+            log.info('MapHandler initialised with Mapbox GL JS');
         } catch (err) {
-            console.error('❌ MapHandler init failed:', err);
+            log.error('MapHandler init failed:', err);
             this._renderUnavailable();
         }
     }
@@ -202,7 +204,7 @@ export class MapHandler {
         this._updateCounter();
         this._updateSidebar();
 
-        console.log(`📍 Marker added: "${label}" [${lat}, ${lon}] (${source})`);
+        log.debug(`Marker added: "${label}" [${lat}, ${lon}] (${source})`);
     }
 
     /**

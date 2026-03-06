@@ -224,7 +224,6 @@ class ReportSectionBuilder:
 
         data = [
             ["SHA-256 Hash:", forensics.get("sha256", "N/A")],
-            ["MD5 Hash:", forensics.get("md5", "N/A")],
             ["File Size:", f"{forensics.get('size_bytes', 0)} bytes"],
             ["Timestamp:", datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S UTC")],
         ]

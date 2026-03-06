@@ -9,6 +9,9 @@
  * - Coordinates automatically adjusted to original image scale
  */
 
+// L-2: Use global logger (set by modules/logger.js via window.__wdLog)
+const log = window.__wdLog || console;
+
 class ROISelector {
     constructor() {
         // DOM elements
@@ -74,23 +77,20 @@ class ROISelector {
         this.canvas.addEventListener('touchmove', (e) => this.handleTouchMove(e));
         this.canvas.addEventListener('touchend', (e) => this.handleTouchEnd(e));
         
-        console.log('🎯 ROI Selector with Zoom initialized');
+        log.info('ROI Selector with Zoom initialized');
     }
     
     setFrame(frameBase64, width, height) {
-        console.log('📸 Loading frame into ROI selector:', width, 'x', height);
+        log.debug('Loading frame into ROI selector:', width, 'x', height);
         
         // Load image
         this.frameImage = new Image();
         this.frameImage.onload = () => {
-            console.log('✅ Frame image loaded successfully');
+            log.debug('Frame image loaded — canvas:', width, 'x', height);
             
             // Set canvas resolution to match video resolution
             this.canvas.width = width;
             this.canvas.height = height;
-            
-            console.log('✅ Canvas resolution set:', this.canvas.width, 'x', this.canvas.height);
-            console.log('   Canvas display size:', this.canvas.getBoundingClientRect().width, 'x', this.canvas.getBoundingClientRect().height);
             
             // Reset zoom/pan
             this.resetZoom();
@@ -110,15 +110,13 @@ class ROISelector {
             this.clearRoiBtn.disabled = false;
             this.analyzeBtn.disabled = false;
             
-            console.log('🎯 ROI selector ready with zoom enabled');
-            console.log('   Scale:', this.scale);
-            console.log('   Offset:', this.offsetX, this.offsetY);
+            log.debug('ROI selector ready — scale:', this.scale, 'offset:', this.offsetX, this.offsetY);
             
             this.updateSelectionInfo('🔍 Usa zoom para ver detalles. Dibuja un rectángulo sobre la región a analizar.');
         };
         
         this.frameImage.onerror = (e) => {
-            console.error('❌ Failed to load frame image:', e);
+            log.error('Failed to load frame image:', e);
             this.updateSelectionInfo('❌ Error al cargar el frame');
         };
         
@@ -272,7 +270,7 @@ class ROISelector {
             this.startX = imgCoords.x;
             this.startY = imgCoords.y;
             
-            console.log('🖱️ Started drawing ROI at:', Math.round(this.startX), Math.round(this.startY));
+            log.debug('Started drawing ROI at:', Math.round(this.startX), Math.round(this.startY));
             this.updateSelectionInfo('Dibujando ROI...');
         }
     }
@@ -436,7 +434,7 @@ class ROISelector {
             
             this.redraw();
             
-            console.log('✅ ROI selected:', this.currentROI);
+            log.debug('ROI selected:', this.currentROI);
             this.updateSelectionInfo(
                 `✅ ROI seleccionado: ${this.currentROI.width}x${this.currentROI.height}px ` +
                 `en (${this.currentROI.x}, ${this.currentROI.y}) - Usa zoom para ver detalles`
@@ -476,7 +474,7 @@ class ROISelector {
         this.updateZoomDisplay();
         this.redraw();
         
-        console.log(`🔍 Zoomed to ROI: scale=${this.scale.toFixed(2)}x, centered at (${roiCenterX}, ${roiCenterY})`);
+        log.debug(`Zoomed to ROI: scale=${this.scale.toFixed(2)}x, centered at (${roiCenterX}, ${roiCenterY})`);
     }
     
     clearROI() {
@@ -484,7 +482,7 @@ class ROISelector {
         this.resetZoom(); // Also reset zoom when clearing ROI
         this.redraw();
         this.updateSelectionInfo('✨ ROI limpiado - Dibuja una nueva región o analiza el frame completo');
-        console.log('🗑️ ROI cleared');
+        log.debug('ROI cleared');
     }
     
     getROI() {

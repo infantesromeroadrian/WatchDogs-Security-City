@@ -3,6 +3,7 @@ Circuit breaker pattern for agent operations.
 """
 
 import logging
+import threading
 import time
 from collections.abc import Callable
 from enum import Enum
@@ -46,6 +47,7 @@ class CircuitBreaker:
         self.recovery_timeout = recovery_timeout
         self.expected_exception = expected_exception
 
+        self._lock = threading.Lock()
         self.state = CircuitState.CLOSED
         self.failure_count = 0
         self.last_failure_time: float | None = None
@@ -54,6 +56,9 @@ class CircuitBreaker:
     def call(self, func: Callable, *args: Any, **kwargs: Any) -> Any:
         """
         Execute function with circuit breaker protection.
+
+        Thread-safe: all state mutations are protected by a lock so that
+        concurrent agents (7 parallel via LangGraph) cannot corrupt state.
 
         Args:
             func: Function to execute
@@ -67,20 +72,24 @@ class CircuitBreaker:
             CircuitBreakerOpenError: If circuit is open
             Exception: Original exception from function
         """
-        # Check circuit state
-        if self.state == CircuitState.OPEN:
-            if self._should_attempt_recovery():
-                self.state = CircuitState.HALF_OPEN
-                self.success_count = 0
-                logger.info("🔄 Circuit breaker: Attempting recovery (HALF_OPEN)")
-            else:
-                raise CircuitBreakerOpenError(
-                    f"Circuit breaker is OPEN. "
-                    f"Last failure: {time.time() - (self.last_failure_time or 0):.1f}s ago. "
-                    f"Recovery timeout: {self.recovery_timeout}s"
-                )
+        with self._lock:
+            # Check circuit state
+            if self.state == CircuitState.OPEN:
+                if self._should_attempt_recovery():
+                    self.state = CircuitState.HALF_OPEN
+                    self.success_count = 0
+                    logger.info("Circuit breaker: Attempting recovery (HALF_OPEN)")
+                else:
+                    raise CircuitBreakerOpenError(
+                        "Circuit breaker is OPEN. "
+                        "Last failure: %.1fs ago. Recovery timeout: %ss"
+                        % (
+                            time.time() - (self.last_failure_time or 0),
+                            self.recovery_timeout,
+                        )
+                    )
 
-        # Execute function
+        # Execute function OUTSIDE the lock to avoid holding it during I/O
         try:
             result = func(*args, **kwargs)
             self._on_success()
@@ -96,34 +105,37 @@ class CircuitBreaker:
         return (time.time() - self.last_failure_time) >= self.recovery_timeout
 
     def _on_success(self) -> None:
-        """Handle successful call."""
-        self.failure_count = 0
+        """Handle successful call. Thread-safe."""
+        with self._lock:
+            self.failure_count = 0
 
-        if self.state == CircuitState.HALF_OPEN:
-            self.success_count += 1
-            if self.success_count >= 2:  # Need 2 successes to close
+            if self.state == CircuitState.HALF_OPEN:
+                self.success_count += 1
+                if self.success_count >= 2:  # Need 2 successes to close
+                    self.state = CircuitState.CLOSED
+                    logger.info("Circuit breaker: CLOSED (recovered)")
+            elif self.state == CircuitState.OPEN:
+                # Shouldn't happen, but handle it
                 self.state = CircuitState.CLOSED
-                logger.info("✅ Circuit breaker: CLOSED (recovered)")
-        elif self.state == CircuitState.OPEN:
-            # Shouldn't happen, but handle it
-            self.state = CircuitState.CLOSED
-            logger.info("✅ Circuit breaker: CLOSED (unexpected recovery)")
+                logger.info("Circuit breaker: CLOSED (unexpected recovery)")
 
     def _on_failure(self) -> None:
-        """Handle failed call."""
-        self.failure_count += 1
-        self.last_failure_time = time.time()
+        """Handle failed call. Thread-safe."""
+        with self._lock:
+            self.failure_count += 1
+            self.last_failure_time = time.time()
 
-        if self.state == CircuitState.HALF_OPEN:
-            # Failed during recovery, open again
-            self.state = CircuitState.OPEN
-            logger.warning("❌ Circuit breaker: OPEN (recovery failed)")
-        elif self.failure_count >= self.failure_threshold:
-            self.state = CircuitState.OPEN
-            logger.warning(
-                f"❌ Circuit breaker: OPEN "
-                f"(failure_count: {self.failure_count} >= threshold: {self.failure_threshold})"
-            )
+            if self.state == CircuitState.HALF_OPEN:
+                # Failed during recovery, open again
+                self.state = CircuitState.OPEN
+                logger.warning("Circuit breaker: OPEN (recovery failed)")
+            elif self.failure_count >= self.failure_threshold:
+                self.state = CircuitState.OPEN
+                logger.warning(
+                    "Circuit breaker: OPEN (failure_count: %d >= threshold: %d)",
+                    self.failure_count,
+                    self.failure_threshold,
+                )
 
 
 class CircuitBreakerOpenError(Exception):

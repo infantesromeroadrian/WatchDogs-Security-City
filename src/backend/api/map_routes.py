@@ -7,6 +7,7 @@ import logging
 from flask import Blueprint, jsonify
 
 from ..config import MAPBOX_ACCESS_TOKEN
+from .middleware import auth_required
 
 logger = logging.getLogger(__name__)
 
@@ -15,6 +16,7 @@ map_bp = Blueprint("map", __name__)
 
 
 @map_bp.route("/mapbox-token", methods=["GET"])
+@auth_required
 def get_mapbox_token():
     """Serve Mapbox access token to the frontend.
 

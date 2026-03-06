@@ -8,7 +8,7 @@ typed sub-models were defined historically but never wired up and have
 been removed to reduce dead code.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 # =============================================================================
 # BASIC AGENT RESULTS
@@ -24,10 +24,7 @@ class VisionResult(BaseModel):
     confidence: str | None = Field(default=None, description="Confidence level")
     error: str | None = Field(default=None, description="Error message if failed")
 
-    class Config:
-        """Pydantic config."""
-
-        frozen = False  # Allow updates for error handling
+    model_config = ConfigDict(frozen=False)
 
 
 class OCRResult(BaseModel):
@@ -40,10 +37,7 @@ class OCRResult(BaseModel):
     confidence: str | None = Field(default=None, description="Confidence level")
     error: str | None = Field(default=None, description="Error message if failed")
 
-    class Config:
-        """Pydantic config."""
-
-        frozen = False
+    model_config = ConfigDict(frozen=False)
 
 
 class DetectionResult(BaseModel):
@@ -55,10 +49,7 @@ class DetectionResult(BaseModel):
     confidence: str | None = Field(default=None, description="Confidence level")
     error: str | None = Field(default=None, description="Error message if failed")
 
-    class Config:
-        """Pydantic config."""
-
-        frozen = False
+    model_config = ConfigDict(frozen=False)
 
 
 # =============================================================================
@@ -127,10 +118,7 @@ class GeolocationResult(BaseModel):
     # Error handling
     error: str | None = Field(default=None, description="Error message if failed")
 
-    class Config:
-        """Pydantic config."""
-
-        frozen = False
+    model_config = ConfigDict(frozen=False)
 
 
 # =============================================================================
@@ -177,10 +165,7 @@ class FaceAnalysisResult(BaseModel):
     # Error handling
     error: str | None = Field(default=None, description="Error message if failed")
 
-    class Config:
-        """Pydantic config."""
-
-        frozen = False
+    model_config = ConfigDict(frozen=False)
 
 
 # =============================================================================
@@ -244,10 +229,7 @@ class ForensicAnalysisResult(BaseModel):
     # Error handling
     error: str | None = Field(default=None, description="Error message if failed")
 
-    class Config:
-        """Pydantic config."""
-
-        frozen = False
+    model_config = ConfigDict(frozen=False)
 
 
 # =============================================================================
@@ -313,10 +295,7 @@ class ContextIntelResult(BaseModel):
     # Error handling
     error: str | None = Field(default=None, description="Error message if failed")
 
-    class Config:
-        """Pydantic config."""
-
-        frozen = False
+    model_config = ConfigDict(frozen=False)
 
 
 # =============================================================================
@@ -335,10 +314,7 @@ class AgentResults(BaseModel):
     forensic_analysis: ForensicAnalysisResult | None = None
     context_intel: ContextIntelResult | None = None
 
-    class Config:
-        """Pydantic config."""
-
-        frozen = False
+    model_config = ConfigDict(frozen=False)
 
 
 class FinalReport(BaseModel):
@@ -348,7 +324,4 @@ class FinalReport(BaseModel):
     status: str = Field(description="Overall status")
     agents: AgentResults = Field(description="Results from all agents")
 
-    class Config:
-        """Pydantic config."""
-
-        frozen = False
+    model_config = ConfigDict(frozen=False)

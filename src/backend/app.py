@@ -4,6 +4,8 @@ Main API server with Blueprint-based routes.
 """
 
 import logging
+import os
+import secrets
 
 from flask import Flask, send_from_directory
 from flask_cors import CORS
@@ -27,6 +29,15 @@ logger = logging.getLogger(__name__)
 # Initialize Flask app
 app = Flask(__name__, static_folder="../frontend/static", template_folder="../frontend")
 app.config["MAX_CONTENT_LENGTH"] = MAX_CONTENT_LENGTH  # Limit upload file size
+
+# H-3: Secret key from env var — required for session integrity and CSRF protection.
+# Falls back to a random secret (safe but sessions won't survive restarts).
+_env_secret = os.getenv("FLASK_SECRET_KEY")
+if _env_secret:
+    app.secret_key = _env_secret
+else:
+    app.secret_key = secrets.token_hex(32)
+    logger.warning("⚠️ FLASK_SECRET_KEY not set — using random secret (sessions lost on restart)")
 
 # Configure CORS with restrictions (security baseline rule 01)
 CORS(
@@ -62,6 +73,36 @@ limiter.limit("5 per minute")(auth_bp)
 limiter.limit("5 per minute")(map_bp)
 
 logger.info("🚀 Flask app initialized with blueprints")
+
+
+# ---------------------------------------------------------------------------
+# H-2: Security headers — applied to EVERY response
+# ---------------------------------------------------------------------------
+@app.after_request
+def set_security_headers(response):
+    """Inject security headers into every HTTP response."""
+    # Prevent clickjacking
+    response.headers["X-Frame-Options"] = "DENY"
+    # Stop MIME-type sniffing
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    # Enable XSS filter in older browsers
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    # Referrer policy — send origin only to same-origin, nothing cross-origin
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    # Content-Security-Policy — allow self + inline (needed for the SPA) + Mapbox tiles/API
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' https://api.mapbox.com; "
+        "style-src 'self' 'unsafe-inline' https://api.mapbox.com; "
+        "img-src 'self' data: blob: https://*.mapbox.com; "
+        "connect-src 'self' https://api.mapbox.com https://*.tiles.mapbox.com; "
+        "worker-src 'self' blob:; "
+        "frame-ancestors 'none';"
+    )
+    # HSTS — only in production (avoids locking out local dev)
+    if not FLASK_DEBUG:
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    return response
 
 
 @app.route("/")

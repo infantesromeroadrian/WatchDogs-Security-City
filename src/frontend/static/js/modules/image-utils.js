@@ -3,6 +3,8 @@
  * Handles image processing operations like cropping ROI
  */
 
+import { log } from './logger.js';
+
 export class ImageUtils {
     /**
      * Crop a frame to the specified Region of Interest (ROI)
@@ -12,7 +14,7 @@ export class ImageUtils {
      */
     cropROI(frameBase64, roi) {
         if (!frameBase64 || !roi) {
-            console.warn('⚠️ cropROI: Missing frame or ROI');
+            log.warn('cropROI: Missing frame or ROI');
             return null;
         }
         
@@ -39,19 +41,19 @@ export class ImageUtils {
                     
                     // Convert to base64
                     const croppedBase64 = canvas.toDataURL('image/png');
-                    console.log('✅ ROI cropped:', roi.width, 'x', roi.height);
+                    log.debug('ROI cropped:', roi.width, 'x', roi.height);
                     resolve(croppedBase64);
                 };
                 
                 img.onerror = () => {
-                    console.error('❌ Failed to load image for cropping');
+                    log.error('Failed to load image for cropping');
                     resolve(null);
                 };
                 
                 img.src = frameBase64;
             });
         } catch (error) {
-            console.error('❌ Error cropping ROI:', error);
+            log.error('Error cropping ROI:', error);
             return null;
         }
     }

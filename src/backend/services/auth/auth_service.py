@@ -6,7 +6,7 @@ import json
 import logging
 import os
 import secrets
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 from .lockout_manager import LockoutManager
@@ -55,17 +55,23 @@ class AuthService:
             self.users = {}
 
     def _save_to_disk(self):
-        """Save users to persistent storage"""
+        """Save users to persistent storage with restrictive permissions."""
         try:
             # Create directory if it doesn't exist
             self.storage_path.parent.mkdir(parents=True, exist_ok=True)
 
-            # Save to disk
-            with open(self.storage_path, "w") as f:
+            # H-5: Write with restrictive permissions (owner read/write only).
+            # Use os.open + os.fdopen to set 0o600 atomically on creation.
+            fd = os.open(
+                str(self.storage_path),
+                os.O_WRONLY | os.O_CREAT | os.O_TRUNC,
+                0o600,
+            )
+            with os.fdopen(fd, "w") as f:
                 json.dump({"users": self.users}, f, indent=2)
 
             logger.debug("💾 Auth data saved to disk")
-        except (ValueError, TypeError, KeyError) as e:
+        except (ValueError, TypeError, KeyError, OSError) as e:
             logger.error("❌ Error saving auth storage: %s", e)
 
     def _create_default_admin(self):
@@ -77,9 +83,14 @@ class AuthService:
         if not admin_password:
             # Generate random password if none provided
             admin_password = secrets.token_urlsafe(16)
-            logger.warning("⚠️ No ADMIN_PASSWORD set in environment!")
-            logger.warning("🔐 Generated random password: %s", admin_password)
-            logger.warning("⚠️ SAVE THIS PASSWORD - it won't be shown again!")
+            logger.warning("No ADMIN_PASSWORD set in environment!")
+            # Print to stdout ONCE — never log credentials
+            print(  # noqa: T201
+                f"\n{'=' * 60}\n"
+                f"  GENERATED ADMIN PASSWORD (shown once, not logged):\n"
+                f"  {admin_password}\n"
+                f"{'=' * 60}\n"
+            )
 
         self.register_user(admin_username, admin_password, role="admin")
         logger.info("🔐 Default admin user created: %s", admin_username)
@@ -123,7 +134,7 @@ class AuthService:
             "password_hash": hashed_pw,
             "salt": salt,
             "role": role,
-            "created_at": datetime.now().isoformat(),
+            "created_at": datetime.now(UTC).isoformat(),
             "last_login": None,
             "analysis_count": 0,
             "is_active": True,
@@ -186,7 +197,7 @@ class AuthService:
         session_token = self.session_manager.create_session(username, user["role"], ip_address)
 
         # Update last login
-        user["last_login"] = datetime.now().isoformat()
+        user["last_login"] = datetime.now(UTC).isoformat()
         self._save_to_disk()
 
         logger.info("✅ User authenticated: %s from IP %s", username, ip_address or "unknown")

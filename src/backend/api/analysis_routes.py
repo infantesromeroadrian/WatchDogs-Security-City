@@ -5,14 +5,16 @@ Analysis routes: frame analysis, chat, batch processing
 import logging
 import json
 import re
-from datetime import datetime
+from datetime import UTC, datetime
 
 from flask import Blueprint, Response, jsonify, request
 
 from ..agents.coordinator import CoordinatorAgent
+from ..agents.vision_agent import VisionAgent
 from ..config import MAX_BASE64_SIZE_BYTES, MAX_BASE64_SIZE_MB
 from ..services.image_service import ImageService
 from ..utils.location_extractor import LocationExtractor
+from .middleware import auth_required
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +25,10 @@ analysis_bp = Blueprint("analysis", __name__)
 image_service = ImageService()
 coordinator = CoordinatorAgent()
 location_extractor = LocationExtractor()
+
+# H-6: Module-level VisionAgent singleton — reused across chat requests
+# instead of re-instantiating per request (avoids repeated LLM + circuit breaker setup).
+_chat_vision_agent = VisionAgent()
 
 
 def validate_base64_size(base64_string: str) -> tuple[bool, str | None]:
@@ -112,6 +118,7 @@ def detect_specific_frame_request(message: str, total_frames: int) -> int | None
 
 
 @analysis_bp.route("/analyze-frame", methods=["POST"])
+@auth_required
 def analyze_frame():
     """
     Analyze video frame with multi-agent system.
@@ -168,22 +175,23 @@ def analyze_frame():
 
         # Add timestamp
         if "json" in results:
-            results["json"]["timestamp"] = datetime.now().isoformat()
+            results["json"]["timestamp"] = datetime.now(UTC).isoformat()
 
         logger.info("✅ Frame analysis complete")
 
         return jsonify({"success": True, "results": results}), 200
 
     except ValueError as e:
-        logger.error("❌ Validation error: %s", e)
+        logger.error("Validation error: %s", e)
         return jsonify({"success": False, "error": str(e)}), 400
 
-    except (ValueError, TypeError, KeyError) as e:
-        logger.error("❌ Analysis error: %s", e)
-        return jsonify({"success": False, "error": str(e)}), 500
+    except (TypeError, KeyError) as e:
+        logger.error("Analysis error: %s", e)
+        return jsonify({"success": False, "error": "Internal analysis error"}), 500
 
 
 @analysis_bp.route("/analyze-frame-stream", methods=["POST"])
+@auth_required
 def analyze_frame_stream():
     """
     Stream analysis results via Server-Sent Events (SSE).
@@ -212,13 +220,16 @@ def analyze_frame_stream():
         def generate():
             """SSE generator yielding events as agents complete."""
             try:
+                # M-5: Send initial heartbeat so proxies/clients know the stream is alive
+                yield ": heartbeat\n\n"
+
                 for update in coordinator.analyze_frame_stream(prepared_base64, context):
                     event_type = update.get("event", "unknown")
                     yield f"event: {event_type}\ndata: {json.dumps(update)}\n\n"
             except Exception as e:
                 logger.error("SSE stream error: %s", e)
-                error_payload = json.dumps({"event": "error", "error": str(e)})
-                yield f"event: error\ndata: {error_payload}\n\n"
+                # M-10: Don't expose raw exception to client
+                yield f"event: error\ndata: {json.dumps({'event': 'error', 'error': 'Analysis stream failed'})}\n\n"
 
         return Response(
             generate(),
@@ -239,6 +250,7 @@ def analyze_frame_stream():
 
 
 @analysis_bp.route("/chat-query", methods=["POST"])
+@auth_required
 def chat_query():
     """
     Chat endpoint for conversational analysis of image(s).
@@ -272,9 +284,8 @@ def chat_query():
 
             logger.info("💬 Processing MULTI-FRAME chat query (%s frames)", len(frames))
 
-            from ..agents.vision_agent import VisionAgent
-
-            vision_agent = VisionAgent()
+            # H-6: reuse module-level singleton instead of per-request instantiation
+            vision_agent = _chat_vision_agent
 
             # 🎯 Smart frame detection: Check if user is asking about a specific frame
             specific_frame_idx = detect_specific_frame_request(message, len(frames))
@@ -388,9 +399,8 @@ def chat_query():
 
             logger.info("💬 Processing SINGLE-FRAME chat query")
 
-            from ..agents.vision_agent import VisionAgent
-
-            vision_agent = VisionAgent()
+            # H-6: reuse module-level singleton
+            vision_agent = _chat_vision_agent
             result = vision_agent.analyze(frame_base64, context)
             response_text = result.get("analysis", "No response generated")
 
@@ -409,15 +419,16 @@ def chat_query():
         ), 400
 
     except ValueError as e:
-        logger.error("❌ Chat validation error: %s", e)
+        logger.error("Chat validation error: %s", e)
         return jsonify({"success": False, "error": str(e)}), 400
 
-    except (ValueError, TypeError, KeyError) as e:
-        logger.error("❌ Chat error: %s", e)
-        return jsonify({"success": False, "error": str(e)}), 500
+    except (TypeError, KeyError) as e:
+        logger.error("Chat error: %s", e)
+        return jsonify({"success": False, "error": "Internal chat error"}), 500
 
 
 @analysis_bp.route("/analyze-batch", methods=["POST"])
+@auth_required
 def analyze_batch():
     """
     Analyze multiple frames for enhanced OSINT with accumulated context.
@@ -469,7 +480,7 @@ def analyze_batch():
         results = coordinator.analyze_multi_frame(frames, enable_context)
 
         # Add timestamp
-        results["timestamp"] = datetime.now().isoformat()
+        results["timestamp"] = datetime.now(UTC).isoformat()
         results["frames_analyzed"] = len(frames)
 
         logger.info("✅ Batch analysis complete (%s frames)", len(frames))
@@ -477,9 +488,9 @@ def analyze_batch():
         return jsonify({"success": True, "results": results}), 200
 
     except ValueError as e:
-        logger.error("❌ Batch validation error: %s", e)
+        logger.error("Batch validation error: %s", e)
         return jsonify({"success": False, "error": str(e)}), 400
 
-    except (ValueError, TypeError, KeyError) as e:
-        logger.error("❌ Batch analysis error: %s", e)
-        return jsonify({"success": False, "error": str(e)}), 500
+    except (TypeError, KeyError) as e:
+        logger.error("Batch analysis error: %s", e)
+        return jsonify({"success": False, "error": "Internal batch error"}), 500

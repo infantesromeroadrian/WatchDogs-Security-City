@@ -3,6 +3,9 @@
  * Handles collection of multiple frames for enhanced OSINT analysis
  */
 
+// L-2: Use global logger (set by modules/logger.js via window.__wdLog)
+const log = window.__wdLog || console;
+
 class MultiFrameAnalyzer {
     constructor() {
         this.frameCollection = [];
@@ -137,7 +140,7 @@ class MultiFrameAnalyzer {
             this.displayBatchResults(data.results);
             
         } catch (error) {
-            console.error('❌ Error en análisis multi-frame:', error);
+            log.error('Error en análisis multi-frame:', error);
             loadingIndicator.style.display = 'none';
             alert(`❌ Error en análisis: ${error.message}`);
         }
@@ -176,7 +179,7 @@ class MultiFrameAnalyzer {
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     window.multiFrameAnalyzer = new MultiFrameAnalyzer();
-    console.log('✅ Multi-Frame Analyzer initialized');
+    log.info('Multi-Frame Analyzer initialized');
 });
 
 // Add CSS for toast animation

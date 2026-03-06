@@ -105,9 +105,13 @@ def track_agent_metrics(agent_name: str):
                 if len(_metrics[agent_name]) > 1000:
                     _metrics[agent_name] = _metrics[agent_name][-1000:]
 
+                avg_ms = stats["total_latency_ms"] / stats["total_calls"]
                 logger.debug(
-                    f"📊 {agent_name}: {status} in {latency_ms:.2f}ms "
-                    f"(avg: {stats['total_latency_ms'] / stats['total_calls']:.2f}ms)"
+                    "📊 %s: %s in %.2fms (avg: %.2fms)",
+                    agent_name,
+                    status,
+                    latency_ms,
+                    avg_ms,
                 )
 
         return wrapper

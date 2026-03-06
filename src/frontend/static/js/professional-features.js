@@ -3,6 +3,7 @@
  * Coordinates metadata extraction, PDF generation, and evidence packages
  */
 
+import { log } from './modules/logger.js';
 import { MetadataHandler } from './modules/professional/metadata-handler.js';
 import { PDFGenerator } from './modules/professional/pdf-generator.js';
 import { EvidenceHandler } from './modules/professional/evidence-handler.js';
@@ -29,14 +30,14 @@ class ProfessionalFeatures {
             this.createMetadataRow.bind(this)
         );
         
-        console.log('✅ Professional features initialized (modular)');
+        log.info('Professional features initialized (modular)');
     }
     
     enableButtons() {
         this.metadataHandler.enable();
         this.pdfGenerator.enable();
         this.evidenceHandler.enable();
-        console.log('✅ Professional features enabled');
+        log.debug('Professional features enabled');
     }
     
     // Shared utility: create metadata row HTML
@@ -96,5 +97,5 @@ class ProfessionalFeatures {
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     window.professionalFeatures = new ProfessionalFeatures();
-    console.log('✅ Professional features module loaded');
+    log.info('Professional features module loaded');
 });

@@ -3,7 +3,7 @@ Session management
 """
 
 import secrets
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 # Session duration
 SESSION_DURATION = timedelta(hours=24)
@@ -34,8 +34,8 @@ class SessionManager:
         self.sessions[session_token] = {
             "username": username,
             "role": role,
-            "created_at": datetime.now(),
-            "expires_at": datetime.now() + SESSION_DURATION,
+            "created_at": datetime.now(UTC),
+            "expires_at": datetime.now(UTC) + SESSION_DURATION,
             "ip_address": ip_address,
         }
 
@@ -54,7 +54,7 @@ class SessionManager:
         session = self.sessions[session_token]
 
         # Check expiration
-        if datetime.now() > session["expires_at"]:
+        if datetime.now(UTC) > session["expires_at"]:
             del self.sessions[session_token]
             return None
 
@@ -80,7 +80,7 @@ class SessionManager:
 
     def cleanup_expired(self):
         """Remove expired sessions"""
-        now = datetime.now()
+        now = datetime.now(UTC)
         expired = [token for token, session in self.sessions.items() if now > session["expires_at"]]
 
         for token in expired:

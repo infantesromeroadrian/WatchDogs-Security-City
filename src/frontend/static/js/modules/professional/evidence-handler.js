@@ -3,6 +3,8 @@
  * Handles evidence package generation and display
  */
 
+import { log } from '../logger.js';
+
 export class EvidenceHandler {
     constructor(baseURL, showToast, createMetadataRow) {
         this.baseURL = baseURL;
@@ -59,7 +61,7 @@ export class EvidenceHandler {
             this.showToast('✅ Evidence package generated!', 'success');
             
         } catch (error) {
-            console.error('❌ Evidence package error:', error);
+            log.error('Evidence package error:', error);
             this.showToast(`❌ Error: ${error.message}`, 'error');
         } finally {
             this.generateEvidenceBtn.disabled = false;

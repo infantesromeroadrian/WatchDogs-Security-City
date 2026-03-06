@@ -3,6 +3,8 @@
  * Handles metadata extraction and display
  */
 
+import { log } from '../logger.js';
+
 export class MetadataHandler {
     constructor(baseURL, showToast) {
         this.baseURL = baseURL;
@@ -54,7 +56,7 @@ export class MetadataHandler {
             this.showToast('✅ Metadata extracted successfully!', 'success');
             
         } catch (error) {
-            console.error('❌ Metadata extraction error:', error);
+            log.error('Metadata extraction error:', error);
             this.showToast(`❌ Error: ${error.message}`, 'error');
         } finally {
             this.extractMetadataBtn.disabled = false;

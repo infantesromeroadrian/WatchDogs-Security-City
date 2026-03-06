@@ -126,8 +126,8 @@ class ImageService:
         image = ImageService.decode_base64_image(base64_frame)
 
         # Crop ROI if coordinates provided
-        logger.info("=" * 80)
-        logger.info("PREPARE_FOR_ANALYSIS: roi_coords = %s", roi_coords)
+        # M-9: Demoted verbose separator-line logging to DEBUG
+        logger.debug("PREPARE_FOR_ANALYSIS: roi_coords = %s", roi_coords)
 
         if roi_coords:
             x = roi_coords.get("x", 0)
@@ -135,17 +135,13 @@ class ImageService:
             width = roi_coords.get("width", image.width)
             height = roi_coords.get("height", image.height)
 
-            logger.info("IMAGE SIZE BEFORE CROP: %s", image.size)
-            logger.info("CROPPING TO: x=%s, y=%s, w=%s, h=%s", x, y, width, height)
+            logger.debug("Image %s → crop x=%s y=%s w=%s h=%s", image.size, x, y, width, height)
 
             image = ImageService.crop_roi(image, x, y, width, height)
 
-            logger.info("IMAGE SIZE AFTER CROP: %s", image.size)
-            logger.info("ROI EXTRACTED SUCCESSFULLY")
+            logger.info("ℹ️ ROI extracted: %s", image.size)
         else:
-            logger.info("NO ROI PROVIDED - Using full frame")
-
-        logger.info("=" * 80)
+            logger.debug("No ROI — using full frame")
 
         # Convert to base64 for OpenAI
         base64_for_api = ImageService.image_to_base64(image, format="PNG")

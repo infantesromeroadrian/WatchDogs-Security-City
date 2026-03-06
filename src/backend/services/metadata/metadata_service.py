@@ -6,7 +6,7 @@ import base64
 import hashlib
 import io
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 try:
@@ -50,7 +50,7 @@ class MetadataService:
             "gps": {},
             "technical": {},
             "forensics": {},
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
         try:
@@ -60,9 +60,8 @@ class MetadataService:
 
             image_bytes = base64.b64decode(image_base64)
 
-            # Calculate hashes for forensics
+            # Calculate hashes for forensics (SHA-256 only — MD5 is cryptographically broken)
             metadata["forensics"]["sha256"] = hashlib.sha256(image_bytes).hexdigest()
-            metadata["forensics"]["md5"] = hashlib.md5(image_bytes).hexdigest()
             metadata["forensics"]["size_bytes"] = len(image_bytes)
 
             # Open image
@@ -143,7 +142,7 @@ class MetadataService:
         Returns:
             Evidence package with metadata, hashes, and chain of custody
         """
-        timestamp = datetime.now().isoformat()
+        timestamp = datetime.now(UTC).isoformat()
 
         # Extract metadata
         metadata = self.extract_image_metadata(frame_base64)

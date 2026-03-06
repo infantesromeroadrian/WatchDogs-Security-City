@@ -4,12 +4,13 @@ Professional OSINT routes: metadata, PDF reports, evidence packages
 
 import io
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 
 from flask import Blueprint, jsonify, request, send_file
 
 from ..services.metadata import metadata_service
 from ..services.report import report_service
+from .middleware import auth_required
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +28,7 @@ def validate_base64_size(base64_string: str, max_mb: int = 10) -> tuple[bool, st
 
 
 @professional_bp.route("/extract-metadata", methods=["POST"])
+@auth_required
 def extract_metadata():
     """
     Extract comprehensive metadata from image.
@@ -66,6 +68,7 @@ def extract_metadata():
 
 
 @professional_bp.route("/generate-pdf-report", methods=["POST"])
+@auth_required
 def generate_pdf_report():
     """
     Generate professional PDF report.
@@ -102,7 +105,7 @@ def generate_pdf_report():
         pdf_io = io.BytesIO(pdf_bytes)
         pdf_io.seek(0)
 
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
         filename = f"watchdogs_report_{timestamp}.pdf"
 
         logger.info("✅ PDF report generated: %s", filename)
@@ -120,6 +123,7 @@ def generate_pdf_report():
 
 
 @professional_bp.route("/generate-evidence-package", methods=["POST"])
+@auth_required
 def generate_evidence_package():
     """
     Generate forensic evidence package with chain of custody.

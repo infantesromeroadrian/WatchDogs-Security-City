@@ -4,6 +4,23 @@
  * Updated for CIA-Level 7-Agent Dashboard
  */
 
+import { log } from './logger.js';
+
+/**
+ * Escape HTML special characters to prevent XSS injection.
+ * MUST be applied to all dynamic data before innerHTML assignment,
+ * especially LLM-generated content which is susceptible to prompt injection.
+ */
+function esc(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 export class UIManager {
     constructor(apiClient) {
         this.apiClient = apiClient;
@@ -184,7 +201,7 @@ For more information, consult your organization's Data Protection Officer.
     
     renderIntelDashboard(jsonData) {
         if (!jsonData || !jsonData.agents) {
-            console.warn('No agent data in results');
+            log.warn('No agent data in results');
             return;
         }
         
@@ -205,7 +222,7 @@ For more information, consult your organization's Data Protection Officer.
         // Render key inferences from context_intel
         this.renderKeyInferences(agents.context_intel);
         
-        console.log('📊 CIA Intel Dashboard rendered with 7 agents');
+        log.info('CIA Intel Dashboard rendered with 7 agents');
     }
 
     updateAgentCard(agentName, result) {
@@ -229,9 +246,9 @@ For more information, consult your organization's Data Protection Officer.
         const renderer = renderMap[agentName];
         if (renderer) {
             renderer(result);
-            console.log(`Agent card updated: ${agentName}`);
+            log.debug(`Agent card updated: ${agentName}`);
         } else {
-            console.warn(`Unknown agent: ${agentName}`);
+            log.warn(`Unknown agent: ${agentName}`);
         }
 
         // Update key inferences if context_intel just completed
@@ -287,13 +304,13 @@ For more information, consult your organization's Data Protection Officer.
         if (!content || !data) return;
         
         if (data.status === 'success') {
-            content.innerHTML = `<p>${this.truncateText(data.analysis, 300)}</p>`;
+            content.innerHTML = `<p>${esc(this.truncateText(data.analysis, 300))}</p>`;
             if (badge && data.confidence) {
                 badge.textContent = data.confidence;
                 badge.className = `confidence-badge ${this.getConfidenceClass(data.confidence)}`;
             }
         } else {
-            content.innerHTML = `<p class="placeholder">Error: ${data.error || 'Unknown error'}</p>`;
+            content.innerHTML = `<p class="placeholder">Error: ${esc(data.error || 'Unknown error')}</p>`;
         }
     }
     
@@ -308,9 +325,9 @@ For more information, consult your organization's Data Protection Officer.
                 badge.textContent = hasText ? 'Text found' : 'No text';
                 badge.className = `text-badge ${hasText ? 'has-text' : ''}`;
             }
-            content.innerHTML = `<p>${this.truncateText(data.analysis, 300)}</p>`;
+            content.innerHTML = `<p>${esc(this.truncateText(data.analysis, 300))}</p>`;
         } else {
-            content.innerHTML = `<p class="placeholder">Error: ${data.error || 'Unknown error'}</p>`;
+            content.innerHTML = `<p class="placeholder">Error: ${esc(data.error || 'Unknown error')}</p>`;
         }
     }
     
@@ -320,13 +337,13 @@ For more information, consult your organization's Data Protection Officer.
         if (!content || !data) return;
         
         if (data.status === 'success') {
-            content.innerHTML = `<p>${this.truncateText(data.analysis, 300)}</p>`;
+            content.innerHTML = `<p>${esc(this.truncateText(data.analysis, 300))}</p>`;
             if (badge && data.confidence) {
                 badge.textContent = data.confidence;
                 badge.className = `confidence-badge ${this.getConfidenceClass(data.confidence)}`;
             }
         } else {
-            content.innerHTML = `<p class="placeholder">Error: ${data.error || 'Unknown error'}</p>`;
+            content.innerHTML = `<p class="placeholder">Error: ${esc(data.error || 'Unknown error')}</p>`;
         }
     }
     
@@ -343,8 +360,8 @@ For more information, consult your organization's Data Protection Officer.
             
             let html = `
                 <div class="location-display">
-                    <div class="location-main">📍 ${city}, ${country}</div>
-                    ${region ? `<div class="location-detail">${region}</div>` : ''}
+                    <div class="location-main">📍 ${esc(city)}, ${esc(country)}</div>
+                    ${region ? `<div class="location-detail">${esc(region)}</div>` : ''}
                 </div>
             `;
             
@@ -354,7 +371,7 @@ For more information, consult your organization's Data Protection Officer.
                 html += '<p><strong>Key Clues:</strong></p><ul>';
                 clues.slice(0, 4).forEach(clue => {
                     const clueText = typeof clue === 'string' ? clue : clue.evidence || clue;
-                    html += `<li>${this.truncateText(clueText, 80)}</li>`;
+                    html += `<li>${esc(this.truncateText(clueText, 80))}</li>`;
                 });
                 html += '</ul>';
             }
@@ -380,7 +397,7 @@ For more information, consult your organization's Data Protection Officer.
                 }));
             }
         } else {
-            content.innerHTML = `<p class="placeholder">Error: ${data.error || 'Unknown error'}</p>`;
+            content.innerHTML = `<p class="placeholder">Error: ${esc(data.error || 'Unknown error')}</p>`;
         }
     }
     
@@ -403,9 +420,9 @@ For more information, consult your organization's Data Protection Officer.
             }
             
             let html = `
-                <p><strong>Detected:</strong> ${personCount} person(s)</p>
-                <p><strong>Faces visible:</strong> ${detection.faces_visible || 'N/A'}</p>
-                <p><strong>ID Quality:</strong> ${detection.identification_quality || 'N/A'}</p>
+                <p><strong>Detected:</strong> ${esc(personCount)} person(s)</p>
+                <p><strong>Faces visible:</strong> ${esc(detection.faces_visible || 'N/A')}</p>
+                <p><strong>ID Quality:</strong> ${esc(detection.identification_quality || 'N/A')}</p>
             `;
             
             // Person summary chips
@@ -416,7 +433,7 @@ For more information, consult your organization's Data Protection Officer.
                     const demo = person.demographics || {};
                     const age = demo.age_range || '?';
                     const gender = demo.gender || '?';
-                    html += `<span class="person-chip">P${person.person_id}: ${age}, ${gender}</span>`;
+                    html += `<span class="person-chip">P${esc(person.person_id)}: ${esc(age)}, ${esc(gender)}</span>`;
                 });
                 html += '</div>';
             }
@@ -426,14 +443,14 @@ For more information, consult your organization's Data Protection Officer.
             if (features.length > 0) {
                 html += '<p><strong>Distinctive:</strong></p><ul>';
                 features.slice(0, 3).forEach(f => {
-                    html += `<li>${this.truncateText(f, 60)}</li>`;
+                    html += `<li>${esc(this.truncateText(f, 60))}</li>`;
                 });
                 html += '</ul>';
             }
             
             content.innerHTML = html;
         } else {
-            content.innerHTML = `<p class="placeholder">Error: ${data.error || 'Unknown error'}</p>`;
+            content.innerHTML = `<p class="placeholder">Error: ${esc(data.error || 'Unknown error')}</p>`;
         }
     }
     
@@ -462,21 +479,21 @@ For more information, consult your organization's Data Protection Officer.
             
             let html = `
                 <div class="verdict-display ${verdictClass}">
-                    <div class="verdict-text">${classification.toUpperCase()}</div>
-                    ${integrity !== null ? `<div class="verdict-score">Integrity: ${integrity}/100</div>` : ''}
+                    <div class="verdict-text">${esc(classification.toUpperCase())}</div>
+                    ${integrity !== null ? `<div class="verdict-score">Integrity: ${esc(integrity)}/100</div>` : ''}
                 </div>
             `;
             
             // Justification
             if (verdict.justification) {
-                html += `<p><em>${this.truncateText(verdict.justification, 150)}</em></p>`;
+                html += `<p><em>${esc(this.truncateText(verdict.justification, 150))}</em></p>`;
             }
             
             // Anomalies summary
             const anomalies = data.anomalies || {};
             const anomalyCount = this.countAnomalies(anomalies);
             if (anomalyCount > 0) {
-                html += `<p><strong>Anomalies detected:</strong> ${anomalyCount}</p>`;
+                html += `<p><strong>Anomalies detected:</strong> ${esc(anomalyCount)}</p>`;
             }
             
             // Recommendations
@@ -484,14 +501,14 @@ For more information, consult your organization's Data Protection Officer.
             if (recs.length > 0) {
                 html += '<p><strong>Recommendations:</strong></p><ul>';
                 recs.slice(0, 2).forEach(r => {
-                    html += `<li>${this.truncateText(r, 50)}</li>`;
+                    html += `<li>${esc(this.truncateText(r, 50))}</li>`;
                 });
                 html += '</ul>';
             }
             
             content.innerHTML = html;
         } else {
-            content.innerHTML = `<p class="placeholder">Error: ${data.error || 'Unknown error'}</p>`;
+            content.innerHTML = `<p class="placeholder">Error: ${esc(data.error || 'Unknown error')}</p>`;
         }
     }
     
@@ -509,7 +526,7 @@ For more information, consult your organization's Data Protection Officer.
             
             // Executive summary
             if (data.executive_summary) {
-                html += `<p><em>${this.truncateText(data.executive_summary, 200)}</em></p>`;
+                html += `<p><em>${esc(this.truncateText(data.executive_summary, 200))}</em></p>`;
             }
             
             // Temporal analysis grid
@@ -526,8 +543,8 @@ For more information, consult your organization's Data Protection Officer.
                 temporalItems.forEach(item => {
                     html += `
                         <div class="temporal-item">
-                            <div class="temporal-label">${item.label}</div>
-                            <div class="temporal-value">${item.value}</div>
+                            <div class="temporal-label">${esc(item.label)}</div>
+                            <div class="temporal-value">${esc(item.value)}</div>
                         </div>
                     `;
                 });
@@ -537,21 +554,21 @@ For more information, consult your organization's Data Protection Officer.
             // Sociocultural
             const socio = data.sociocultural_analysis || {};
             if (socio.socioeconomic_level) {
-                html += `<p><strong>Socioeconomic:</strong> ${socio.socioeconomic_level}</p>`;
+                html += `<p><strong>Socioeconomic:</strong> ${esc(socio.socioeconomic_level)}</p>`;
             }
             if (socio.cultural_context) {
-                html += `<p><strong>Cultural:</strong> ${this.truncateText(socio.cultural_context, 80)}</p>`;
+                html += `<p><strong>Cultural:</strong> ${esc(this.truncateText(socio.cultural_context, 80))}</p>`;
             }
             
             // Event classification
             const event = data.event_classification || {};
             if (event.event_type) {
-                html += `<p><strong>Event Type:</strong> ${event.event_type}</p>`;
+                html += `<p><strong>Event Type:</strong> ${esc(event.event_type)}</p>`;
             }
             
             content.innerHTML = html || '<p class="placeholder">No context data available</p>';
         } else {
-            content.innerHTML = `<p class="placeholder">Error: ${data.error || 'Unknown error'}</p>`;
+            content.innerHTML = `<p class="placeholder">Error: ${esc(data.error || 'Unknown error')}</p>`;
         }
     }
     
@@ -573,9 +590,9 @@ For more information, consult your organization's Data Protection Officer.
             
             html += `
                 <div class="inference-item">
-                    <span class="inference-order">${inf.order || '?'}</span>
-                    <span class="inference-text">${inf.inference || 'N/A'}</span>
-                    <span class="inference-confidence ${confClass}">${confidence}%</span>
+                    <span class="inference-order">${esc(inf.order || '?')}</span>
+                    <span class="inference-text">${esc(inf.inference || 'N/A')}</span>
+                    <span class="inference-confidence ${confClass}">${esc(confidence)}%</span>
                 </div>
             `;
         });
@@ -640,7 +657,7 @@ For more information, consult your organization's Data Protection Officer.
         this.jsonResults.textContent = JSON.stringify(results.json, null, 2);
         
         // For multi-frame, show a collage or summary preview
-        console.log('📊 Multi-frame results displayed:', frameCollection.length, 'frames');
+        log.info('Multi-frame results displayed:', frameCollection.length, 'frames');
     }
     
     displayPreview() {
@@ -648,7 +665,7 @@ For more information, consult your organization's Data Protection Officer.
         const roi = window.roiSelector?.getROI();
         
         if (!frame) {
-            console.warn('⚠️ No frame available for preview');
+            log.warn('No frame available for preview');
             return;
         }
         
@@ -732,7 +749,7 @@ For more information, consult your organization's Data Protection Officer.
                 this.copyJsonBtn.textContent = '📋 Copiar JSON';
             }, 2000);
         }).catch(err => {
-            console.error('Failed to copy:', err);
+            log.error('Failed to copy:', err);
             alert('Error al copiar al portapapeles');
         });
     }
@@ -752,7 +769,7 @@ For more information, consult your organization's Data Protection Officer.
         a.click();
         
         URL.revokeObjectURL(url);
-        console.log('💾 Report downloaded:', filename);
+        log.debug('Report downloaded:', filename);
     }
     
     resetAnalysis() {
@@ -773,6 +790,6 @@ For more information, consult your organization's Data Protection Officer.
         }
         
         window.roiSelector?.clearROI();
-        console.log('🔄 Analysis reset');
+        log.debug('Analysis reset');
     }
 }

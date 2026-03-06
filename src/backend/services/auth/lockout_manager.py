@@ -3,7 +3,7 @@ Account lockout management
 """
 
 import logging
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 logger = logging.getLogger(__name__)
 
@@ -28,8 +28,8 @@ class LockoutManager:
         # Check if account is locked
         if user_data.get("locked_until"):
             locked_until = datetime.fromisoformat(user_data["locked_until"])
-            if datetime.now() < locked_until:
-                remaining = (locked_until - datetime.now()).seconds // 60
+            if datetime.now(UTC) < locked_until:
+                remaining = (locked_until - datetime.now(UTC)).seconds // 60
                 return True, f"Account locked. Try again in {remaining} minutes"
             # Unlock account
             user_data["locked_until"] = None
@@ -52,7 +52,7 @@ class LockoutManager:
 
         # Lock account if max attempts exceeded
         if user_data["failed_login_attempts"] >= MAX_LOGIN_ATTEMPTS:
-            user_data["locked_until"] = (datetime.now() + LOCKOUT_DURATION).isoformat()
+            user_data["locked_until"] = (datetime.now(UTC) + LOCKOUT_DURATION).isoformat()
             logger.warning("🔒 Account locked due to failed attempts: %s", username)
             return True
 

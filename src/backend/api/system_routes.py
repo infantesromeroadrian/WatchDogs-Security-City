@@ -3,7 +3,7 @@ System routes: health, metrics, video upload
 """
 
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 
 from flask import Blueprint, jsonify, request
 
@@ -11,6 +11,7 @@ from ..config import METRICS_ENABLED, VIDEO_RETENTION_HOURS
 from ..services.video_service import VideoService
 from ..utils.cache_utils import get_cache_stats
 from ..utils.metrics_utils import get_agent_metrics
+from .middleware import auth_required
 
 logger = logging.getLogger(__name__)
 
@@ -28,12 +29,13 @@ def health_check():
         {
             "status": "healthy",
             "service": "video-analysis-agents",
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
     )
 
 
 @system_bp.route("/upload-video", methods=["POST"])
+@auth_required
 def upload_video():
     """
     Upload video file for analysis.
@@ -65,10 +67,12 @@ def upload_video():
 
     except (ValueError, TypeError, KeyError) as e:
         logger.error("❌ Upload error: %s", e)
-        return jsonify({"success": False, "error": str(e)}), 500
+        # M-8: Don't expose internal exception details to client
+        return jsonify({"success": False, "error": "Upload processing failed"}), 500
 
 
 @system_bp.route("/metrics", methods=["GET"])
+@auth_required
 def get_metrics():
     """Get agent metrics and cache statistics."""
     try:
@@ -83,10 +87,10 @@ def get_metrics():
                 "success": True,
                 "metrics": metrics,
                 "cache": cache_stats,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
         ), 200
 
     except (ValueError, TypeError, KeyError) as e:
         logger.error("❌ Error getting metrics: %s", e)
-        return jsonify({"success": False, "error": str(e)}), 500
+        return jsonify({"success": False, "error": "Failed to retrieve metrics"}), 500

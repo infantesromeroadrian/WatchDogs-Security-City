@@ -3,6 +3,7 @@
  * Coordinates communication with backend and delegates to specialized modules
  */
 
+import { log } from './modules/logger.js';
 import { ChatHandler } from './modules/chat-handler.js';
 import { MapHandler } from './modules/map-handler.js';
 import { UIManager } from './modules/ui-manager.js';
@@ -49,7 +50,7 @@ class APIClient {
             this.analyzeFrame();
         });
         
-        console.log('✅ APIClient initialized with modular architecture');
+        log.info('APIClient initialized with modular architecture');
     }
     
     async checkBackendConnection() {
@@ -73,14 +74,14 @@ class APIClient {
             if (response.ok) {
                 statusElement.textContent = '✅ Conectado al backend';
                 statusElement.className = 'connection-status connected';
-                console.log('✅ Backend connection successful');
+                log.info('Backend connection successful');
             } else {
                 throw new Error('Backend responded with error');
             }
         } catch (error) {
             statusElement.textContent = '❌ Backend desconectado';
             statusElement.className = 'connection-status disconnected';
-            console.error('❌ Backend connection failed:', error);
+            log.error('Backend connection failed:', error);
             
             // Retry after 10 seconds
             setTimeout(() => this.checkBackendConnection(), 10000);
@@ -92,7 +93,7 @@ class APIClient {
             // DEFENSIVE: Verify videoPlayer exists
             if (!window.videoPlayer) {
                 alert('Error: Video player no inicializado. Recarga la pagina.');
-                console.error('CRITICAL: videoPlayer not initialized!');
+                log.error('CRITICAL: videoPlayer not initialized!');
                 return;
             }
 
@@ -100,11 +101,11 @@ class APIClient {
             const frame = window.videoPlayer.getCapturedFrame();
             if (!frame) {
                 alert('Por favor captura un frame primero usando el boton "Capturar Frame"');
-                console.warn('No frame captured. User needs to capture frame first.');
+                log.warn('No frame captured. User needs to capture frame first.');
                 return;
             }
 
-            console.log('Frame obtained from videoPlayer');
+            log.debug('Frame obtained from videoPlayer');
 
             // Get ROI if selected
             const roi = window.roiSelector?.getROI();
@@ -112,12 +113,7 @@ class APIClient {
             // Show loading via UIManager
             this.uiManager.showLoading();
 
-            console.log('Sending frame for streaming analysis...');
-            if (roi) {
-                console.log('ROI Details:', JSON.stringify(roi, null, 2));
-            } else {
-                console.log('ROI: Full frame (no ROI selected)');
-            }
+            log.debug('Sending frame for streaming analysis...', roi ? { roi } : 'full frame');
 
             // Prepare request payload
             const payload = {
@@ -140,6 +136,8 @@ class APIClient {
                     signal: controller.signal
                 });
 
+                // H-8: Don't clear timeout after headers — restart it for the stream phase.
+                // Each chunk resets the timer so we only abort on true stalls.
                 clearTimeout(timeoutId);
 
                 if (!response.ok) {
@@ -157,9 +155,17 @@ class APIClient {
                 let finalReport = null;
                 let agentsCompleted = 0;
 
+                // H-8: Per-chunk stall timeout — if no data arrives for 60s, abort.
+                const STALL_TIMEOUT_MS = 60000;
+                let stallTimer = setTimeout(() => controller.abort(), STALL_TIMEOUT_MS);
+
                 while (true) {
                     const { done, value } = await reader.read();
                     if (done) break;
+
+                    // Reset stall timer on every received chunk
+                    clearTimeout(stallTimer);
+                    stallTimer = setTimeout(() => controller.abort(), STALL_TIMEOUT_MS);
 
                     buffer += decoder.decode(value, { stream: true });
 
@@ -191,23 +197,26 @@ class APIClient {
 
                             if (eventType === 'agent_update') {
                                 agentsCompleted++;
-                                console.log(`Agent completed (${agentsCompleted}): ${parsed.agent}`);
+                                log.info(`Agent completed (${agentsCompleted}): ${parsed.agent}`);
                                 this.uiManager.updateAgentCard(parsed.agent, parsed.result);
                             } else if (eventType === 'complete') {
-                                console.log('Analysis complete - all agents finished');
+                                log.info('Analysis complete - all agents finished');
                                 finalReport = parsed.final_report;
                             } else if (eventType === 'error') {
-                                console.error('Stream error:', parsed.error);
+                                log.error('Stream error:', parsed.error);
                                 throw new Error(parsed.error || 'Analysis failed');
                             }
                         } catch (parseError) {
                             if (parseError.message && !parseError.message.includes('JSON')) {
                                 throw parseError;
                             }
-                            console.warn('Failed to parse SSE event:', eventStr);
+                            log.warn('Failed to parse SSE event:', eventStr);
                         }
                     }
                 }
+
+                // H-8: Stream finished — clear stall timer
+                clearTimeout(stallTimer);
 
                 // Display final complete results
                 if (finalReport) {
@@ -226,7 +235,7 @@ class APIClient {
             }
 
         } catch (error) {
-            console.error('Analysis error:', error);
+            log.error('Analysis error:', error);
             this.uiManager.showError(error.message);
         }
     }
@@ -237,7 +246,7 @@ class APIClient {
         // DEFENSIVE: Ensure frame is captured before storing
         const capturedFrame = window.videoPlayer?.getCapturedFrame();
         if (!capturedFrame) {
-            console.error('❌ CRITICAL: No frame available from videoPlayer!');
+            log.error('CRITICAL: No frame available from videoPlayer!');
             this.uiManager.showError('Error interno: No se pudo obtener el frame capturado. Intenta capturar el frame nuevamente.');
             return;
         }
@@ -247,7 +256,7 @@ class APIClient {
         this.isMultiFrameAnalysis = false;  // Single frame analysis
         this.frameCollection = null;  // Clear multi-frame collection
         
-        console.log('✅ Frame stored in apiClient:', this.currentFrame ? 'YES' : 'NO');
+        log.debug('Frame stored in apiClient:', this.currentFrame ? 'YES' : 'NO');
         
         // Delegate UI updates to UIManager
         this.uiManager.displayResults(results);
@@ -261,7 +270,7 @@ class APIClient {
             window.professionalFeatures.enableButtons();
         }
         
-        console.log('📊 Results displayed and chat controls activated');
+        log.info('Results displayed and chat controls activated');
     }
     
     displayBatchResults(results, frameCollection) {
@@ -283,7 +292,7 @@ class APIClient {
             window.professionalFeatures.enableButtons();
         }
         
-        console.log('📊 Multi-frame results displayed');
+        log.info('Multi-frame results displayed');
     }
 }
 

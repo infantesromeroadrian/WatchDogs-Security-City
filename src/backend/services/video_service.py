@@ -17,6 +17,16 @@ MAX_VIDEO_SIZE_BYTES = MAX_VIDEO_SIZE_MB * 1024 * 1024
 logger = logging.getLogger(__name__)
 
 
+# M-4: Magic byte signatures for supported video containers
+_VIDEO_MAGIC_BYTES: dict[bytes, str] = {
+    b"\x00\x00\x00\x1cftyp": "mp4/mov",  # ISO Base Media (MP4, MOV, M4V)
+    b"\x00\x00\x00\x18ftyp": "mp4/mov",
+    b"\x00\x00\x00\x20ftyp": "mp4/mov",
+    b"\x1a\x45\xdf\xa3": "mkv/webm",  # Matroska/WebM (EBML header)
+    b"RIFF": "avi",  # AVI container (RIFF header — second check for AVI below)
+}
+
+
 class VideoService:
     """Service for handling video uploads and temporary storage."""
 
@@ -26,7 +36,31 @@ class VideoService:
         return Path(filename).suffix.lower() in ALLOWED_VIDEO_EXTENSIONS
 
     @staticmethod
-    def validate_video(file: FileStorage) -> dict[str, str | bool]:
+    def _check_magic_bytes(file: FileStorage) -> bool:
+        """
+        M-4: Validate file content matches a known video container format.
+
+        Reads the first 12 bytes and checks against known magic signatures.
+        Resets the file pointer after reading.
+        """
+        header = file.read(12)
+        file.seek(0)
+
+        if len(header) < 4:
+            return False
+
+        # Check direct prefix matches
+        for magic, _fmt in _VIDEO_MAGIC_BYTES.items():
+            if header[: len(magic)] == magic:
+                # AVI: RIFF header must also contain 'AVI ' at offset 8
+                if magic == b"RIFF":
+                    return len(header) >= 12 and header[8:12] == b"AVI "
+                return True
+
+        return False
+
+    @staticmethod
+    def validate_video(file: FileStorage) -> dict[str, str | bool | float]:
         """
         Validate uploaded video file.
 
@@ -48,6 +82,14 @@ class VideoService:
                 "error": f"File type not allowed. Allowed: {', '.join(ALLOWED_VIDEO_EXTENSIONS)}",
             }
 
+        # M-4: Check magic bytes (content validation, not just extension)
+        if not VideoService._check_magic_bytes(file):
+            logger.warning("⚠️ File %s has valid extension but invalid magic bytes", file.filename)
+            return {
+                "valid": False,
+                "error": "File content does not match a supported video format",
+            }
+
         # Check file size (if available)
         file.seek(0, os.SEEK_END)
         size = file.tell()
@@ -62,7 +104,7 @@ class VideoService:
         return {"valid": True}
 
     @staticmethod
-    def save_video(file: FileStorage) -> dict[str, str]:
+    def save_video(file: FileStorage) -> dict[str, str | bool | float]:
         """
         Save uploaded video to temporary storage.
 
@@ -70,7 +112,8 @@ class VideoService:
             file: Uploaded file object
 
         Returns:
-            Dict with 'success' bool, 'path' str, and optional 'error' str
+            Dict with 'success' bool, 'path' str, 'filename' str,
+            'size_mb' float, and optional 'error' str
         """
         try:
             # Validate file
@@ -79,7 +122,8 @@ class VideoService:
                 return {"success": False, "error": validation["error"]}
 
             # Generate secure filename with timestamp
-            original_filename = secure_filename(file.filename)
+            # file.filename is guaranteed non-None — validate_video checks it
+            original_filename = secure_filename(file.filename)  # type: ignore[arg-type]
             timestamp = int(time.time())
             filename = f"{timestamp}_{original_filename}"
             filepath = TEMP_VIDEO_PATH / filename
