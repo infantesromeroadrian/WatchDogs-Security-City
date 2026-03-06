@@ -253,6 +253,9 @@ class VideoPlayer {
      * @param {File} file - The original video file the browser can't decode
      */
     transcodeAndReload(file) {
+        // Hide the video element so the ugly native error message is not visible
+        // while uploading + transcoding. It will be shown again on success.
+        this.videoPlayer.style.display = 'none';
         this.showUploadStatus('⏳ Codec incompatible detectado. Subiendo para transcodificar...', 'info');
 
         const formData = new FormData();
