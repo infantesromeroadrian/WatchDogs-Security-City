@@ -1,9 +1,11 @@
 """
-Video processing service for handling video uploads and frame extraction.
+Video processing service for handling video uploads, frame extraction,
+and automatic transcoding for browser-incompatible codecs (H.265/VP9 → H.264).
 """
 
 import logging
 import os
+import subprocess
 import time
 from pathlib import Path
 
@@ -12,7 +14,20 @@ from werkzeug.utils import secure_filename
 
 from ..config import ALLOWED_VIDEO_EXTENSIONS, MAX_VIDEO_SIZE_MB, TEMP_VIDEO_PATH
 
+try:
+    import ffmpeg
+
+    FFMPEG_PROBE_AVAILABLE = True
+except ImportError:
+    FFMPEG_PROBE_AVAILABLE = False
+
 MAX_VIDEO_SIZE_BYTES = MAX_VIDEO_SIZE_MB * 1024 * 1024
+
+# Codecs that HTML5 <video> can natively decode in all major browsers
+_BROWSER_COMPATIBLE_CODECS = frozenset({"h264", "vp8", "theora", "av1"})
+
+# Max transcoding time (seconds) — 5 min covers ~100 MB with -preset fast
+_TRANSCODE_TIMEOUT_SECONDS = 300
 
 logger = logging.getLogger(__name__)
 
@@ -163,7 +178,8 @@ class VideoService:
             deleted_count = 0
 
             for video_file in TEMP_VIDEO_PATH.glob("*"):
-                if video_file.is_file():
+                # Skip dotfiles like .gitkeep
+                if video_file.is_file() and not video_file.name.startswith("."):
                     file_age = video_file.stat().st_mtime
                     if file_age < cutoff_time:
                         video_file.unlink()
@@ -181,3 +197,143 @@ class VideoService:
         except (OSError, IOError) as e:
             logger.error("❌ Cleanup failed: %s", e)
             return 0
+
+    # ====================================================================
+    # Codec detection & transcoding (H.265/VP9 → H.264 for browsers)
+    # ====================================================================
+
+    @staticmethod
+    def detect_video_codec(filepath: str) -> str | None:
+        """
+        Detect the primary video codec using ffprobe.
+
+        Args:
+            filepath: Path to the video file on disk
+
+        Returns:
+            Codec name (e.g. 'h264', 'hevc', 'vp9') or None on failure
+        """
+        if not FFMPEG_PROBE_AVAILABLE:
+            logger.warning("ffmpeg-python not installed — cannot detect codec")
+            return None
+
+        try:
+            probe = ffmpeg.probe(filepath)
+            for stream in probe.get("streams", []):
+                if stream.get("codec_type") == "video":
+                    codec = stream.get("codec_name")
+                    logger.info("Detected video codec: %s", codec)
+                    return codec
+        except ffmpeg.Error as e:
+            logger.error("ffprobe failed for %s: %s", filepath, e)
+
+        return None
+
+    @staticmethod
+    def needs_transcoding(codec_name: str | None) -> bool:
+        """
+        Check whether the codec requires transcoding for browser playback.
+
+        H.264, VP8, Theora and AV1 are universally supported.
+        H.265 (hevc), VP9-in-MP4, and exotic codecs are not.
+
+        Args:
+            codec_name: Codec identifier from ffprobe
+
+        Returns:
+            True if the codec is NOT browser-compatible
+        """
+        if codec_name is None:
+            return False
+        return codec_name.lower() not in _BROWSER_COMPATIBLE_CODECS
+
+    @staticmethod
+    def transcode_to_h264(input_path: str) -> dict[str, str | bool]:
+        """
+        Transcode a video file to H.264/AAC in an MP4 container.
+
+        Uses ``ffmpeg -c:v libx264 -preset fast -crf 23 -movflags faststart``
+        for broad browser compatibility and fast web start.
+
+        Args:
+            input_path: Path to the source video
+
+        Returns:
+            Dict with 'success' bool, 'output_path', 'filename', or 'error'
+        """
+        input_p = Path(input_path)
+        output_filename = f"{input_p.stem}_h264.mp4"
+        output_path = TEMP_VIDEO_PATH / output_filename
+
+        try:
+            logger.info("Transcoding %s → H.264 …", input_p.name)
+
+            result = subprocess.run(
+                [
+                    "ffmpeg",
+                    "-i",
+                    str(input_path),
+                    "-c:v",
+                    "libx264",
+                    "-profile:v",
+                    "high",
+                    "-level",
+                    "4.1",
+                    "-pix_fmt",
+                    "yuv420p",  # Force 8-bit 4:2:0 (universal browser support)
+                    "-preset",
+                    "fast",
+                    "-crf",
+                    "23",
+                    "-c:a",
+                    "aac",
+                    "-b:a",
+                    "128k",
+                    "-movflags",
+                    "faststart",
+                    "-y",
+                    str(output_path),
+                ],
+                capture_output=True,
+                text=True,
+                timeout=_TRANSCODE_TIMEOUT_SECONDS,
+            )
+
+            if result.returncode != 0:
+                # Log last 500 chars of stderr for diagnostics
+                logger.error("ffmpeg exited %s: %s", result.returncode, result.stderr[-500:])
+                return {"success": False, "error": "Transcoding failed"}
+
+            size_mb = output_path.stat().st_size / (1024 * 1024)
+            logger.info("Transcoded successfully: %s (%.1f MB)", output_filename, size_mb)
+
+            return {
+                "success": True,
+                "output_path": str(output_path),
+                "filename": output_filename,
+                "size_mb": str(round(size_mb, 2)),
+            }
+
+        except subprocess.TimeoutExpired:
+            logger.error(
+                "Transcoding timed out after %ss for %s",
+                _TRANSCODE_TIMEOUT_SECONDS,
+                input_p.name,
+            )
+            if output_path.exists():
+                output_path.unlink()
+            return {
+                "success": False,
+                "error": "Transcoding timed out (max 5 minutes)",
+            }
+
+        except FileNotFoundError:
+            logger.error("ffmpeg binary not found in PATH")
+            return {
+                "success": False,
+                "error": "ffmpeg not installed on server",
+            }
+
+        except OSError as e:
+            logger.error("Transcoding OS error: %s", e)
+            return {"success": False, "error": "Transcoding system error"}

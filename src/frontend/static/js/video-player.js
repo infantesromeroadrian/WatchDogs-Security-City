@@ -27,6 +27,10 @@ class VideoPlayer {
         this.mediaType = null;
         /** @type {string|null} H-9: Track Object URL for proper revocation */
         this._currentObjectURL = null;
+        /** @type {boolean} Prevent infinite transcode loop on repeated errors */
+        this._transcodeAttempted = false;
+        /** @type {boolean} Suppress error handler while swapping video source */
+        this._isSwappingSource = false;
 
         this.init();
     }
@@ -75,16 +79,25 @@ class VideoPlayer {
             log.info('Video loaded successfully');
         });
 
-        // Handle unsupported codecs / corrupt files
+        // Handle unsupported codecs / corrupt files — auto-transcode to H.264
         this.videoPlayer.addEventListener('error', () => {
+            // Ignore transient errors while swapping source (e.g. during transcodeAndReload)
+            if (this._isSwappingSource) {
+                log.debug('Ignoring transient video error during source swap');
+                return;
+            }
             const err = this.videoPlayer.error;
             const code = err ? err.code : 0;
             // MediaError codes: 1=ABORTED, 2=NETWORK, 3=DECODE, 4=SRC_NOT_SUPPORTED
-            if (code === 4 || code === 3) {
-                log.warn('Video codec not supported by browser, code:', code);
+            if ((code === 4 || code === 3) && this.currentVideoFile && !this._transcodeAttempted) {
+                log.warn('Video codec not supported by browser (code:', code, ') — requesting server transcode');
+                this._transcodeAttempted = true;
+                this.transcodeAndReload(this.currentVideoFile);
+            } else if (code === 4 || code === 3) {
+                // Already attempted transcoding or no file available
+                log.error('Video still unplayable after transcode attempt, code:', code);
                 this.showUploadStatus(
-                    '⚠️ Codec de video no soportado por el navegador (H.265/VP9). ' +
-                    'Prueba con un video H.264 MP4, o sube una imagen directamente.',
+                    '❌ No se pudo reproducir el video. Prueba con otro archivo o sube una imagen.',
                     'error'
                 );
             } else {
@@ -109,6 +122,7 @@ class VideoPlayer {
         this.mediaType = 'video';
         this.currentVideoFile = file;
         this.capturedFrame = null;
+        this._transcodeAttempted = false; // Reset for each new video
 
         // Restore video element & controls (may have been hidden by image mode)
         this.videoPlayer.style.display = 'block';
@@ -226,6 +240,124 @@ class VideoPlayer {
         };
 
         reader.readAsDataURL(file);
+    }
+
+    // ========================================================================
+    // Server-side transcoding (H.265/VP9 → H.264)
+    // ========================================================================
+
+    /**
+     * Upload the video to the server for transcoding to H.264 and reload it.
+     * Uses XMLHttpRequest for upload progress feedback.
+     * @param {File} file - The original video file the browser can't decode
+     */
+    transcodeAndReload(file) {
+        this.showUploadStatus('⏳ Codec incompatible detectado. Subiendo para transcodificar...', 'info');
+
+        const formData = new FormData();
+        formData.append('video', file);
+
+        const xhr = new XMLHttpRequest();
+
+        // --- Upload progress ---
+        xhr.upload.addEventListener('progress', (e) => {
+            if (e.lengthComputable) {
+                const pct = Math.round((e.loaded / e.total) * 100);
+                this.showUploadStatus(`⏳ Subiendo video: ${pct}%`, 'info');
+            }
+        });
+
+        // --- Upload complete → now server is transcoding ---
+        xhr.upload.addEventListener('load', () => {
+            this.showUploadStatus('⏳ Transcodificando a H.264 (puede tardar 1-2 min)...', 'info');
+        });
+
+        // --- Server response ---
+        xhr.addEventListener('load', () => {
+            try {
+                const data = JSON.parse(xhr.responseText);
+
+                if (xhr.status === 200 && data.success && data.video_url) {
+                    // Revoke the old Object URL
+                    if (this._currentObjectURL) {
+                        URL.revokeObjectURL(this._currentObjectURL);
+                        this._currentObjectURL = null;
+                    }
+
+                    // Suppress error handler while swapping to transcoded source
+                    this._isSwappingSource = true;
+
+                    // Listen for metadata on the transcoded video (one-time)
+                    this.videoPlayer.addEventListener('loadedmetadata', () => {
+                        this._isSwappingSource = false;
+                        this.captureBtn.disabled = false;
+                        log.info(
+                            'Transcoded video ready:',
+                            this.videoPlayer.videoWidth, 'x', this.videoPlayer.videoHeight
+                        );
+                    }, { once: true });
+
+                    // Also clear the flag on error so we don't stay stuck
+                    this.videoPlayer.addEventListener('error', () => {
+                        this._isSwappingSource = false;
+                    }, { once: true });
+
+                    // Load the transcoded video from the server
+                    this.videoPlayer.src = data.video_url;
+                    this.videoPlayer.load();
+
+                    // Make sure player section and controls are visible
+                    this.playerSection.style.display = 'block';
+                    this.videoPlayer.style.display = 'block';
+                    this.playPauseBtn.style.display = '';
+                    this.captureBtn.style.display = '';
+
+                    // Restore ROI canvas to absolute overlay mode
+                    const roiCanvas = document.getElementById('roiCanvas');
+                    if (roiCanvas) {
+                        roiCanvas.style.position = 'absolute';
+                        roiCanvas.style.maxWidth = '';
+                        roiCanvas.style.height = '100%';
+                    }
+
+                    const codec = data.original_codec || 'desconocido';
+                    this.showUploadStatus(
+                        `✅ Video transcodificado (${codec} → H.264). Listo para capturar y analizar.`,
+                        'success'
+                    );
+                    log.info('Transcode complete:', data);
+                } else {
+                    const errMsg = data.error || 'Error desconocido';
+                    log.error('Transcode response error:', errMsg);
+                    this.showUploadStatus(`❌ Transcodificacion fallida: ${errMsg}`, 'error');
+                }
+            } catch (parseErr) {
+                log.error('Failed to parse transcode response:', parseErr);
+                this.showUploadStatus('❌ Respuesta inesperada del servidor.', 'error');
+            }
+        });
+
+        // --- Network error ---
+        xhr.addEventListener('error', () => {
+            log.error('Transcode XHR network error');
+            this.showUploadStatus(
+                '❌ Error de red al transcodificar. Prueba con un video H.264 MP4 o sube una imagen.',
+                'error'
+            );
+        });
+
+        // --- Timeout ---
+        xhr.addEventListener('timeout', () => {
+            log.error('Transcode XHR timed out');
+            this.showUploadStatus(
+                '❌ Timeout al transcodificar. El video puede ser demasiado grande.',
+                'error'
+            );
+        });
+
+        xhr.open('POST', '/api/transcode-video');
+        xhr.timeout = 360000; // 6 min client-side (> server's 5 min ffmpeg timeout)
+        xhr.send(formData);
     }
 
     // ========================================================================
