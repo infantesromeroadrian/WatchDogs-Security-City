@@ -22,6 +22,7 @@ from langgraph.checkpoint.memory import InMemorySaver
 
 from ...utils.image_utils import verify_image_size
 from .agent_runners import AgentRunners
+from .chat_graph import ChatGraphBuilder
 from .graph_builder import GraphBuilder
 from .multi_frame_handler import MultiFrameHandler
 from .state import DEFAULT_AGENTS, AgentType, AnalysisState
@@ -55,11 +56,14 @@ class CoordinatorAgent:
             checkpointer=self.checkpointer,
         )
 
+        # Build chat graph with same checkpointer for shared thread state
+        self.chat_graph = ChatGraphBuilder(checkpointer=self.checkpointer)
+
         # Initialize multi-frame handler
         self.multi_frame_handler = MultiFrameHandler(self.analyze_frame)
 
         logger.info(
-            "CoordinatorAgent initialized with LangGraph checkpointer (7 parallel CIA-level agents)"
+            "CoordinatorAgent initialized with LangGraph checkpointer (7 agents + chat graph)"
         )
 
     def analyze_frame(
@@ -238,3 +242,37 @@ class CoordinatorAgent:
                 - summary: Overall analysis
         """
         return self.multi_frame_handler.analyze_multi_frame(frames, enable_context_accumulation)
+
+    def chat(
+        self,
+        user_message: str,
+        image_base64: str = "",
+        analysis_summary: str = "",
+        thread_id: str = "",
+    ) -> str:
+        """
+        Conversational chat with LangGraph message history.
+
+        Uses the chat graph with MessagesState for proper multi-turn
+        HumanMessage/AIMessage alternation. The checkpointer maintains
+        conversation history per thread_id.
+
+        Args:
+            user_message: The user's question.
+            image_base64: Base64 image (only needed on first call per session).
+            analysis_summary: Previous analysis results (only on first call).
+            thread_id: Session thread ID for conversation persistence.
+
+        Returns:
+            The assistant's response text.
+        """
+        try:
+            return self.chat_graph.chat(
+                user_message=user_message,
+                image_base64=image_base64,
+                analysis_summary=analysis_summary,
+                thread_id=thread_id,
+            )
+        except (ValueError, TypeError, KeyError, AttributeError) as e:
+            logger.error("Chat graph error: %s", e)
+            return f"Error en el chat: {e!s}"

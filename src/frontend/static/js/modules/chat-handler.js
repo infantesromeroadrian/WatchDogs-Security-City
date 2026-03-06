@@ -153,7 +153,21 @@ export class ChatHandler {
     }
     
     async buildSingleFrameContext(userMessage, roi = null) {
-        // Build context string that includes user message, analysis results, and chat history
+        // SESSION-BASED MODE with LangGraph MessagesState
+        // The server maintains conversation history via LangGraph checkpointer.
+        // We only send the user's message — no need to rebuild context client-side.
+        // Image is stored server-side and not re-transmitted.
+        if (this.apiClient.currentSessionId && !roi) {
+            log.debug('Using LangGraph session chat (no image, no context rebuild)', {
+                sessionId: this.apiClient.currentSessionId.slice(0, 8),
+            });
+            return {
+                session_id: this.apiClient.currentSessionId,
+                message: userMessage
+            };
+        }
+        
+        // LEGACY/ROI MODE: Build full context string for non-session chat
         let contextString = `Pregunta del usuario: ${userMessage}\n\n`;
         
         // Add analysis results if available
@@ -168,19 +182,6 @@ export class ChatHandler {
                 contextString += `${msg.role}: ${msg.content}\n`;
             });
             contextString += '\n';
-        }
-        
-        // SESSION-BASED MODE: Use session_id to avoid re-sending the full image
-        // The server stores the image from the initial analysis, so we only need
-        // to send the session_id and the chat context (saves 1-5MB per message)
-        if (this.apiClient.currentSessionId && !roi) {
-            log.debug('Using session-based chat (no image re-transmission)', {
-                sessionId: this.apiClient.currentSessionId.slice(0, 8),
-            });
-            return {
-                session_id: this.apiClient.currentSessionId,
-                context: contextString
-            };
         }
         
         // LEGACY/ROI MODE: Send full frame (needed when ROI changes between messages)

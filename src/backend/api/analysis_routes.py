@@ -285,19 +285,23 @@ def analyze_frame_stream():
 
 def _handle_session_chat(data: dict) -> tuple:
     """
-    Handle chat using session_id — no image re-transmission needed.
+    Handle chat using session_id with LangGraph MessagesState.
 
-    Retrieves the image(s) from the server-side session store and uses
-    the VisionAgent for conversational follow-up analysis.
+    Uses the coordinator's chat graph for proper multi-turn conversation
+    with automatic message history via LangGraph checkpointer.
+    The image is only sent on the first chat message per session.
 
     Args:
-        data: Request JSON with session_id and context.
+        data: Request JSON with session_id, message, and optional context.
 
     Returns:
         Flask response tuple (jsonify, status_code).
     """
     session_id = data["session_id"]
-    context = data.get("context", "")
+    user_message = data.get("message", data.get("context", ""))
+
+    if not user_message:
+        return jsonify({"success": False, "error": "No message provided"}), 400
 
     if not session_store.session_exists(session_id):
         return jsonify(
@@ -307,34 +311,44 @@ def _handle_session_chat(data: dict) -> tuple:
             }
         ), 404
 
-    # Retrieve the most recent image from session
-    session_images = session_store.get_session_images(session_id)
-    if not session_images:
-        return jsonify(
-            {
-                "success": False,
-                "error": "No images found in session. Please analyze a frame first.",
-            }
-        ), 400
+    # Get thread_id for LangGraph conversation persistence
+    thread_id = session_store.get_thread_id(session_id)
 
-    # Use the most recently stored image
-    latest_image_id = max(session_images, key=lambda iid: session_images[iid].timestamp)
-    image_data = session_images[latest_image_id]
-    frame_base64 = image_data.image_base64
+    # Retrieve image and analysis results from session
+    session_images = session_store.get_session_images(session_id)
+    analysis_result = session_store.get_analysis_result(session_id)
+
+    # Image is only needed for the first chat message — the checkpointer
+    # retains the multimodal context from the first invocation
+    image_base64 = ""
+    analysis_summary = ""
+
+    if session_images:
+        latest_image_id = max(session_images, key=lambda iid: session_images[iid].timestamp)
+        image_base64 = session_images[latest_image_id].image_base64
+
+    if analysis_result and isinstance(analysis_result, dict):
+        # Extract text report as summary for the LLM context
+        analysis_summary = analysis_result.get("text", "")
+        if not analysis_summary and "json" in analysis_result:
+            analysis_summary = str(analysis_result["json"])[:2000]
 
     logger.info(
-        "Processing session-based chat (session=%s, image=%s, context=%s chars)",
+        "Processing LangGraph chat (session=%s, thread=%s, msg=%s chars)",
         session_id[:8],
-        latest_image_id[:8],
-        len(context),
+        thread_id[:8],
+        len(user_message),
     )
 
-    # H-6: reuse module-level singleton
-    vision_agent = _chat_vision_agent
-    result = vision_agent.analyze(frame_base64, context)
-    response_text = result.get("analysis", "No response generated")
+    # Use coordinator's chat graph — LangGraph manages message history
+    response_text = coordinator.chat(
+        user_message=user_message,
+        image_base64=image_base64,
+        analysis_summary=analysis_summary,
+        thread_id=thread_id,
+    )
 
-    logger.info("Session-based chat query complete (session=%s)", session_id[:8])
+    logger.info("LangGraph chat complete (session=%s)", session_id[:8])
     locations = location_extractor.extract(response_text)
     return jsonify(
         {
