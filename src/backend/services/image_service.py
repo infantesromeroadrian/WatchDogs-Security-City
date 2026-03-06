@@ -111,7 +111,7 @@ class ImageService:
     @staticmethod
     def prepare_for_analysis(
         base64_frame: str, roi_coords: dict | None = None
-    ) -> tuple[Image.Image, str]:
+    ) -> tuple[Image.Image, str, dict]:
         """
         Prepare frame for agent analysis by decoding and optionally cropping ROI.
 
@@ -120,12 +120,15 @@ class ImageService:
             roi_coords: Optional dict with keys: x, y, width, height
 
         Returns:
-            Tuple of (PIL Image, base64 string for OpenAI)
+            Tuple of (PIL Image, base64 string for API, crop metadata dict).
+            Metadata contains: roi_applied, original_size, analysis_size, roi_coords.
         """
         # Decode frame
         image = ImageService.decode_base64_image(base64_frame)
+        original_size = {"width": image.width, "height": image.height}
 
         # Crop ROI if coordinates provided
+        roi_applied = bool(roi_coords)
         if roi_coords:
             x = roi_coords.get("x", 0)
             y = roi_coords.get("y", 0)
@@ -150,4 +153,11 @@ class ImageService:
         # Convert to base64 for OpenAI
         base64_for_api = ImageService.image_to_base64(image, format="PNG")
 
-        return image, base64_for_api
+        metadata = {
+            "roi_applied": roi_applied,
+            "original_size": original_size,
+            "analysis_size": {"width": image.width, "height": image.height},
+            "roi_coords": roi_coords,
+        }
+
+        return image, base64_for_api, metadata

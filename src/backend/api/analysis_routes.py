@@ -169,7 +169,19 @@ def analyze_frame():
             logger.info("ℹ️ Context provided: %s chars", len(context))
 
         # Prepare image (decode and crop ROI if provided)
-        _image, prepared_base64 = image_service.prepare_for_analysis(frame_base64, roi_coords)
+        _image, prepared_base64, crop_meta = image_service.prepare_for_analysis(
+            frame_base64, roi_coords
+        )
+
+        # Inject ROI context so agents focus on the cropped region
+        if crop_meta["roi_applied"]:
+            roi_ctx = (
+                "[ROI ANALYSIS] This image is a cropped Region of Interest from a larger frame. "
+                "Analyze ONLY what is visible in this specific crop "
+                f"({crop_meta['analysis_size']['width']}x{crop_meta['analysis_size']['height']}px). "
+                "Do not speculate about content outside this region."
+            )
+            context = f"{roi_ctx}\n{context}" if context else roi_ctx
 
         # Create session and store image for subsequent chat messages
         session_id = data.get("session_id") or session_store.create_session()
@@ -194,6 +206,9 @@ def analyze_frame():
                 "results": results,
                 "session_id": session_id,
                 "image_id": image_id,
+                "roi_applied": crop_meta["roi_applied"],
+                "original_size": crop_meta["original_size"],
+                "analysis_size": crop_meta["analysis_size"],
             }
         ), 200
 
@@ -231,7 +246,30 @@ def analyze_frame_stream():
         if not is_valid:
             return jsonify({"success": False, "error": error_msg}), 413
 
-        _image, prepared_base64 = image_service.prepare_for_analysis(frame_base64, roi_coords)
+        _image, prepared_base64, crop_meta = image_service.prepare_for_analysis(
+            frame_base64, roi_coords
+        )
+
+        # Log ROI info for debugging (matching non-SSE endpoint)
+        logger.debug("SSE ROI_COORDS: %s (type=%s)", roi_coords, type(roi_coords).__name__)
+        if crop_meta["roi_applied"]:
+            logger.info(
+                "SSE ROI applied: %sx%s → %sx%s",
+                crop_meta["original_size"]["width"],
+                crop_meta["original_size"]["height"],
+                crop_meta["analysis_size"]["width"],
+                crop_meta["analysis_size"]["height"],
+            )
+
+        # Inject ROI context so agents focus on the cropped region
+        if crop_meta["roi_applied"]:
+            roi_ctx = (
+                "[ROI ANALYSIS] This image is a cropped Region of Interest from a larger frame. "
+                "Analyze ONLY what is visible in this specific crop "
+                f"({crop_meta['analysis_size']['width']}x{crop_meta['analysis_size']['height']}px). "
+                "Do not speculate about content outside this region."
+            )
+            context = f"{roi_ctx}\n{context}" if context else roi_ctx
 
         # Create session and store image for subsequent chat messages
         session_id = data.get("session_id") or session_store.create_session()
@@ -244,8 +282,15 @@ def analyze_frame_stream():
                 # M-5: Send initial heartbeat so proxies/clients know the stream is alive
                 yield ": heartbeat\n\n"
 
-                # Send session info as first event so frontend can store it
-                yield f"event: session\ndata: {json.dumps({'session_id': session_id, 'image_id': image_id})}\n\n"
+                # Send session info with crop metadata so frontend can show ROI feedback
+                session_event = {
+                    "session_id": session_id,
+                    "image_id": image_id,
+                    "roi_applied": crop_meta["roi_applied"],
+                    "original_size": crop_meta["original_size"],
+                    "analysis_size": crop_meta["analysis_size"],
+                }
+                yield f"event: session\ndata: {json.dumps(session_event)}\n\n"
 
                 final_report = None
                 for update in coordinator.analyze_frame_stream(

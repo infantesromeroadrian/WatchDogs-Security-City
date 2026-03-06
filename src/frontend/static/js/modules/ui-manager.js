@@ -148,8 +148,50 @@ For more information, consult your organization's Data Protection Officer.
         // Reset CIA Intel dashboard
         this.resetIntelDashboard();
         
+        // Clear any previous ROI feedback
+        this._clearROIFeedback();
+        
         // Scroll to analysis section
         this.analysisSection.scrollIntoView({ behavior: 'smooth' });
+    }
+    
+    /**
+     * Show ROI crop confirmation to user during analysis.
+     * Called when the SSE session event confirms ROI was applied server-side.
+     */
+    showROIFeedback(cropSize, originalSize) {
+        // Update the summary text to show ROI info
+        if (this.summaryText) {
+            this.summaryText.textContent =
+                `Analyzing ROI: ${cropSize.width}x${cropSize.height}px ` +
+                `(from ${originalSize.width}x${originalSize.height}) with 7 agents...`;
+        }
+        
+        // Add a visible ROI badge above the agent cards
+        const dashboard = document.getElementById('intelSummary');
+        if (dashboard) {
+            const existing = document.getElementById('roiFeedbackBadge');
+            if (existing) existing.remove();
+            
+            const badge = document.createElement('div');
+            badge.id = 'roiFeedbackBadge';
+            badge.style.cssText =
+                'background: linear-gradient(135deg, #00d2ff22, #764ba222); ' +
+                'border: 1px solid #00d2ff; border-radius: 8px; padding: 8px 16px; ' +
+                'margin-bottom: 12px; display: flex; align-items: center; gap: 8px; ' +
+                'font-size: 13px; color: #00d2ff;';
+            badge.innerHTML =
+                `<span style="font-size: 16px;">&#9986;</span> ` +
+                `<strong>ROI Active</strong> &mdash; ` +
+                `${esc(String(cropSize.width))}x${esc(String(cropSize.height))}px crop ` +
+                `from ${esc(String(originalSize.width))}x${esc(String(originalSize.height))} original`;
+            dashboard.prepend(badge);
+        }
+    }
+    
+    _clearROIFeedback() {
+        const badge = document.getElementById('roiFeedbackBadge');
+        if (badge) badge.remove();
     }
     
     displayResults(results) {

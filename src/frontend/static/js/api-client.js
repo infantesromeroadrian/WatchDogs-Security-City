@@ -200,6 +200,15 @@ class APIClient {
                                 // Capture server-side session for image persistence
                                 this.currentSessionId = parsed.session_id;
                                 log.info(`Session established: ${parsed.session_id?.slice(0, 8)}`);
+
+                                // Show ROI crop confirmation to user
+                                if (parsed.roi_applied) {
+                                    const orig = parsed.original_size;
+                                    const crop = parsed.analysis_size;
+                                    const roiMsg = `Analyzing ROI: ${crop.width}x${crop.height}px (from ${orig.width}x${orig.height})`;
+                                    log.info(roiMsg);
+                                    this.uiManager.showROIFeedback(crop, orig);
+                                }
                             } else if (eventType === 'agent_update') {
                                 agentsCompleted++;
                                 log.info(`Agent completed (${agentsCompleted}): ${parsed.agent}`);

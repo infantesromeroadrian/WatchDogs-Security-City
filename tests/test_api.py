@@ -80,6 +80,12 @@ class TestAPIEndpoints:
         mock_image_service.prepare_for_analysis.return_value = (
             mock_image,
             "data:image/png;base64,mock",
+            {
+                "roi_applied": False,
+                "original_size": {"width": 100, "height": 100},
+                "analysis_size": {"width": 100, "height": 100},
+                "roi_coords": None,
+            },
         )
 
         # Mock coordinator
