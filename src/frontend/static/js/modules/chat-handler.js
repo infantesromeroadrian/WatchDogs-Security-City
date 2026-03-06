@@ -170,13 +170,27 @@ export class ChatHandler {
             contextString += '\n';
         }
         
-        // DEBUG: Log the frame type and value
+        // SESSION-BASED MODE: Use session_id to avoid re-sending the full image
+        // The server stores the image from the initial analysis, so we only need
+        // to send the session_id and the chat context (saves 1-5MB per message)
+        if (this.apiClient.currentSessionId && !roi) {
+            log.debug('Using session-based chat (no image re-transmission)', {
+                sessionId: this.apiClient.currentSessionId.slice(0, 8),
+            });
+            return {
+                session_id: this.apiClient.currentSessionId,
+                context: contextString
+            };
+        }
+        
+        // LEGACY/ROI MODE: Send full frame (needed when ROI changes between messages)
         const frameValue = this.apiClient.currentFrame;
-        log.debug('buildSingleFrameContext:', {
+        log.debug('buildSingleFrameContext (legacy mode):', {
             frameType: typeof frameValue,
             isString: typeof frameValue === 'string',
             frameLength: frameValue ? (typeof frameValue === 'string' ? frameValue.length : 'N/A') : 0,
             roi: roi || null,
+            hasSessionId: !!this.apiClient.currentSessionId,
         });
         
         // DEFENSIVE: Validate frame is a string before sending

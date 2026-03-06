@@ -2,8 +2,8 @@
 Analysis routes: frame analysis, chat, batch processing
 """
 
-import logging
 import json
+import logging
 import re
 from datetime import UTC, datetime
 
@@ -13,6 +13,7 @@ from ..agents.coordinator import CoordinatorAgent
 from ..agents.vision_agent import VisionAgent
 from ..config import MAX_BASE64_SIZE_BYTES, MAX_BASE64_SIZE_MB
 from ..services.image_service import ImageService
+from ..services.session_store import session_store
 from ..utils.location_extractor import LocationExtractor
 from .middleware import auth_required
 
@@ -170,16 +171,31 @@ def analyze_frame():
         # Prepare image (decode and crop ROI if provided)
         _image, prepared_base64 = image_service.prepare_for_analysis(frame_base64, roi_coords)
 
-        # Execute multi-agent analysis
-        results = coordinator.analyze_frame(prepared_base64, context)
+        # Create session and store image for subsequent chat messages
+        session_id = data.get("session_id") or session_store.create_session()
+        thread_id = session_store.get_thread_id(session_id)
+        image_id = session_store.store_image(session_id, prepared_base64, "analysis frame")
+
+        # Execute multi-agent analysis with session thread_id
+        results = coordinator.analyze_frame(prepared_base64, context, thread_id=thread_id)
+
+        # Store analysis results in session for chat reference
+        session_store.store_analysis_result(session_id, results)
 
         # Add timestamp
         if "json" in results:
             results["json"]["timestamp"] = datetime.now(UTC).isoformat()
 
-        logger.info("✅ Frame analysis complete")
+        logger.info("Frame analysis complete (session=%s)", session_id[:8])
 
-        return jsonify({"success": True, "results": results}), 200
+        return jsonify(
+            {
+                "success": True,
+                "results": results,
+                "session_id": session_id,
+                "image_id": image_id,
+            }
+        ), 200
 
     except ValueError as e:
         logger.error("Validation error: %s", e)
@@ -217,15 +233,33 @@ def analyze_frame_stream():
 
         _image, prepared_base64 = image_service.prepare_for_analysis(frame_base64, roi_coords)
 
+        # Create session and store image for subsequent chat messages
+        session_id = data.get("session_id") or session_store.create_session()
+        thread_id = session_store.get_thread_id(session_id)
+        image_id = session_store.store_image(session_id, prepared_base64, "analysis frame")
+
         def generate():
             """SSE generator yielding events as agents complete."""
             try:
                 # M-5: Send initial heartbeat so proxies/clients know the stream is alive
                 yield ": heartbeat\n\n"
 
-                for update in coordinator.analyze_frame_stream(prepared_base64, context):
+                # Send session info as first event so frontend can store it
+                yield f"event: session\ndata: {json.dumps({'session_id': session_id, 'image_id': image_id})}\n\n"
+
+                final_report = None
+                for update in coordinator.analyze_frame_stream(
+                    prepared_base64, context, thread_id=thread_id
+                ):
                     event_type = update.get("event", "unknown")
                     yield f"event: {event_type}\ndata: {json.dumps(update)}\n\n"
+                    if event_type == "complete":
+                        final_report = update.get("final_report")
+
+                # Store analysis results in session for chat reference
+                if final_report:
+                    session_store.store_analysis_result(session_id, final_report)
+
             except Exception as e:
                 logger.error("SSE stream error: %s", e)
                 # M-10: Don't expose raw exception to client
@@ -249,13 +283,82 @@ def analyze_frame_stream():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+def _handle_session_chat(data: dict) -> tuple:
+    """
+    Handle chat using session_id — no image re-transmission needed.
+
+    Retrieves the image(s) from the server-side session store and uses
+    the VisionAgent for conversational follow-up analysis.
+
+    Args:
+        data: Request JSON with session_id and context.
+
+    Returns:
+        Flask response tuple (jsonify, status_code).
+    """
+    session_id = data["session_id"]
+    context = data.get("context", "")
+
+    if not session_store.session_exists(session_id):
+        return jsonify(
+            {
+                "success": False,
+                "error": "Session expired or not found. Please analyze a frame first.",
+            }
+        ), 404
+
+    # Retrieve the most recent image from session
+    session_images = session_store.get_session_images(session_id)
+    if not session_images:
+        return jsonify(
+            {
+                "success": False,
+                "error": "No images found in session. Please analyze a frame first.",
+            }
+        ), 400
+
+    # Use the most recently stored image
+    latest_image_id = max(session_images, key=lambda iid: session_images[iid].timestamp)
+    image_data = session_images[latest_image_id]
+    frame_base64 = image_data.image_base64
+
+    logger.info(
+        "Processing session-based chat (session=%s, image=%s, context=%s chars)",
+        session_id[:8],
+        latest_image_id[:8],
+        len(context),
+    )
+
+    # H-6: reuse module-level singleton
+    vision_agent = _chat_vision_agent
+    result = vision_agent.analyze(frame_base64, context)
+    response_text = result.get("analysis", "No response generated")
+
+    logger.info("Session-based chat query complete (session=%s)", session_id[:8])
+    locations = location_extractor.extract(response_text)
+    return jsonify(
+        {
+            "success": True,
+            "response": response_text,
+            "session_id": session_id,
+            "extracted_locations": locations or None,
+        }
+    ), 200
+
+
 @analysis_bp.route("/chat-query", methods=["POST"])
 @auth_required
 def chat_query():
     """
     Chat endpoint for conversational analysis of image(s).
 
-    Expected JSON (single-frame):
+    Expected JSON (session-based — preferred, no image re-transmission):
+    {
+        "session_id": "uuid-from-analyze-frame",
+        "context": "conversation context"
+    }
+
+    OR (legacy single-frame — backwards compatible):
     {
         "frame": "base64_encoded_image",
         "context": "conversation context"
@@ -275,6 +378,11 @@ def chat_query():
 
         if not data:
             return jsonify({"success": False, "error": "No data provided"}), 400
+
+        # SESSION-BASED MODE — retrieve image from server-side session store
+        # This avoids re-sending 1-5MB base64 on every chat message
+        if "session_id" in data and "frame" not in data and "frames" not in data:
+            return _handle_session_chat(data)
 
         # MULTI-FRAME MODE
         if "frames" in data and isinstance(data["frames"], list):
@@ -415,7 +523,7 @@ def chat_query():
             ), 200
 
         return jsonify(
-            {"success": False, "error": "Invalid payload: need 'frame' or 'frames'"}
+            {"success": False, "error": "Invalid payload: need 'session_id', 'frame', or 'frames'"}
         ), 400
 
     except ValueError as e:

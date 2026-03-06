@@ -13,8 +13,12 @@ CIA-Level OSINT Analysis with 6 parallel agents:
 """
 
 import logging
+import uuid
 from collections.abc import Generator
 from typing import Any
+
+from langchain_core.runnables import RunnableConfig
+from langgraph.checkpoint.memory import InMemorySaver
 
 from ...utils.image_utils import verify_image_size
 from .agent_runners import AgentRunners
@@ -39,31 +43,41 @@ class CoordinatorAgent:
 
     def __init__(self):
         """Initialize coordinator and all sub-agents."""
-        # Initialize agent runners (contains all 6 agents)
+        # Initialize agent runners (contains all 7 agents)
         self.agent_runners = AgentRunners()
 
-        # Build LangGraph workflow with native parallelism
-        self.graph = GraphBuilder.build_analysis_graph(self.agent_runners)
+        # LangGraph checkpointer for state persistence across invocations
+        self.checkpointer = InMemorySaver()
+
+        # Build LangGraph workflow with checkpointer for thread-level state persistence
+        self.graph = GraphBuilder.build_analysis_graph(
+            self.agent_runners,
+            checkpointer=self.checkpointer,
+        )
 
         # Initialize multi-frame handler
         self.multi_frame_handler = MultiFrameHandler(self.analyze_frame)
 
-        logger.info("🚀 CoordinatorAgent initialized with LangGraph (7 parallel CIA-level agents)")
+        logger.info(
+            "CoordinatorAgent initialized with LangGraph checkpointer (7 parallel CIA-level agents)"
+        )
 
     def analyze_frame(
         self,
         image_base64: str,
         context: str = "",
         agents_to_run: list[AgentType] | None = None,
+        thread_id: str | None = None,
     ) -> dict[str, Any]:
         """
-        Execute full analysis workflow on image frame with 6 parallel agents.
+        Execute full analysis workflow on image frame with 7 parallel agents.
 
         Args:
             image_base64: Base64 encoded image with data URI
             context: Optional context for analysis
-            agents_to_run: List of agents to run (None = all 6 agents)
-                Options: vision, ocr, detection, geolocation, face_analysis, forensic_analysis
+            agents_to_run: List of agents to run (None = all enabled agents)
+            thread_id: Session thread ID for LangGraph state persistence.
+                If None, generates a unique ID (stateless single-shot analysis).
 
         Returns:
             Dict with both JSON and text reports (CIA-level intelligence)
@@ -72,9 +86,16 @@ class CoordinatorAgent:
             # Verify image size ONCE (before distributing to agents)
             verify_image_size(image_base64, "COORDINATOR")
 
-            logger.info("🚀 Starting CIA-level coordinated frame analysis (6 agents)...")
+            # Generate thread_id if not provided (single-shot analysis)
+            if thread_id is None:
+                thread_id = str(uuid.uuid4())
 
-            # Default to all 6 agents if not specified
+            logger.info(
+                "Starting coordinated frame analysis (7 agents, thread=%s)",
+                thread_id[:8],
+            )
+
+            # Default to all enabled agents if not specified
             if agents_to_run is None:
                 agents_to_run = DEFAULT_AGENTS.copy()
 
@@ -96,8 +117,13 @@ class CoordinatorAgent:
                 "final_report": None,
             }
 
+            # LangGraph config with thread_id for checkpointer state persistence
+            config: RunnableConfig = {
+                "configurable": {"thread_id": thread_id},
+            }
+
             # Execute graph (LangGraph handles parallelism natively)
-            final_state = self.graph.invoke(initial_state)
+            final_state = self.graph.invoke(initial_state, config=config)
 
             # Return final report
             return final_state.get(
@@ -109,7 +135,7 @@ class CoordinatorAgent:
             )
 
         except (ValueError, TypeError, KeyError, AttributeError) as e:
-            logger.error("❌ Coordinated analysis failed: %s", e)
+            logger.error("Coordinated analysis failed: %s", e)
             return {
                 "json": {"status": "error", "error": str(e)},
                 "text": f"Error en análisis: {e!s}",
@@ -120,9 +146,17 @@ class CoordinatorAgent:
         image_base64: str,
         context: str = "",
         agents_to_run: list[AgentType] | None = None,
+        thread_id: str | None = None,
     ) -> Generator[dict[str, Any], None, None]:
         """
         Stream analysis results as each agent completes.
+
+        Args:
+            image_base64: Base64 encoded image with data URI
+            context: Optional context for analysis
+            agents_to_run: List of agents to run (None = all enabled agents)
+            thread_id: Session thread ID for LangGraph state persistence.
+                If None, generates a unique ID (stateless single-shot analysis).
 
         Yields per-agent update dicts as they finish:
             {"event": "agent_update", "agent": "vision", "result": {...}}
@@ -133,7 +167,13 @@ class CoordinatorAgent:
         try:
             verify_image_size(image_base64, "COORDINATOR")
 
-            logger.info("Starting streaming CIA-level coordinated frame analysis...")
+            if thread_id is None:
+                thread_id = str(uuid.uuid4())
+
+            logger.info(
+                "Starting streaming frame analysis (7 agents, thread=%s)",
+                thread_id[:8],
+            )
 
             if agents_to_run is None:
                 agents_to_run = DEFAULT_AGENTS.copy()
@@ -152,7 +192,12 @@ class CoordinatorAgent:
                 "final_report": None,
             }
 
-            for update in self.graph.stream(initial_state, stream_mode="updates"):
+            # LangGraph config with thread_id for checkpointer state persistence
+            config: RunnableConfig = {
+                "configurable": {"thread_id": thread_id},
+            }
+
+            for update in self.graph.stream(initial_state, config=config, stream_mode="updates"):
                 for node_name, node_output in update.items():
                     if node_name == "combine":
                         final_report = node_output.get("final_report")

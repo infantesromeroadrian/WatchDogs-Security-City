@@ -9,8 +9,9 @@ CIA-Level OSINT Analysis Graph with 7 parallel agents:
 """
 
 import logging
-from typing import Sequence
+from collections.abc import Sequence
 
+from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
@@ -30,7 +31,10 @@ class GraphBuilder:
     """Constructs LangGraph workflow with parallel agent execution."""
 
     @staticmethod
-    def build_analysis_graph(agent_runners: AgentRunners) -> CompiledStateGraph:
+    def build_analysis_graph(
+        agent_runners: AgentRunners,
+        checkpointer: BaseCheckpointSaver | None = None,
+    ) -> CompiledStateGraph:
         """
         Build the LangGraph workflow with native parallel execution.
 
@@ -98,8 +102,13 @@ class GraphBuilder:
         # Combine to END
         workflow.add_edge("combine", END)
 
-        logger.info(
-            "✅ LangGraph workflow built with conditional parallel agents (CIA-level OSINT)"
-        )
+        if checkpointer:
+            logger.info(
+                "✅ LangGraph workflow built with checkpointer + conditional parallel agents"
+            )
+        else:
+            logger.info(
+                "✅ LangGraph workflow built with conditional parallel agents (no checkpointer)"
+            )
 
-        return workflow.compile()
+        return workflow.compile(checkpointer=checkpointer)

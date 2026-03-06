@@ -23,6 +23,7 @@ class APIClient {
         this.chatHistory = [];
         this.currentFrame = null;
         this.currentROI = null;
+        this.currentSessionId = null;  // Server-side session for image persistence
         this.frameCollection = null;  // For multi-frame chat
         this.isMultiFrameAnalysis = false;  // Flag to know if last analysis was multi-frame
         
@@ -195,7 +196,11 @@ class APIClient {
                         try {
                             const parsed = JSON.parse(eventData);
 
-                            if (eventType === 'agent_update') {
+                            if (eventType === 'session') {
+                                // Capture server-side session for image persistence
+                                this.currentSessionId = parsed.session_id;
+                                log.info(`Session established: ${parsed.session_id?.slice(0, 8)}`);
+                            } else if (eventType === 'agent_update') {
                                 agentsCompleted++;
                                 log.info(`Agent completed (${agentsCompleted}): ${parsed.agent}`);
                                 this.uiManager.updateAgentCard(parsed.agent, parsed.result);
@@ -255,6 +260,7 @@ class APIClient {
         this.currentROI = window.roiSelector?.getROI();  // Store ROI for chat
         this.isMultiFrameAnalysis = false;  // Single frame analysis
         this.frameCollection = null;  // Clear multi-frame collection
+        // currentSessionId is already set by SSE 'session' event
         
         log.debug('Frame stored in apiClient:', this.currentFrame ? 'YES' : 'NO');
         
@@ -279,6 +285,7 @@ class APIClient {
         this.isMultiFrameAnalysis = true;
         this.currentFrame = null;  // No single frame in multi-frame analysis
         this.currentROI = null;
+        this.currentSessionId = null;  // Multi-frame doesn't use sessions yet
         
         // Delegate to UIManager
         this.uiManager.displayBatchResults(results, frameCollection);
