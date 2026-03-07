@@ -1,0 +1,77 @@
+# =============================================================================
+# Render Blueprint — WatchDogs Security City (16 OSINT Agents)
+# Deploy: Connect GitHub repo → Render auto-detects this file
+# =============================================================================
+
+services:
+  - type: web
+    name: watchdogs-security-city
+    runtime: docker
+    repo: https://github.com/infantesromeroadrian/WatchDogs-Security-City
+    plan: free
+    region: frankfurt  # EU — closest to Spain
+
+    # Override Dockerfile CMD for free tier (1 worker, memory-optimized)
+    dockerCommand: >
+      gunicorn
+      --bind 0.0.0.0:5000
+      --workers 1
+      --threads 4
+      --timeout 300
+      --preload
+      --max-requests 50
+      --max-requests-jitter 10
+      --access-logfile -
+      --error-logfile -
+      src.backend.app:app
+
+    # Health check
+    healthCheckPath: /api/health
+
+    # Environment variables (set GROQ_API_KEY in Render dashboard as secret)
+    envVars:
+      # LLM Provider — Groq API
+      - key: OPENAI_BASE_URL
+        value: https://api.groq.com/openai/v1
+      - key: OPENAI_MODEL
+        value: meta-llama/llama-4-scout-17b-16e-instruct
+      - key: OPENAI_API_KEY
+        sync: false  # Must be set manually in Render dashboard
+
+      # Flask
+      - key: FLASK_HOST
+        value: "0.0.0.0"
+      - key: FLASK_PORT
+        value: "5000"
+      - key: FLASK_DEBUG
+        value: "false"
+      - key: PYTHONPATH
+        value: /app
+      - key: PYTHONDONTWRITEBYTECODE
+        value: "1"
+      - key: PYTHONUNBUFFERED
+        value: "1"
+
+      # Agent timeout (generous for free tier cold starts)
+      - key: AGENT_TIMEOUT_SECONDS
+        value: "180"
+
+      # All 16 agents enabled
+      - key: VEHICLE_DETECTION_ENABLED
+        value: "true"
+      - key: WEAPON_DETECTION_ENABLED
+        value: "true"
+      - key: CROWD_ANALYSIS_ENABLED
+        value: "true"
+      - key: SHADOW_ANALYSIS_ENABLED
+        value: "true"
+      - key: INFRASTRUCTURE_ANALYSIS_ENABLED
+        value: "true"
+      - key: TEMPORAL_COMPARISON_ENABLED
+        value: "true"
+      - key: NIGHT_VISION_ENABLED
+        value: "true"
+      - key: NATO_SYMBOLOGY_ENABLED
+        value: "true"
+      - key: MULTI_MONITOR_ENABLED
+        value: "true"
