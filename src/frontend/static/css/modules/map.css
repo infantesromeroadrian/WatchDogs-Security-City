@@ -389,6 +389,37 @@
 
 /* --- Responsive --- */
 @media (max-width: 768px) {
+    /* M-6: Tactical map responsive — reduce height, stack controls */
+    .tactical-map-container {
+        height: 30vh;
+        min-height: 200px;
+    }
+
+    .tactical-map-header {
+        flex-wrap: wrap;
+        gap: 6px;
+        padding: 8px 10px;
+    }
+
+    .tactical-map-controls {
+        gap: 6px;
+    }
+
+    .tactical-coords {
+        font-size: 9px;
+        padding: 2px 6px;
+    }
+
+    .tactical-map-title h2 {
+        font-size: 12px;
+        letter-spacing: 1px;
+    }
+
+    .tactical-map-footer {
+        padding: 4px 10px;
+    }
+
+    /* Fullscreen overlay responsive */
     .map-fullscreen-layout {
         flex-direction: column;
     }

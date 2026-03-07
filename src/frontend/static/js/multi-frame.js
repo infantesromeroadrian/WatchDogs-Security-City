@@ -26,7 +26,6 @@ class MultiFrameAnalyzer {
         this.clearCollectionBtn = document.getElementById('clearCollectionBtn');
         this.frameCollectionGrid = document.getElementById('frameCollectionGrid');
         this.frameCountSpan = document.getElementById('frameCount');
-        this.captureBtn = document.getElementById('captureBtn');
     }
     
     bindEvents() {
@@ -122,7 +121,7 @@ class MultiFrameAnalyzer {
             `🤖 Analizando ${this.frameCollection.length} frames con contexto acumulado...`;
         
         try {
-            const response = await fetch('/api/analyze-batch', {
+            const response = await fetch(`${window.location.origin}/api/analyze-batch`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
@@ -171,10 +170,10 @@ class MultiFrameAnalyzer {
         toast.textContent = message;
         toast.style.cssText = `position: fixed; bottom: 20px; right: 20px; background: #00d2ff;
             color: #1a1a2e; padding: 12px 20px; border-radius: 8px; font-weight: bold;
-            z-index: 10000; animation: slideIn 0.3s ease`;
+            z-index: 10000; animation: wdToastSlideIn 0.3s ease`;
         document.body.appendChild(toast);
         setTimeout(() => {
-            toast.style.animation = 'slideOut 0.3s ease';
+            toast.style.animation = 'wdToastSlideOut 0.3s ease';
             setTimeout(() => toast.remove(), 300);
         }, 3000);
     }
@@ -189,11 +188,11 @@ document.addEventListener('DOMContentLoaded', () => {
 // Add CSS for toast animation
 const style = document.createElement('style');
 style.textContent = `
-    @keyframes slideIn {
+    @keyframes wdToastSlideIn {
         from { transform: translateX(400px); opacity: 0; }
         to { transform: translateX(0); opacity: 1; }
     }
-    @keyframes slideOut {
+    @keyframes wdToastSlideOut {
         from { transform: translateX(0); opacity: 1; }
         to { transform: translateX(400px); opacity: 0; }
     }

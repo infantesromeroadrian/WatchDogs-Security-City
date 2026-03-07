@@ -71,7 +71,14 @@ class ROISelector {
         this.canvas.addEventListener('mousedown', (e) => this.handleMouseDown(e));
         this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
         this.canvas.addEventListener('mouseup', (e) => this.handleMouseUp(e));
-        this.canvas.addEventListener('mouseleave', () => this.handleMouseUp());
+        // M-8: mouseleave should only cancel panning, not drop an in-progress ROI draw.
+        // Drawing can be finalized when the user re-enters and releases, or via mouseup.
+        this.canvas.addEventListener('mouseleave', () => {
+            if (this.isPanning) {
+                this.stopPan();
+                this.canvas.style.cursor = this.scale > 1.0 ? 'grab' : 'crosshair';
+            }
+        });
         
         // Mouse wheel for zoom
         this.canvas.addEventListener('wheel', (e) => this.handleWheel(e), { passive: false });

@@ -5,7 +5,7 @@ Metrics and observability utilities for agent operations.
 import logging
 import threading
 import time
-from collections import defaultdict
+from collections import defaultdict, deque
 from functools import wraps
 from typing import Any
 
@@ -15,8 +15,11 @@ logger = logging.getLogger(__name__)
 # when 7 agents update concurrently.
 _lock = threading.Lock()
 
-# In-memory metrics storage
-_metrics: dict[str, list[dict[str, Any]]] = defaultdict(list)
+# M-10: In-memory metrics storage — deque(maxlen=1000) for O(1) bounded storage
+_MAX_METRICS_PER_AGENT = 1000
+_metrics: dict[str, deque[dict[str, Any]]] = defaultdict(
+    lambda: deque(maxlen=_MAX_METRICS_PER_AGENT)
+)
 _agent_stats: dict[str, dict[str, Any]] = defaultdict(
     lambda: {
         "total_calls": 0,
@@ -97,7 +100,7 @@ def track_agent_metrics(agent_name: str):
                     stats["min_latency_ms"] = min(stats["min_latency_ms"], latency_ms)
                     stats["max_latency_ms"] = max(stats["max_latency_ms"], latency_ms)
 
-                    # Store metric entry
+                    # Store metric entry (deque auto-evicts oldest beyond maxlen)
                     _metrics[agent_name].append(
                         {
                             "timestamp": time.time(),
@@ -106,10 +109,6 @@ def track_agent_metrics(agent_name: str):
                             "error_type": error_type,
                         }
                     )
-
-                    # Keep only last 1000 entries per agent
-                    if len(_metrics[agent_name]) > 1000:
-                        _metrics[agent_name] = _metrics[agent_name][-1000:]
 
                     avg_ms = stats["total_latency_ms"] / stats["total_calls"]
 

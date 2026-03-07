@@ -55,7 +55,8 @@ RATE_LIMIT_PER_MINUTE = int(
 AUTH_ENABLED = os.getenv("AUTH_ENABLED", "False").lower() == "true"
 
 # Base64 Image Size Limits (for DoS prevention)
-MAX_BASE64_SIZE_MB = int(os.getenv("MAX_BASE64_SIZE_MB", "10"))  # 10MB default
+# M-3: Aligned with frontend 20MB image upload limit (video-player.js loadImage)
+MAX_BASE64_SIZE_MB = int(os.getenv("MAX_BASE64_SIZE_MB", "20"))  # 20MB default
 MAX_BASE64_SIZE_BYTES = MAX_BASE64_SIZE_MB * 1024 * 1024
 
 # Agent Configuration

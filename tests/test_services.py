@@ -67,7 +67,7 @@ class TestImageService:
         """Test image to base64 conversion."""
         img, _ = self.create_test_image()
 
-        b64_string = ImageService.image_to_base64(img, format="PNG")
+        b64_string = ImageService.image_to_base64(img, img_format="PNG")
         assert b64_string.startswith("data:image/png;base64,")
         assert len(b64_string) > 100  # Has actual data
 

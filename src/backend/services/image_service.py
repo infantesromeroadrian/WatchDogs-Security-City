@@ -84,29 +84,29 @@ class ImageService:
             raise ValueError(f"Invalid crop coordinates: {e}") from e
 
     @staticmethod
-    def image_to_base64(image: Image.Image, format: str = "PNG") -> str:
+    def image_to_base64(image: Image.Image, img_format: str = "PNG") -> str:
         """
         Convert PIL Image to base64 string.
 
         Args:
             image: PIL Image object
-            format: Image format (PNG, JPEG, etc.)
+            img_format: Image format (PNG, JPEG, etc.)
 
         Returns:
             Base64 encoded image string
         """
         try:
             buffer = BytesIO()
-            image.save(buffer, format=format)
+            image.save(buffer, format=img_format)
             buffer.seek(0)
             base64_string = base64.b64encode(buffer.read()).decode("utf-8")
-            return f"data:image/{format.lower()};base64,{base64_string}"
+            return f"data:image/{img_format.lower()};base64,{base64_string}"
         except (OSError, IOError) as e:
             logger.error("❌ Failed to save image: %s", e)
             raise ImageProcessingError(f"Failed to save image to buffer: {e}") from e
         except (KeyError, ValueError) as e:
-            logger.error("❌ Invalid image format '%s': %s", format, e)
-            raise ValueError(f"Invalid image format '{format}': {e}") from e
+            logger.error("❌ Invalid image format '%s': %s", img_format, e)
+            raise ValueError(f"Invalid image format '{img_format}': {e}") from e
 
     @staticmethod
     def prepare_for_analysis(
@@ -151,7 +151,7 @@ class ImageService:
             logger.info("📸 No ROI selected — sending FULL frame %s to agents", image.size)
 
         # Convert to base64 for OpenAI
-        base64_for_api = ImageService.image_to_base64(image, format="PNG")
+        base64_for_api = ImageService.image_to_base64(image, img_format="PNG")
 
         metadata = {
             "roi_applied": roi_applied,

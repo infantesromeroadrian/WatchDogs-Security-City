@@ -160,10 +160,11 @@ export class MetadataHandler {
     }
     
     formatBytes(bytes) {
-        if (bytes === 0) return '0 Bytes';
+        // M-4: Guard against negative, NaN, and overflow edge cases
+        if (!Number.isFinite(bytes) || bytes <= 0) return '0 Bytes';
         const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.min(Math.floor(Math.log(bytes) / Math.log(k)), sizes.length - 1);
         return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
     }
     

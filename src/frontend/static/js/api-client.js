@@ -45,10 +45,14 @@ class APIClient {
         // Init map (async, non-blocking)
         this.mapHandler.init();
         
-        // Analyze button
-        this.analyzeBtn.addEventListener('click', () => {
-            this.analyzeFrame();
-        });
+        // Analyze button (M-9: guard against missing DOM element)
+        if (this.analyzeBtn) {
+            this.analyzeBtn.addEventListener('click', () => {
+                this.analyzeFrame();
+            });
+        } else {
+            log.warn('analyzeBtn not found in DOM — analyze feature unavailable');
+        }
         
         log.info('APIClient initialized with modular architecture');
     }
