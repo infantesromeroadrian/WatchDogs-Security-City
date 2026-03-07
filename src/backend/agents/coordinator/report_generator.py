@@ -1,11 +1,12 @@
 """
 Report Generation
 Single Responsibility: Format analysis results into human-readable reports
-Max: 350 lines
 
-CIA-Level OSINT Intelligence Brief with 7 agents:
+Military-Grade OSINT Intelligence Brief with 12 agents:
 - vision, ocr, detection, geolocation (original)
 - face_analysis, forensic_analysis, context_intel (CIA-level)
+- vehicle_detection, weapon_detection, crowd_analysis,
+  shadow_analysis, infrastructure_analysis (military intel)
 """
 
 import logging
@@ -18,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 class ReportGenerator:
-    """Generates human-readable intelligence briefs from 7 agent results."""
+    """Generates human-readable intelligence briefs from 12 agent results."""
 
     @staticmethod
     def format_text_report(
@@ -29,6 +30,11 @@ class ReportGenerator:
         face_analysis: dict[str, Any] | None = None,
         forensic_analysis: dict[str, Any] | None = None,
         context_intel: dict[str, Any] | None = None,
+        vehicle_detection: dict[str, Any] | None = None,
+        weapon_detection: dict[str, Any] | None = None,
+        crowd_analysis: dict[str, Any] | None = None,
+        shadow_analysis: dict[str, Any] | None = None,
+        infrastructure_analysis: dict[str, Any] | None = None,
     ) -> str:
         """
         Format combined results into CIA-level intelligence brief.
@@ -47,7 +53,7 @@ class ReportGenerator:
         """
         report_lines = [
             "=" * 80,
-            "INTELLIGENCE BRIEF - SISTEMA OSINT CIA-LEVEL (7 AGENTES)",
+            "INTELLIGENCE BRIEF - SISTEMA OSINT MILITARY-GRADE (12 AGENTES)",
             "=" * 80,
             "",
             "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
@@ -130,6 +136,70 @@ class ReportGenerator:
             ]
         )
         report_lines.extend(ReportGenerator._format_context_intel_section(context_intel))
+
+        # =====================================================================
+        # MILITARY INTELLIGENCE BLOCK 1 (5 new agents)
+        # =====================================================================
+
+        # Vehicle Detection section
+        report_lines.extend(
+            [
+                "",
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+                "🚗 8. DETECCIÓN VEHICULAR & ALPR (MILITAR)",
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+                "",
+            ]
+        )
+        report_lines.extend(ReportGenerator._format_vehicle_section(vehicle_detection))
+
+        # Weapon Detection section
+        report_lines.extend(
+            [
+                "",
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+                "🔫 9. DETECCIÓN DE ARMAS Y AMENAZAS (MILITAR)",
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+                "",
+            ]
+        )
+        report_lines.extend(ReportGenerator._format_weapon_section(weapon_detection))
+
+        # Crowd Analysis section
+        report_lines.extend(
+            [
+                "",
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+                "👥 10. ANÁLISIS DE MULTITUDES (MILITAR)",
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+                "",
+            ]
+        )
+        report_lines.extend(ReportGenerator._format_crowd_section(crowd_analysis))
+
+        # Shadow Analysis section
+        report_lines.extend(
+            [
+                "",
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+                "☀️ 11. ANÁLISIS SOLAR Y DE SOMBRAS (MILITAR)",
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+                "",
+            ]
+        )
+        report_lines.extend(ReportGenerator._format_shadow_section(shadow_analysis))
+
+        # Infrastructure Analysis section
+        report_lines.extend(
+            [
+                "",
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+                "🏗️ 12. ANÁLISIS DE INFRAESTRUCTURA (MILITAR)",
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+                "",
+            ]
+        )
+        report_lines.extend(ReportGenerator._format_infrastructure_section(infrastructure_analysis))
 
         # Metrics section
         if METRICS_ENABLED:
@@ -352,6 +422,230 @@ class ReportGenerator:
         else:
             lines.append("⏭️ Context Intel Agent no ejecutado")
 
+        return lines
+
+    # =========================================================================
+    # MILITARY INTELLIGENCE BLOCK 1 — Report formatters
+    # =========================================================================
+
+    @staticmethod
+    def _format_vehicle_section(vehicle: dict[str, Any] | None = None) -> list[str]:
+        """Format vehicle detection / ALPR section."""
+        lines: list[str] = []
+        if vehicle and vehicle.get("status") == "success":
+            summary = vehicle.get("summary")
+            if summary:
+                lines.append(f"📋 Resumen: {summary}")
+                lines.append("")
+
+            vehicle_count = vehicle.get("vehicle_count", 0)
+            lines.append(f"🚗 Vehículos detectados: {vehicle_count}")
+
+            plates = vehicle.get("license_plates", [])
+            if plates:
+                lines.append("")
+                lines.append("🔢 Matrículas identificadas:")
+                for plate in plates[:10]:
+                    reading = plate.get("reading", "N/A") if isinstance(plate, dict) else plate
+                    lines.append(f"   - {reading}")
+
+            markings = vehicle.get("military_markings", [])
+            if markings:
+                lines.append("")
+                lines.append("⚔️ Marcas militares:")
+                for m in markings[:5]:
+                    lines.append(f"   - {m}")
+
+            assessment = vehicle.get("tactical_assessment", {})
+            if assessment.get("threat_level"):
+                lines.append("")
+                lines.append(f"🎯 Amenaza vehicular: {assessment['threat_level']}")
+
+            lines.append("")
+            lines.append(vehicle.get("analysis", "No vehicle analysis available"))
+
+        elif vehicle and vehicle.get("status") == "skipped":
+            lines.append("⏭️ Vehicle Detection Agent fue omitido")
+        elif vehicle:
+            lines.append(f"⚠️ Error: {vehicle.get('error', 'Vehicle detection failed')}")
+        else:
+            lines.append("⏭️ Vehicle Detection Agent no ejecutado")
+        return lines
+
+    @staticmethod
+    def _format_weapon_section(weapon: dict[str, Any] | None = None) -> list[str]:
+        """Format weapon/threat detection section."""
+        lines: list[str] = []
+        if weapon and weapon.get("status") == "success":
+            summary = weapon.get("summary")
+            if summary:
+                lines.append(f"📋 Resumen: {summary}")
+                lines.append("")
+
+            weapon_count = weapon.get("weapon_count", 0)
+            lines.append(f"🔫 Armas detectadas: {weapon_count}")
+
+            assessment = weapon.get("threat_assessment", {})
+            threat_level = assessment.get("threat_level")
+            if threat_level:
+                lines.append(f"🚨 NIVEL DE AMENAZA: {threat_level}")
+
+            equipment = weapon.get("military_equipment", [])
+            if equipment:
+                lines.append("")
+                lines.append("⚔️ Equipamiento militar:")
+                for eq in equipment[:5]:
+                    lines.append(f"   - {eq}")
+
+            explosive = weapon.get("explosive_indicators", [])
+            if explosive:
+                lines.append("")
+                lines.append("💣 Indicadores explosivos:")
+                for ind in explosive[:5]:
+                    lines.append(f"   - {ind}")
+
+            lines.append("")
+            lines.append(weapon.get("analysis", "No weapon analysis available"))
+
+        elif weapon and weapon.get("status") == "skipped":
+            lines.append("⏭️ Weapon Detection Agent fue omitido")
+        elif weapon:
+            lines.append(f"⚠️ Error: {weapon.get('error', 'Weapon detection failed')}")
+        else:
+            lines.append("⏭️ Weapon Detection Agent no ejecutado")
+        return lines
+
+    @staticmethod
+    def _format_crowd_section(crowd: dict[str, Any] | None = None) -> list[str]:
+        """Format crowd analysis section."""
+        lines: list[str] = []
+        if crowd and crowd.get("status") == "success":
+            summary = crowd.get("summary")
+            if summary:
+                lines.append(f"📋 Resumen: {summary}")
+                lines.append("")
+
+            density = crowd.get("density_estimate", {})
+            if density:
+                total = density.get("total_count", "N/A")
+                level = density.get("density_level", "N/A")
+                lines.append(f"👥 Estimación: {total} personas — Densidad: {level}")
+
+            behavior = crowd.get("behavioral_assessment", {})
+            if behavior.get("general_mood"):
+                lines.append(f"🧠 Estado general: {behavior['general_mood']}")
+
+            concerns = crowd.get("security_concerns", [])
+            if concerns:
+                lines.append("")
+                lines.append("🚨 Preocupaciones de seguridad:")
+                for c in concerns[:5]:
+                    lines.append(f"   - {c}")
+
+            lines.append("")
+            lines.append(crowd.get("analysis", "No crowd analysis available"))
+
+        elif crowd and crowd.get("status") == "skipped":
+            lines.append("⏭️ Crowd Analysis Agent fue omitido")
+        elif crowd:
+            lines.append(f"⚠️ Error: {crowd.get('error', 'Crowd analysis failed')}")
+        else:
+            lines.append("⏭️ Crowd Analysis Agent no ejecutado")
+        return lines
+
+    @staticmethod
+    def _format_shadow_section(shadow: dict[str, Any] | None = None) -> list[str]:
+        """Format shadow/sun analysis section."""
+        lines: list[str] = []
+        if shadow and shadow.get("status") == "success":
+            summary = shadow.get("summary")
+            if summary:
+                lines.append(f"📋 Resumen: {summary}")
+                lines.append("")
+
+            time_est = shadow.get("time_estimate", {})
+            if time_est.get("time_range"):
+                lines.append(
+                    f"⏰ Hora estimada: {time_est['time_range']} "
+                    f"(Confianza: {time_est.get('confidence', 'N/A')})"
+                )
+
+            sun_pos = shadow.get("sun_position", {})
+            if sun_pos.get("azimuth_estimate"):
+                lines.append(f"☀️ Azimut solar: {sun_pos['azimuth_estimate']}")
+            if sun_pos.get("hemisphere"):
+                lines.append(f"🌍 Hemisferio: {sun_pos['hemisphere']}")
+
+            season = shadow.get("season_inference", {})
+            if season.get("estimated_season"):
+                lines.append(
+                    f"📅 Estación: {season['estimated_season']} "
+                    f"(Confianza: {season.get('confidence', 'N/A')})"
+                )
+
+            forensic = shadow.get("forensic_indicators", [])
+            if forensic:
+                lines.append("")
+                lines.append("🔬 Indicadores forenses (inconsistencias de sombras):")
+                for f_item in forensic[:5]:
+                    lines.append(f"   - {f_item}")
+
+            lines.append("")
+            lines.append(shadow.get("analysis", "No shadow analysis available"))
+
+        elif shadow and shadow.get("status") == "skipped":
+            lines.append("⏭️ Shadow Analysis Agent fue omitido")
+        elif shadow:
+            lines.append(f"⚠️ Error: {shadow.get('error', 'Shadow analysis failed')}")
+        else:
+            lines.append("⏭️ Shadow Analysis Agent no ejecutado")
+        return lines
+
+    @staticmethod
+    def _format_infrastructure_section(infra: dict[str, Any] | None = None) -> list[str]:
+        """Format infrastructure analysis section."""
+        lines: list[str] = []
+        if infra and infra.get("status") == "success":
+            summary = infra.get("summary")
+            if summary:
+                lines.append(f"📋 Resumen: {summary}")
+                lines.append("")
+
+            buildings = infra.get("buildings", [])
+            if buildings:
+                lines.append(f"🏢 Edificios clasificados: {len(buildings)}")
+
+            roads = infra.get("roads", [])
+            if roads:
+                lines.append(f"🛣️ Infraestructura vial: {len(roads)} elementos")
+
+            bridges = infra.get("bridges", [])
+            if bridges:
+                lines.append(f"🌉 Puentes/estructuras: {len(bridges)}")
+
+            assessment = infra.get("strategic_assessment", {})
+            if assessment.get("military_significance"):
+                lines.append("")
+                lines.append(f"⚔️ Significado militar: {assessment['military_significance']}")
+
+            vulnerabilities = assessment.get("vulnerability_points", [])
+            if vulnerabilities:
+                lines.append("")
+                lines.append("🎯 Puntos vulnerables:")
+                for v in (
+                    vulnerabilities[:5] if isinstance(vulnerabilities, list) else [vulnerabilities]
+                ):
+                    lines.append(f"   - {v}")
+
+            lines.append("")
+            lines.append(infra.get("analysis", "No infrastructure analysis available"))
+
+        elif infra and infra.get("status") == "skipped":
+            lines.append("⏭️ Infrastructure Analysis Agent fue omitido")
+        elif infra:
+            lines.append(f"⚠️ Error: {infra.get('error', 'Infrastructure analysis failed')}")
+        else:
+            lines.append("⏭️ Infrastructure Analysis Agent no ejecutado")
         return lines
 
     @staticmethod

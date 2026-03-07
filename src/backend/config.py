@@ -104,6 +104,19 @@ CONTEXT_INTEL_ENABLED = os.getenv("CONTEXT_INTEL_ENABLED", "True").lower() == "t
 # Privacy Mode - Disables ALL sensitive analysis (face, forensic, context)
 PRIVACY_MODE = os.getenv("PRIVACY_MODE", "False").lower() == "true"
 
+# =============================================================================
+# MILITARY INTELLIGENCE AGENTS (Block 1)
+# =============================================================================
+# These agents provide military-grade analysis capabilities
+
+VEHICLE_DETECTION_ENABLED = os.getenv("VEHICLE_DETECTION_ENABLED", "True").lower() == "true"
+WEAPON_DETECTION_ENABLED = os.getenv("WEAPON_DETECTION_ENABLED", "True").lower() == "true"
+CROWD_ANALYSIS_ENABLED = os.getenv("CROWD_ANALYSIS_ENABLED", "True").lower() == "true"
+SHADOW_ANALYSIS_ENABLED = os.getenv("SHADOW_ANALYSIS_ENABLED", "True").lower() == "true"
+INFRASTRUCTURE_ANALYSIS_ENABLED = (
+    os.getenv("INFRASTRUCTURE_ANALYSIS_ENABLED", "True").lower() == "true"
+)
+
 # Mapbox Configuration (optional — map features degrade gracefully)
 MAPBOX_ACCESS_TOKEN = os.getenv("MAP_BOX_ACCESS_TOKEN")
 

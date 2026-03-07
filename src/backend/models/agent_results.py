@@ -303,16 +303,186 @@ class ContextIntelResult(BaseModel):
 # =============================================================================
 
 
-class AgentResults(BaseModel):
-    """Combined results from all 7 agents."""
+# =============================================================================
+# MILITARY INTELLIGENCE RESULTS (Block 1 - 5 new agents)
+# =============================================================================
 
+
+class VehicleDetectionResult(BaseModel):
+    """
+    Result from Vehicle Detection & ALPR Agent.
+
+    Military-grade vehicle intelligence including license plate recognition.
+    """
+
+    agent: str = Field(default="vehicle_detection", description="Agent identifier")
+    status: str = Field(description="Status: success, error, timeout")
+    analysis: str = Field(description="Full vehicle detection analysis text")
+
+    summary: str | None = Field(default=None, description="Vehicle inventory summary")
+    vehicles: list = Field(default_factory=list, description="List of detected vehicles")
+    vehicle_count: int = Field(default=0, description="Total vehicles detected")
+    license_plates: list = Field(default_factory=list, description="License plate readings")
+    military_markings: list = Field(default_factory=list, description="Military markings found")
+    tactical_assessment: dict = Field(
+        default_factory=dict,
+        description="Tactical threat assessment from vehicles",
+    )
+    limitations: list = Field(default_factory=list, description="Analysis limitations")
+    error: str | None = Field(default=None, description="Error message if failed")
+
+    model_config = ConfigDict(frozen=False)
+
+
+class WeaponDetectionResult(BaseModel):
+    """
+    Result from Weapon/Threat Detection Agent.
+
+    Military-grade weapon and threat identification.
+    """
+
+    agent: str = Field(default="weapon_detection", description="Agent identifier")
+    status: str = Field(description="Status: success, error, timeout")
+    analysis: str = Field(description="Full weapon detection analysis text")
+
+    summary: str | None = Field(default=None, description="Weapon/threat summary")
+    weapons: list = Field(default_factory=list, description="List of detected weapons")
+    weapon_count: int = Field(default=0, description="Total weapons detected")
+    explosive_indicators: list = Field(
+        default_factory=list, description="Explosive device indicators"
+    )
+    military_equipment: list = Field(
+        default_factory=list, description="Military equipment detected"
+    )
+    threat_assessment: dict = Field(
+        default_factory=dict,
+        description="Overall threat assessment",
+    )
+    limitations: list = Field(default_factory=list, description="Analysis limitations")
+    error: str | None = Field(default=None, description="Error message if failed")
+
+    model_config = ConfigDict(frozen=False)
+
+
+class CrowdAnalysisResult(BaseModel):
+    """
+    Result from Crowd Analysis Agent.
+
+    Crowd density, demographics, movement, and behavioral analysis.
+    """
+
+    agent: str = Field(default="crowd_analysis", description="Agent identifier")
+    status: str = Field(description="Status: success, error, timeout")
+    analysis: str = Field(description="Full crowd analysis text")
+
+    summary: str | None = Field(default=None, description="Crowd analysis summary")
+    density_estimate: dict = Field(
+        default_factory=dict,
+        description="Crowd density estimation (count, level, zones)",
+    )
+    demographics: dict = Field(default_factory=dict, description="Demographic composition")
+    movement_patterns: dict = Field(default_factory=dict, description="Movement flow and patterns")
+    behavioral_assessment: dict = Field(
+        default_factory=dict,
+        description="Behavioral analysis (mood, anomalies, groups)",
+    )
+    security_concerns: list = Field(default_factory=list, description="Security risk factors")
+    limitations: list = Field(default_factory=list, description="Analysis limitations")
+    error: str | None = Field(default=None, description="Error message if failed")
+
+    model_config = ConfigDict(frozen=False)
+
+
+class ShadowAnalysisResult(BaseModel):
+    """
+    Result from Shadow/Sun Analysis Agent.
+
+    Sun position, shadow geometry, and temporal estimation from lighting.
+    """
+
+    agent: str = Field(default="shadow_analysis", description="Agent identifier")
+    status: str = Field(description="Status: success, error, timeout")
+    analysis: str = Field(description="Full shadow analysis text")
+
+    summary: str | None = Field(default=None, description="Shadow analysis summary")
+    shadow_geometry: dict = Field(
+        default_factory=dict,
+        description="Shadow direction, length ratio, consistency",
+    )
+    sun_position: dict = Field(
+        default_factory=dict,
+        description="Estimated sun azimuth, elevation, hemisphere",
+    )
+    time_estimate: dict = Field(
+        default_factory=dict,
+        description="Time-of-day estimation from shadows",
+    )
+    season_inference: dict = Field(
+        default_factory=dict,
+        description="Season inference from sun angle",
+    )
+    lighting_analysis: dict = Field(
+        default_factory=dict,
+        description="Natural vs artificial lighting analysis",
+    )
+    forensic_indicators: list = Field(
+        default_factory=list, description="Shadow inconsistencies (manipulation)"
+    )
+    limitations: list = Field(default_factory=list, description="Analysis limitations")
+    error: str | None = Field(default=None, description="Error message if failed")
+
+    model_config = ConfigDict(frozen=False)
+
+
+class InfrastructureAnalysisResult(BaseModel):
+    """
+    Result from Infrastructure Analysis Agent.
+
+    Building, road, utility, and strategic infrastructure classification.
+    """
+
+    agent: str = Field(default="infrastructure_analysis", description="Agent identifier")
+    status: str = Field(description="Status: success, error, timeout")
+    analysis: str = Field(description="Full infrastructure analysis text")
+
+    summary: str | None = Field(default=None, description="Infrastructure summary")
+    buildings: list = Field(default_factory=list, description="Building inventory")
+    roads: list = Field(default_factory=list, description="Road infrastructure")
+    utilities: list = Field(default_factory=list, description="Utility infrastructure")
+    bridges: list = Field(default_factory=list, description="Bridges and structures")
+    signage: list = Field(default_factory=list, description="Signage analysis")
+    strategic_assessment: dict = Field(
+        default_factory=dict,
+        description="Strategic infrastructure assessment",
+    )
+    limitations: list = Field(default_factory=list, description="Analysis limitations")
+    error: str | None = Field(default=None, description="Error message if failed")
+
+    model_config = ConfigDict(frozen=False)
+
+
+# =============================================================================
+# COMBINED RESULTS
+# =============================================================================
+
+
+class AgentResults(BaseModel):
+    """Combined results from all 12 agents (7 original + 5 military)."""
+
+    # Original agents
     vision: VisionResult
     ocr: OCRResult
     detection: DetectionResult
-    geolocation: GeolocationResult | None = None  # Optional for backwards compatibility
+    geolocation: GeolocationResult | None = None
     face_analysis: FaceAnalysisResult | None = None
     forensic_analysis: ForensicAnalysisResult | None = None
     context_intel: ContextIntelResult | None = None
+    # Military intelligence agents (Block 1)
+    vehicle_detection: VehicleDetectionResult | None = None
+    weapon_detection: WeaponDetectionResult | None = None
+    crowd_analysis: CrowdAnalysisResult | None = None
+    shadow_analysis: ShadowAnalysisResult | None = None
+    infrastructure_analysis: InfrastructureAnalysisResult | None = None
 
     model_config = ConfigDict(frozen=False)
 

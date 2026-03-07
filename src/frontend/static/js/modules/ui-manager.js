@@ -221,17 +221,33 @@ For more information, consult your organization's Data Protection Officer.
             this.analysisStatus.textContent = '●';
         }
         if (this.summaryText) {
-            this.summaryText.textContent = 'Analyzing with 7 CIA-level agents...';
+            this.summaryText.textContent = 'Analyzing with 12 intelligence agents...';
         }
         
-        // Reset all agent cards
-        const agentIds = ['vision', 'ocr', 'detection', 'geolocation', 'faceAnalysis', 'forensicAnalysis', 'contextIntel'];
+        // Reset all agent cards (original 7 + military block 1)
+        const agentIds = [
+            'vision', 'ocr', 'detection', 'geolocation', 'faceAnalysis',
+            'forensicAnalysis', 'contextIntel',
+            'vehicleDetection', 'weaponDetection', 'crowdAnalysis',
+            'shadowAnalysis', 'infrastructureAnalysis'
+        ];
         agentIds.forEach(id => {
             const content = document.getElementById(`${id}Content`);
             if (content) {
                 content.innerHTML = '<p class="placeholder">Awaiting analysis...</p>';
             }
         });
+        
+        // Reset military badge values
+        const vehicleCount = document.getElementById('vehicleCount');
+        if (vehicleCount) vehicleCount.textContent = '0';
+        const threatLevel = document.getElementById('threatLevel');
+        if (threatLevel) {
+            threatLevel.textContent = '-';
+            threatLevel.className = 'threat-level-badge';
+        }
+        const crowdCount = document.getElementById('crowdCount');
+        if (crowdCount) crowdCount.textContent = '-';
         
         // Hide key inferences
         if (this.keyInferencesPanel) {
@@ -258,11 +274,17 @@ For more information, consult your organization's Data Protection Officer.
         this.renderFaceAnalysisCard(agents.face_analysis);
         this.renderForensicAnalysisCard(agents.forensic_analysis);
         this.renderContextIntelCard(agents.context_intel);
+        // Military Intelligence Block 1
+        this.renderVehicleDetectionCard(agents.vehicle_detection);
+        this.renderWeaponDetectionCard(agents.weapon_detection);
+        this.renderCrowdAnalysisCard(agents.crowd_analysis);
+        this.renderShadowAnalysisCard(agents.shadow_analysis);
+        this.renderInfrastructureAnalysisCard(agents.infrastructure_analysis);
         
         // Render key inferences from context_intel
         this.renderKeyInferences(agents.context_intel);
         
-        log.info('CIA Intel Dashboard rendered with 7 agents');
+        log.info('Military-Grade Intel Dashboard rendered with 12 agents');
     }
 
     updateAgentCard(agentName, result) {
@@ -280,7 +302,13 @@ For more information, consult your organization's Data Protection Officer.
             geolocation: data => this.renderGeolocationCard(data),
             face_analysis: data => this.renderFaceAnalysisCard(data),
             forensic_analysis: data => this.renderForensicAnalysisCard(data),
-            context_intel: data => this.renderContextIntelCard(data)
+            context_intel: data => this.renderContextIntelCard(data),
+            // Military Intelligence Block 1
+            vehicle_detection: data => this.renderVehicleDetectionCard(data),
+            weapon_detection: data => this.renderWeaponDetectionCard(data),
+            crowd_analysis: data => this.renderCrowdAnalysisCard(data),
+            shadow_analysis: data => this.renderShadowAnalysisCard(data),
+            infrastructure_analysis: data => this.renderInfrastructureAnalysisCard(data)
         };
 
         const renderer = renderMap[agentName];
@@ -303,7 +331,12 @@ For more information, consult your organization's Data Protection Officer.
             'geolocationContent',
             'faceAnalysisContent',
             'forensicAnalysisContent',
-            'contextIntelContent'
+            'contextIntelContent',
+            'vehicleDetectionContent',
+            'weaponDetectionContent',
+            'crowdAnalysisContent',
+            'shadowAnalysisContent',
+            'infrastructureAnalysisContent'
         ];
         const totalCount = agentIds.length;
         const completedCount = agentIds.filter(id => {
@@ -612,6 +645,281 @@ For more information, consult your organization's Data Protection Officer.
         }
     }
     
+    // =========================================================================
+    // MILITARY INTELLIGENCE BLOCK 1 — Card renderers
+    // =========================================================================
+
+    renderVehicleDetectionCard(data) {
+        const content = document.getElementById('vehicleDetectionContent');
+        const countBadge = document.getElementById('vehicleCount');
+        if (!content) return;
+
+        if (!data || data.status === 'skipped') {
+            content.innerHTML = '<p class="placeholder">Agent not executed</p>';
+            return;
+        }
+
+        if (countBadge) countBadge.textContent = data.vehicle_count || 0;
+
+        if (data.status === 'success') {
+            let html = '';
+            if (data.summary) {
+                html += `<p><em>${esc(this.truncateText(data.summary, 200))}</em></p>`;
+            }
+
+            const vehicles = data.vehicles || [];
+            if (vehicles.length > 0) {
+                html += '<div class="vehicle-list">';
+                vehicles.slice(0, 5).forEach(v => {
+                    const cat = v.category || 'Unknown';
+                    const catClass = cat.toLowerCase().includes('militar') ? 'military' :
+                                     cat.toLowerCase().includes('emergencia') ? 'emergency' : 'civilian';
+                    html += `<div class="vehicle-item ${catClass}">`;
+                    html += `<strong>${esc(v.type || 'Vehicle')}</strong>`;
+                    if (v.color) html += ` - ${esc(v.color)}`;
+                    if (v.make_model) html += ` (${esc(v.make_model)})`;
+                    if (v.license_plate) html += `<br><span class="plate-reading">🔢 ${esc(v.license_plate)}</span>`;
+                    if (v.threat_level && v.threat_level !== 'Ninguno') {
+                        html += `<br><span class="threat-tag">${esc(v.threat_level)}</span>`;
+                    }
+                    html += '</div>';
+                });
+                html += '</div>';
+            }
+
+            const plates = data.license_plates || [];
+            if (plates.length > 0) {
+                html += '<p><strong>Plates:</strong> ';
+                html += plates.slice(0, 5).map(p => {
+                    const reading = typeof p === 'string' ? p : (p.reading || 'N/A');
+                    return esc(reading);
+                }).join(', ');
+                html += '</p>';
+            }
+
+            const assessment = data.tactical_assessment || {};
+            if (assessment.threat_level) {
+                const tlClass = this.getThreatClass(assessment.threat_level);
+                html += `<p class="threat-assessment ${tlClass}"><strong>Threat:</strong> ${esc(assessment.threat_level)}</p>`;
+            }
+
+            content.innerHTML = html || '<p class="placeholder">No vehicles detected</p>';
+        } else {
+            content.innerHTML = `<p class="placeholder">Error: ${esc(data.error || 'Unknown error')}</p>`;
+        }
+    }
+
+    renderWeaponDetectionCard(data) {
+        const content = document.getElementById('weaponDetectionContent');
+        const threatBadge = document.getElementById('threatLevel');
+        if (!content) return;
+
+        if (!data || data.status === 'skipped') {
+            content.innerHTML = '<p class="placeholder">Agent not executed</p>';
+            return;
+        }
+
+        const assessment = data.threat_assessment || {};
+        if (threatBadge && assessment.threat_level) {
+            threatBadge.textContent = assessment.threat_level;
+            threatBadge.className = `threat-level-badge ${this.getThreatClass(assessment.threat_level)}`;
+        }
+
+        if (data.status === 'success') {
+            let html = '';
+            if (data.summary) {
+                html += `<p><em>${esc(this.truncateText(data.summary, 200))}</em></p>`;
+            }
+
+            const weaponCount = data.weapon_count || 0;
+            html += `<p><strong>Weapons detected:</strong> ${esc(weaponCount)}</p>`;
+
+            if (assessment.threat_level) {
+                const tlClass = this.getThreatClass(assessment.threat_level);
+                html += `<p class="threat-assessment ${tlClass}"><strong>THREAT LEVEL:</strong> ${esc(assessment.threat_level)}</p>`;
+            }
+
+            const equipment = data.military_equipment || [];
+            if (equipment.length > 0) {
+                html += '<p><strong>Military Equipment:</strong></p><ul>';
+                equipment.slice(0, 4).forEach(eq => {
+                    html += `<li>${esc(typeof eq === 'string' ? eq : JSON.stringify(eq))}</li>`;
+                });
+                html += '</ul>';
+            }
+
+            const explosive = data.explosive_indicators || [];
+            if (explosive.length > 0) {
+                html += '<p><strong>Explosive Indicators:</strong></p><ul>';
+                explosive.slice(0, 3).forEach(ind => {
+                    html += `<li>${esc(typeof ind === 'string' ? ind : JSON.stringify(ind))}</li>`;
+                });
+                html += '</ul>';
+            }
+
+            content.innerHTML = html || '<p class="placeholder">No threats detected</p>';
+        } else {
+            content.innerHTML = `<p class="placeholder">Error: ${esc(data.error || 'Unknown error')}</p>`;
+        }
+    }
+
+    renderCrowdAnalysisCard(data) {
+        const content = document.getElementById('crowdAnalysisContent');
+        const countBadge = document.getElementById('crowdCount');
+        if (!content) return;
+
+        if (!data || data.status === 'skipped') {
+            content.innerHTML = '<p class="placeholder">Agent not executed</p>';
+            return;
+        }
+
+        const density = data.density_estimate || {};
+        if (countBadge) {
+            countBadge.textContent = density.total_count || density.density_level || '-';
+        }
+
+        if (data.status === 'success') {
+            let html = '';
+            if (data.summary) {
+                html += `<p><em>${esc(this.truncateText(data.summary, 200))}</em></p>`;
+            }
+
+            if (density.total_count) {
+                html += `<p><strong>Estimated count:</strong> ${esc(density.total_count)}</p>`;
+            }
+            if (density.density_level) {
+                html += `<p><strong>Density:</strong> ${esc(density.density_level)}</p>`;
+            }
+
+            const behavior = data.behavioral_assessment || {};
+            if (behavior.general_mood) {
+                html += `<p><strong>General mood:</strong> ${esc(behavior.general_mood)}</p>`;
+            }
+
+            const concerns = data.security_concerns || [];
+            if (concerns.length > 0) {
+                html += '<p><strong>Security Concerns:</strong></p><ul>';
+                concerns.slice(0, 3).forEach(c => {
+                    html += `<li>${esc(typeof c === 'string' ? c : JSON.stringify(c))}</li>`;
+                });
+                html += '</ul>';
+            }
+
+            content.innerHTML = html || '<p class="placeholder">No crowd data available</p>';
+        } else {
+            content.innerHTML = `<p class="placeholder">Error: ${esc(data.error || 'Unknown error')}</p>`;
+        }
+    }
+
+    renderShadowAnalysisCard(data) {
+        const content = document.getElementById('shadowAnalysisContent');
+        if (!content) return;
+
+        if (!data || data.status === 'skipped') {
+            content.innerHTML = '<p class="placeholder">Agent not executed</p>';
+            return;
+        }
+
+        if (data.status === 'success') {
+            let html = '';
+            if (data.summary) {
+                html += `<p><em>${esc(this.truncateText(data.summary, 200))}</em></p>`;
+            }
+
+            const timeEst = data.time_estimate || {};
+            if (timeEst.time_range) {
+                html += `<p><strong>Estimated time:</strong> ${esc(timeEst.time_range)}`;
+                if (timeEst.confidence) html += ` (${esc(timeEst.confidence)})`;
+                html += '</p>';
+            }
+
+            const sunPos = data.sun_position || {};
+            if (sunPos.azimuth_estimate) {
+                html += `<p><strong>Sun azimuth:</strong> ${esc(sunPos.azimuth_estimate)}</p>`;
+            }
+            if (sunPos.hemisphere) {
+                html += `<p><strong>Hemisphere:</strong> ${esc(sunPos.hemisphere)}</p>`;
+            }
+
+            const season = data.season_inference || {};
+            if (season.estimated_season) {
+                html += `<p><strong>Season:</strong> ${esc(season.estimated_season)}`;
+                if (season.confidence) html += ` (${esc(season.confidence)})`;
+                html += '</p>';
+            }
+
+            const forensic = data.forensic_indicators || [];
+            if (forensic.length > 0) {
+                html += '<p><strong>Shadow Inconsistencies:</strong></p><ul>';
+                forensic.slice(0, 3).forEach(f => {
+                    html += `<li>${esc(typeof f === 'string' ? f : JSON.stringify(f))}</li>`;
+                });
+                html += '</ul>';
+            }
+
+            content.innerHTML = html || '<p class="placeholder">No shadow data available</p>';
+        } else {
+            content.innerHTML = `<p class="placeholder">Error: ${esc(data.error || 'Unknown error')}</p>`;
+        }
+    }
+
+    renderInfrastructureAnalysisCard(data) {
+        const content = document.getElementById('infrastructureAnalysisContent');
+        if (!content) return;
+
+        if (!data || data.status === 'skipped') {
+            content.innerHTML = '<p class="placeholder">Agent not executed</p>';
+            return;
+        }
+
+        if (data.status === 'success') {
+            let html = '';
+            if (data.summary) {
+                html += `<p><em>${esc(this.truncateText(data.summary, 200))}</em></p>`;
+            }
+
+            const buildings = data.buildings || [];
+            const roads = data.roads || [];
+            const bridges = data.bridges || [];
+            const signage = data.signage || [];
+
+            html += '<div class="infra-stats">';
+            if (buildings.length) html += `<span class="infra-stat">🏢 ${buildings.length} buildings</span>`;
+            if (roads.length) html += `<span class="infra-stat">🛣️ ${roads.length} roads</span>`;
+            if (bridges.length) html += `<span class="infra-stat">🌉 ${bridges.length} bridges</span>`;
+            if (signage.length) html += `<span class="infra-stat">🪧 ${signage.length} signs</span>`;
+            html += '</div>';
+
+            const assessment = data.strategic_assessment || {};
+            if (assessment.military_significance) {
+                html += `<p><strong>Military significance:</strong> ${esc(this.truncateText(assessment.military_significance, 100))}</p>`;
+            }
+
+            const vulns = assessment.vulnerability_points;
+            if (vulns && Array.isArray(vulns) && vulns.length > 0) {
+                html += '<p><strong>Vulnerability points:</strong></p><ul>';
+                vulns.slice(0, 3).forEach(v => {
+                    html += `<li>${esc(typeof v === 'string' ? v : JSON.stringify(v))}</li>`;
+                });
+                html += '</ul>';
+            }
+
+            content.innerHTML = html || '<p class="placeholder">No infrastructure data</p>';
+        } else {
+            content.innerHTML = `<p class="placeholder">Error: ${esc(data.error || 'Unknown error')}</p>`;
+        }
+    }
+
+    getThreatClass(threatLevel) {
+        if (!threatLevel) return '';
+        const upper = threatLevel.toUpperCase();
+        if (upper.includes('CRITICAL') || upper.includes('CRÍTICO')) return 'threat-critical';
+        if (upper.includes('HIGH') || upper.includes('ALTO')) return 'threat-high';
+        if (upper.includes('MEDIUM') || upper.includes('MEDIO')) return 'threat-medium';
+        if (upper.includes('LOW') || upper.includes('BAJO')) return 'threat-low';
+        return 'threat-none';
+    }
+
     renderKeyInferences(contextData) {
         if (!this.keyInferencesPanel || !this.inferencesList) return;
         
@@ -860,6 +1168,17 @@ For more information, consult your organization's Data Protection Officer.
         if (this.apiClient.chatHandler?.chatInput) {
             this.apiClient.chatHandler.chatInput.disabled = true;
         }
+        
+        // Reset military badge values
+        const vehicleCount = document.getElementById('vehicleCount');
+        if (vehicleCount) vehicleCount.textContent = '0';
+        const threatLevel = document.getElementById('threatLevel');
+        if (threatLevel) {
+            threatLevel.textContent = '-';
+            threatLevel.className = 'threat-level-badge';
+        }
+        const crowdCount = document.getElementById('crowdCount');
+        if (crowdCount) crowdCount.textContent = '-';
         
         window.roiSelector?.clearROI();
         log.debug('Analysis reset');

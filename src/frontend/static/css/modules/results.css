@@ -257,6 +257,228 @@
     letter-spacing: 0.5px;
 }
 
+/* ============================================================================
+   MILITARY INTELLIGENCE — Block 1 Agent Cards
+   ============================================================================ */
+
+/* Military-Intel Card Base */
+.agent-card.military-intel {
+    border-color: rgba(76, 175, 80, 0.35);
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.35), rgba(30, 60, 30, 0.12));
+}
+
+.agent-card.military-intel:hover {
+    border-color: rgba(76, 175, 80, 0.65);
+    box-shadow: 0 4px 24px rgba(76, 175, 80, 0.18);
+}
+
+/* Threat variant (weapon detection card) */
+.agent-card.military-intel.threat {
+    border-color: rgba(244, 67, 54, 0.35);
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.35), rgba(80, 20, 20, 0.12));
+}
+
+.agent-card.military-intel.threat:hover {
+    border-color: rgba(244, 67, 54, 0.65);
+    box-shadow: 0 4px 24px rgba(244, 67, 54, 0.18);
+}
+
+/* MIL Badge */
+.mil-badge {
+    background: linear-gradient(135deg, #4caf50, #2e7d32);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-weight: bold;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.agent-card.military-intel.threat .mil-badge {
+    background: linear-gradient(135deg, #f44336, #b71c1c);
+}
+
+/* Vehicle Count Badge */
+.vehicle-count-badge {
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    background: rgba(76, 175, 80, 0.2);
+    color: #81c784;
+    min-width: 20px;
+    text-align: center;
+}
+
+/* Crowd Count Badge */
+.crowd-count-badge {
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    background: rgba(255, 183, 77, 0.2);
+    color: #ffb74d;
+    min-width: 20px;
+    text-align: center;
+}
+
+/* Threat Level Badge */
+.threat-level-badge {
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: rgba(158, 158, 158, 0.2);
+    color: #9e9e9e;
+    min-width: 20px;
+    text-align: center;
+}
+
+.threat-level-badge.threat-critical {
+    background: rgba(211, 47, 47, 0.3);
+    color: #ef5350;
+    animation: pulse-threat 1.5s infinite;
+}
+
+.threat-level-badge.threat-high {
+    background: rgba(244, 67, 54, 0.25);
+    color: #e57373;
+}
+
+.threat-level-badge.threat-medium {
+    background: rgba(255, 152, 0, 0.25);
+    color: #ffb74d;
+}
+
+.threat-level-badge.threat-low {
+    background: rgba(76, 175, 80, 0.2);
+    color: #81c784;
+}
+
+.threat-level-badge.threat-none {
+    background: rgba(158, 158, 158, 0.15);
+    color: #9e9e9e;
+}
+
+@keyframes pulse-threat {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+/* Vehicle List */
+.vehicle-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: var(--spacing-xs) 0;
+}
+
+.vehicle-item {
+    padding: 6px 10px;
+    border-radius: var(--radius-sm);
+    border-left: 3px solid rgba(158, 158, 158, 0.4);
+    background: rgba(255, 255, 255, 0.03);
+    font-size: 0.85rem;
+}
+
+.vehicle-item.civilian {
+    border-left-color: rgba(100, 181, 246, 0.6);
+}
+
+.vehicle-item.military {
+    border-left-color: rgba(76, 175, 80, 0.7);
+    background: rgba(76, 175, 80, 0.05);
+}
+
+.vehicle-item.emergency {
+    border-left-color: rgba(255, 152, 0, 0.7);
+    background: rgba(255, 152, 0, 0.05);
+}
+
+/* License Plate Reading */
+.plate-reading {
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    color: #ffb74d;
+    font-size: 0.85rem;
+}
+
+/* Threat Tag (inline on vehicles) */
+.threat-tag {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    background: rgba(244, 67, 54, 0.2);
+    color: #ef5350;
+    text-transform: uppercase;
+}
+
+/* Threat Assessment Block */
+.threat-assessment {
+    padding: 6px 10px;
+    border-radius: var(--radius-sm);
+    margin-top: var(--spacing-xs);
+    font-weight: 600;
+}
+
+.threat-assessment.threat-critical {
+    background: rgba(211, 47, 47, 0.2);
+    border-left: 3px solid #d32f2f;
+    color: #ef5350;
+}
+
+.threat-assessment.threat-high {
+    background: rgba(244, 67, 54, 0.15);
+    border-left: 3px solid #f44336;
+    color: #e57373;
+}
+
+.threat-assessment.threat-medium {
+    background: rgba(255, 152, 0, 0.15);
+    border-left: 3px solid #ff9800;
+    color: #ffb74d;
+}
+
+.threat-assessment.threat-low {
+    background: rgba(76, 175, 80, 0.1);
+    border-left: 3px solid #4caf50;
+    color: #81c784;
+}
+
+.threat-assessment.threat-none {
+    background: rgba(158, 158, 158, 0.1);
+    border-left: 3px solid #9e9e9e;
+    color: #bdbdbd;
+}
+
+/* Infrastructure Stats Bar */
+.infra-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: var(--spacing-xs) 0;
+}
+
+.infra-stat {
+    padding: 4px 10px;
+    border-radius: 16px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    background: rgba(100, 181, 246, 0.12);
+    color: #90caf9;
+    border: 1px solid rgba(100, 181, 246, 0.2);
+    white-space: nowrap;
+}
+
+/* ============================================================================
+   END MILITARY INTELLIGENCE CSS
+   ============================================================================ */
+
 /* Agent Content */
 .agent-content {
     padding: var(--spacing-md);

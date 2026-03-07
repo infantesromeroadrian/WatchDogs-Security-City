@@ -1,11 +1,12 @@
 """
 LangGraph Construction
 Single Responsibility: Build and configure the LangGraph workflow
-Max: 150 lines
 
-CIA-Level OSINT Analysis Graph with 7 parallel agents:
+Military-Grade OSINT Analysis Graph with 12 parallel agents:
 - vision, ocr, detection, geolocation (original)
 - face_analysis, forensic_analysis, context_intel (CIA-level)
+- vehicle_detection, weapon_detection, crowd_analysis,
+  shadow_analysis, infrastructure_analysis (military intel)
 """
 
 import logging
@@ -83,6 +84,14 @@ class GraphBuilder:
         workflow.add_node("face_analysis", agent_runners.run_face_analysis_agent)
         workflow.add_node("forensic_analysis", agent_runners.run_forensic_analysis_agent)
         workflow.add_node("context_intel", agent_runners.run_context_intel_agent)
+        # Military Intelligence Block 1
+        workflow.add_node("vehicle_detection", agent_runners.run_vehicle_detection_agent)
+        workflow.add_node("weapon_detection", agent_runners.run_weapon_detection_agent)
+        workflow.add_node("crowd_analysis", agent_runners.run_crowd_analysis_agent)
+        workflow.add_node("shadow_analysis", agent_runners.run_shadow_analysis_agent)
+        workflow.add_node(
+            "infrastructure_analysis", agent_runners.run_infrastructure_analysis_agent
+        )
 
         # Add result combiner node
         workflow.add_node("combine", ResultCombiner.combine_results)
@@ -98,6 +107,11 @@ class GraphBuilder:
         workflow.add_edge("face_analysis", "combine")
         workflow.add_edge("forensic_analysis", "combine")
         workflow.add_edge("context_intel", "combine")
+        workflow.add_edge("vehicle_detection", "combine")
+        workflow.add_edge("weapon_detection", "combine")
+        workflow.add_edge("crowd_analysis", "combine")
+        workflow.add_edge("shadow_analysis", "combine")
+        workflow.add_edge("infrastructure_analysis", "combine")
 
         # Combine to END
         workflow.add_edge("combine", END)

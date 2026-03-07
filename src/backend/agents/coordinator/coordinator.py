@@ -3,13 +3,15 @@ Coordinator Agent - Main Orchestrator
 Single Responsibility: Coordinate multi-agent analysis using LangGraph
 Max: 150 lines (thin orchestrator - delegates to modules)
 
-CIA-Level OSINT Analysis with 6 parallel agents:
-- vision: General scene analysis
-- ocr: Text extraction
-- detection: Object/person detection
-- geolocation: Location identification
-- face_analysis: Person identification (NEW)
-- forensic_analysis: Image authenticity verification (NEW)
+Military-Grade OSINT Analysis with 12 parallel agents:
+
+Original CIA-Level (7):
+- vision, ocr, detection, geolocation
+- face_analysis, forensic_analysis, context_intel
+
+Military Intelligence Block 1 (5):
+- vehicle_detection, weapon_detection, crowd_analysis
+- shadow_analysis, infrastructure_analysis
 """
 
 import logging
@@ -32,11 +34,11 @@ logger = logging.getLogger(__name__)
 
 class CoordinatorAgent:
     """
-    Coordinator that orchestrates all 6 analysis agents using LangGraph.
+    Coordinator that orchestrates all 12 analysis agents using LangGraph.
 
     This is a thin orchestrator - actual logic is delegated to specialized modules:
-    - AgentRunners: Execute individual agents (6 agents)
-    - GraphBuilder: Build LangGraph workflow with 6-way parallelism
+    - AgentRunners: Execute individual agents (12 agents)
+    - GraphBuilder: Build LangGraph workflow with 12-way parallelism
     - MultiFrameHandler: Handle multi-frame analysis
     - ResultCombiner: Combine agent results (called by graph)
     - ReportGenerator: Generate text reports (called by combiner)
@@ -44,7 +46,7 @@ class CoordinatorAgent:
 
     def __init__(self):
         """Initialize coordinator and all sub-agents."""
-        # Initialize agent runners (contains all 7 agents)
+        # Initialize agent runners (contains all 12 agents)
         self.agent_runners = AgentRunners()
 
         # LangGraph checkpointer for state persistence across invocations
@@ -94,16 +96,17 @@ class CoordinatorAgent:
             if thread_id is None:
                 thread_id = str(uuid.uuid4())
 
-            logger.info(
-                "Starting coordinated frame analysis (7 agents, thread=%s)",
-                thread_id[:8],
-            )
-
             # Default to all enabled agents if not specified
             if agents_to_run is None:
                 agents_to_run = DEFAULT_AGENTS.copy()
 
-            # Initialize state with all 7 result slots
+            logger.info(
+                "Starting coordinated frame analysis (%s agents, thread=%s)",
+                len(agents_to_run),
+                thread_id[:8],
+            )
+
+            # Initialize state with all 12 result slots
             initial_state: AnalysisState = {
                 "image_base64": image_base64,
                 "context": context,
@@ -117,6 +120,12 @@ class CoordinatorAgent:
                 "face_analysis_result": None,
                 "forensic_analysis_result": None,
                 "context_intel_result": None,
+                # Military Intelligence Block 1
+                "vehicle_detection_result": None,
+                "weapon_detection_result": None,
+                "crowd_analysis_result": None,
+                "shadow_analysis_result": None,
+                "infrastructure_analysis_result": None,
                 # Final output
                 "final_report": None,
             }
@@ -174,25 +183,35 @@ class CoordinatorAgent:
             if thread_id is None:
                 thread_id = str(uuid.uuid4())
 
-            logger.info(
-                "Starting streaming frame analysis (7 agents, thread=%s)",
-                thread_id[:8],
-            )
-
             if agents_to_run is None:
                 agents_to_run = DEFAULT_AGENTS.copy()
+
+            logger.info(
+                "Starting streaming frame analysis (%s agents, thread=%s)",
+                len(agents_to_run),
+                thread_id[:8],
+            )
 
             initial_state: AnalysisState = {
                 "image_base64": image_base64,
                 "context": context,
                 "agents_to_run": agents_to_run,
+                # Original 4 agents
                 "vision_result": None,
                 "ocr_result": None,
                 "detection_result": None,
                 "geolocation_result": None,
+                # CIA-level agents
                 "face_analysis_result": None,
                 "forensic_analysis_result": None,
                 "context_intel_result": None,
+                # Military Intelligence Block 1
+                "vehicle_detection_result": None,
+                "weapon_detection_result": None,
+                "crowd_analysis_result": None,
+                "shadow_analysis_result": None,
+                "infrastructure_analysis_result": None,
+                # Final output
                 "final_report": None,
             }
 

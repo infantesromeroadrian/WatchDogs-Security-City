@@ -1,11 +1,12 @@
 """
 Agent Execution Functions
 Single Responsibility: Run individual agents and handle their errors
-Max: 350 lines
 
-CIA-Level OSINT Analysis with 7 parallel agents:
+Military-Grade OSINT Analysis with 12 parallel agents:
 - vision, ocr, detection, geolocation (original)
 - face_analysis, forensic_analysis, context_intel (CIA-level)
+- vehicle_detection, weapon_detection, crowd_analysis,
+  shadow_analysis, infrastructure_analysis (military intel)
 """
 
 import logging
@@ -14,19 +15,24 @@ from typing import Any
 from ...services.geolocation_service import GeolocationService
 from ...utils.timeout_utils import TimeoutError as AgentTimeoutError
 from ..context_intel import ContextIntelAgent
+from ..crowd_analysis import CrowdAnalysisAgent
 from ..detection_agent import DetectionAgent
 from ..face_analysis import FaceAnalysisAgent
 from ..forensic_analysis import ForensicAnalysisAgent
 from ..geolocation_agent import GeolocationAgent
+from ..infrastructure_analysis import InfrastructureAnalysisAgent
 from ..ocr_agent import OCRAgent
+from ..shadow_analysis import ShadowAnalysisAgent
+from ..vehicle_detection import VehicleDetectionAgent
 from ..vision_agent import VisionAgent
+from ..weapon_detection import WeaponDetectionAgent
 from .state import AnalysisState
 
 logger = logging.getLogger(__name__)
 
 
 class AgentRunners:
-    """Encapsulates execution logic for all 7 analysis agents."""
+    """Encapsulates execution logic for all 12 analysis agents."""
 
     def __init__(self):
         """Initialize all agents."""
@@ -40,6 +46,12 @@ class AgentRunners:
         self.face_analysis_agent = FaceAnalysisAgent()
         self.forensic_analysis_agent = ForensicAnalysisAgent()
         self.context_intel_agent = ContextIntelAgent()
+        # Military Intelligence Block 1
+        self.vehicle_detection_agent = VehicleDetectionAgent()
+        self.weapon_detection_agent = WeaponDetectionAgent()
+        self.crowd_analysis_agent = CrowdAnalysisAgent()
+        self.shadow_analysis_agent = ShadowAnalysisAgent()
+        self.infrastructure_analysis_agent = InfrastructureAnalysisAgent()
 
     def run_vision_agent(self, state: AnalysisState) -> dict[str, Any]:
         """
@@ -380,5 +392,228 @@ class AgentRunners:
                     "key_inferences": [],
                     "limitations": [str(e)],
                     "open_questions": [],
+                }
+            }
+
+    # =========================================================================
+    # MILITARY INTELLIGENCE BLOCK 1 — 5 new agents
+    # =========================================================================
+
+    def run_vehicle_detection_agent(self, state: AnalysisState) -> dict[str, Any]:
+        """Execute Vehicle Detection & ALPR Agent (native parallel)."""
+        try:
+            logger.info("🚗 Running Vehicle Detection Agent (native parallel)...")
+            result = self.vehicle_detection_agent.analyze(
+                state["image_base64"], state.get("context", "")
+            )
+            return {"vehicle_detection_result": result}
+        except AgentTimeoutError as e:
+            logger.warning("⏱️ Vehicle detection agent timeout: %s", e)
+            return {
+                "vehicle_detection_result": {
+                    "agent": "vehicle_detection",
+                    "status": "timeout",
+                    "error": str(e),
+                    "analysis": "Vehicle detection timed out",
+                    "summary": None,
+                    "vehicles": [],
+                    "vehicle_count": 0,
+                    "license_plates": [],
+                    "military_markings": [],
+                    "tactical_assessment": {},
+                    "limitations": ["Analysis timed out"],
+                }
+            }
+        except (ValueError, TypeError, KeyError, AttributeError, RuntimeError) as e:
+            logger.error("❌ Vehicle detection agent error: %s", e)
+            return {
+                "vehicle_detection_result": {
+                    "agent": "vehicle_detection",
+                    "status": "error",
+                    "error": str(e),
+                    "analysis": "Vehicle detection failed",
+                    "summary": None,
+                    "vehicles": [],
+                    "vehicle_count": 0,
+                    "license_plates": [],
+                    "military_markings": [],
+                    "tactical_assessment": {},
+                    "limitations": [str(e)],
+                }
+            }
+
+    def run_weapon_detection_agent(self, state: AnalysisState) -> dict[str, Any]:
+        """Execute Weapon/Threat Detection Agent (native parallel)."""
+        try:
+            logger.info("🔫 Running Weapon Detection Agent (native parallel)...")
+            result = self.weapon_detection_agent.analyze(
+                state["image_base64"], state.get("context", "")
+            )
+            return {"weapon_detection_result": result}
+        except AgentTimeoutError as e:
+            logger.warning("⏱️ Weapon detection agent timeout: %s", e)
+            return {
+                "weapon_detection_result": {
+                    "agent": "weapon_detection",
+                    "status": "timeout",
+                    "error": str(e),
+                    "analysis": "Weapon detection timed out",
+                    "summary": None,
+                    "weapons": [],
+                    "weapon_count": 0,
+                    "explosive_indicators": [],
+                    "military_equipment": [],
+                    "threat_assessment": {},
+                    "limitations": ["Analysis timed out"],
+                }
+            }
+        except (ValueError, TypeError, KeyError, AttributeError, RuntimeError) as e:
+            logger.error("❌ Weapon detection agent error: %s", e)
+            return {
+                "weapon_detection_result": {
+                    "agent": "weapon_detection",
+                    "status": "error",
+                    "error": str(e),
+                    "analysis": "Weapon detection failed",
+                    "summary": None,
+                    "weapons": [],
+                    "weapon_count": 0,
+                    "explosive_indicators": [],
+                    "military_equipment": [],
+                    "threat_assessment": {},
+                    "limitations": [str(e)],
+                }
+            }
+
+    def run_crowd_analysis_agent(self, state: AnalysisState) -> dict[str, Any]:
+        """Execute Crowd Analysis Agent (native parallel)."""
+        try:
+            logger.info("👥 Running Crowd Analysis Agent (native parallel)...")
+            result = self.crowd_analysis_agent.analyze(
+                state["image_base64"], state.get("context", "")
+            )
+            return {"crowd_analysis_result": result}
+        except AgentTimeoutError as e:
+            logger.warning("⏱️ Crowd analysis agent timeout: %s", e)
+            return {
+                "crowd_analysis_result": {
+                    "agent": "crowd_analysis",
+                    "status": "timeout",
+                    "error": str(e),
+                    "analysis": "Crowd analysis timed out",
+                    "summary": None,
+                    "density_estimate": {},
+                    "demographics": {},
+                    "movement_patterns": {},
+                    "behavioral_assessment": {},
+                    "security_concerns": [],
+                    "limitations": ["Analysis timed out"],
+                }
+            }
+        except (ValueError, TypeError, KeyError, AttributeError, RuntimeError) as e:
+            logger.error("❌ Crowd analysis agent error: %s", e)
+            return {
+                "crowd_analysis_result": {
+                    "agent": "crowd_analysis",
+                    "status": "error",
+                    "error": str(e),
+                    "analysis": "Crowd analysis failed",
+                    "summary": None,
+                    "density_estimate": {},
+                    "demographics": {},
+                    "movement_patterns": {},
+                    "behavioral_assessment": {},
+                    "security_concerns": [],
+                    "limitations": [str(e)],
+                }
+            }
+
+    def run_shadow_analysis_agent(self, state: AnalysisState) -> dict[str, Any]:
+        """Execute Shadow/Sun Analysis Agent (native parallel)."""
+        try:
+            logger.info("☀️ Running Shadow Analysis Agent (native parallel)...")
+            result = self.shadow_analysis_agent.analyze(
+                state["image_base64"], state.get("context", "")
+            )
+            return {"shadow_analysis_result": result}
+        except AgentTimeoutError as e:
+            logger.warning("⏱️ Shadow analysis agent timeout: %s", e)
+            return {
+                "shadow_analysis_result": {
+                    "agent": "shadow_analysis",
+                    "status": "timeout",
+                    "error": str(e),
+                    "analysis": "Shadow analysis timed out",
+                    "summary": None,
+                    "shadow_geometry": {},
+                    "sun_position": {},
+                    "time_estimate": {},
+                    "season_inference": {},
+                    "lighting_analysis": {},
+                    "forensic_indicators": [],
+                    "limitations": ["Analysis timed out"],
+                }
+            }
+        except (ValueError, TypeError, KeyError, AttributeError, RuntimeError) as e:
+            logger.error("❌ Shadow analysis agent error: %s", e)
+            return {
+                "shadow_analysis_result": {
+                    "agent": "shadow_analysis",
+                    "status": "error",
+                    "error": str(e),
+                    "analysis": "Shadow analysis failed",
+                    "summary": None,
+                    "shadow_geometry": {},
+                    "sun_position": {},
+                    "time_estimate": {},
+                    "season_inference": {},
+                    "lighting_analysis": {},
+                    "forensic_indicators": [],
+                    "limitations": [str(e)],
+                }
+            }
+
+    def run_infrastructure_analysis_agent(self, state: AnalysisState) -> dict[str, Any]:
+        """Execute Infrastructure Analysis Agent (native parallel)."""
+        try:
+            logger.info("🏗️ Running Infrastructure Analysis Agent (native parallel)...")
+            result = self.infrastructure_analysis_agent.analyze(
+                state["image_base64"], state.get("context", "")
+            )
+            return {"infrastructure_analysis_result": result}
+        except AgentTimeoutError as e:
+            logger.warning("⏱️ Infrastructure analysis agent timeout: %s", e)
+            return {
+                "infrastructure_analysis_result": {
+                    "agent": "infrastructure_analysis",
+                    "status": "timeout",
+                    "error": str(e),
+                    "analysis": "Infrastructure analysis timed out",
+                    "summary": None,
+                    "buildings": [],
+                    "roads": [],
+                    "utilities": [],
+                    "bridges": [],
+                    "signage": [],
+                    "strategic_assessment": {},
+                    "limitations": ["Analysis timed out"],
+                }
+            }
+        except (ValueError, TypeError, KeyError, AttributeError, RuntimeError) as e:
+            logger.error("❌ Infrastructure analysis agent error: %s", e)
+            return {
+                "infrastructure_analysis_result": {
+                    "agent": "infrastructure_analysis",
+                    "status": "error",
+                    "error": str(e),
+                    "analysis": "Infrastructure analysis failed",
+                    "summary": None,
+                    "buildings": [],
+                    "roads": [],
+                    "utilities": [],
+                    "bridges": [],
+                    "signage": [],
+                    "strategic_assessment": {},
+                    "limitations": [str(e)],
                 }
             }
