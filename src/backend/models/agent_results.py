@@ -1,7 +1,7 @@
 """
 Pydantic models for validating agent results.
 
-Each *Result model corresponds to one of the 7 analysis agents.
+Each *Result model corresponds to one of the 14 analysis agents.
 Fields use generic ``dict`` / ``list`` types because the LLM response
 is parsed from free-text into dicts by each agent's response_parser —
 typed sub-models were defined historically but never wired up and have
@@ -462,12 +462,93 @@ class InfrastructureAnalysisResult(BaseModel):
 
 
 # =============================================================================
+# MILITARY INTELLIGENCE RESULTS (Block 2 - 2 new agents)
+# =============================================================================
+
+
+class TemporalComparisonResult(BaseModel):
+    """
+    Result from Temporal Comparison Agent.
+
+    Military-grade temporal change detection and strategic posture analysis.
+    """
+
+    agent: str = Field(default="temporal_comparison", description="Agent identifier")
+    status: str = Field(description="Status: success, error, timeout")
+    analysis: str = Field(description="Full temporal comparison analysis text")
+
+    summary: str | None = Field(default=None, description="Temporal comparison summary")
+    structural_changes: dict = Field(
+        default_factory=dict,
+        description="Detected structural changes (new, removed, modified)",
+    )
+    activity_detection: dict = Field(
+        default_factory=dict,
+        description="Activity pattern changes (vehicle, personnel, equipment)",
+    )
+    strategic_posture: dict = Field(
+        default_factory=dict,
+        description="Strategic posture assessment (buildup, withdrawal, fortification)",
+    )
+    environmental_changes: dict = Field(
+        default_factory=dict,
+        description="Environmental/terrain temporal shifts",
+    )
+    chronology: list = Field(
+        default_factory=list,
+        description="Chronological sequence of detected changes",
+    )
+    limitations: list = Field(default_factory=list, description="Analysis limitations")
+    error: str | None = Field(default=None, description="Error message if failed")
+
+    model_config = ConfigDict(frozen=False)
+
+
+class NightVisionResult(BaseModel):
+    """
+    Result from Night Vision Enhancement Agent.
+
+    Military-grade night/low-light image analysis and interpretation.
+    """
+
+    agent: str = Field(default="night_vision", description="Agent identifier")
+    status: str = Field(description="Status: success, error, timeout")
+    analysis: str = Field(description="Full night vision analysis text")
+
+    summary: str | None = Field(default=None, description="Night vision analysis summary")
+    visibility_conditions: dict = Field(
+        default_factory=dict,
+        description="Visibility assessment (ambient light, distance, quality)",
+    )
+    light_sources: dict = Field(
+        default_factory=dict,
+        description="Light source identification and classification",
+    )
+    nocturnal_activity: dict = Field(
+        default_factory=dict,
+        description="Night activity pattern detection",
+    )
+    covert_indicators: dict = Field(
+        default_factory=dict,
+        description="Covert activity indicators and anomalies",
+    )
+    tactical_assessment: dict = Field(
+        default_factory=dict,
+        description="Tactical night assessment (cover, concealment, approach routes)",
+    )
+    limitations: list = Field(default_factory=list, description="Analysis limitations")
+    error: str | None = Field(default=None, description="Error message if failed")
+
+    model_config = ConfigDict(frozen=False)
+
+
+# =============================================================================
 # COMBINED RESULTS
 # =============================================================================
 
 
 class AgentResults(BaseModel):
-    """Combined results from all 12 agents (7 original + 5 military)."""
+    """Combined results from all 14 agents (7 original + 5 military B1 + 2 military B2)."""
 
     # Original agents
     vision: VisionResult
@@ -483,6 +564,9 @@ class AgentResults(BaseModel):
     crowd_analysis: CrowdAnalysisResult | None = None
     shadow_analysis: ShadowAnalysisResult | None = None
     infrastructure_analysis: InfrastructureAnalysisResult | None = None
+    # Military intelligence agents (Block 2)
+    temporal_comparison: TemporalComparisonResult | None = None
+    night_vision: NightVisionResult | None = None
 
     model_config = ConfigDict(frozen=False)
 

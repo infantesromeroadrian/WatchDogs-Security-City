@@ -476,6 +476,124 @@
 }
 
 /* ============================================================================
+   MILITARY INTELLIGENCE — Block 2 Agent Cards
+   ============================================================================ */
+
+/* Posture Badge (Temporal Comparison) */
+.posture-badge {
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: rgba(158, 158, 158, 0.2);
+    color: #9e9e9e;
+    min-width: 20px;
+    text-align: center;
+}
+
+.posture-badge.posture-buildup {
+    background: rgba(244, 67, 54, 0.3);
+    color: #ef5350;
+    animation: pulse-threat 1.5s infinite;
+}
+
+.posture-badge.posture-withdrawal {
+    background: rgba(255, 152, 0, 0.25);
+    color: #ffb74d;
+}
+
+.posture-badge.posture-fortification {
+    background: rgba(156, 39, 176, 0.25);
+    color: #ce93d8;
+}
+
+.posture-badge.posture-normal {
+    background: rgba(76, 175, 80, 0.2);
+    color: #81c784;
+}
+
+.posture-badge.posture-crisis {
+    background: rgba(211, 47, 47, 0.35);
+    color: #e53935;
+    animation: pulse-threat 1s infinite;
+}
+
+/* Risk Level Badge (Night Vision) */
+.risk-level-badge {
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: rgba(158, 158, 158, 0.2);
+    color: #9e9e9e;
+    min-width: 20px;
+    text-align: center;
+}
+
+.risk-level-badge.risk-critical {
+    background: rgba(211, 47, 47, 0.3);
+    color: #ef5350;
+    animation: pulse-threat 1.5s infinite;
+}
+
+.risk-level-badge.risk-high {
+    background: rgba(244, 67, 54, 0.25);
+    color: #e57373;
+}
+
+.risk-level-badge.risk-medium {
+    background: rgba(255, 152, 0, 0.25);
+    color: #ffb74d;
+}
+
+.risk-level-badge.risk-low {
+    background: rgba(76, 175, 80, 0.2);
+    color: #81c784;
+}
+
+.risk-level-badge.risk-minimal {
+    background: rgba(158, 158, 158, 0.15);
+    color: #9e9e9e;
+}
+
+/* Chronology List (Temporal Comparison) */
+.chronology-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: var(--spacing-xs) 0;
+}
+
+.chronology-item {
+    padding: 6px 10px;
+    border-radius: var(--radius-sm);
+    border-left: 3px solid rgba(0, 210, 255, 0.4);
+    background: rgba(0, 210, 255, 0.05);
+    font-size: 0.85rem;
+}
+
+/* Visibility Info (Night Vision) */
+.visibility-info {
+    background: rgba(33, 33, 33, 0.4);
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    margin-bottom: var(--spacing-xs);
+    border-left: 3px solid rgba(255, 235, 59, 0.4);
+}
+
+/* Light Source Info (Night Vision) */
+.light-source-info {
+    background: rgba(255, 235, 59, 0.05);
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    margin-bottom: var(--spacing-xs);
+}
+
+/* ============================================================================
    END MILITARY INTELLIGENCE CSS
    ============================================================================ */
 

@@ -221,15 +221,16 @@ For more information, consult your organization's Data Protection Officer.
             this.analysisStatus.textContent = '●';
         }
         if (this.summaryText) {
-            this.summaryText.textContent = 'Analyzing with 12 intelligence agents...';
+            this.summaryText.textContent = 'Analyzing with 14 intelligence agents...';
         }
         
-        // Reset all agent cards (original 7 + military block 1)
+        // Reset all agent cards (original 7 + military block 1 + block 2)
         const agentIds = [
             'vision', 'ocr', 'detection', 'geolocation', 'faceAnalysis',
             'forensicAnalysis', 'contextIntel',
             'vehicleDetection', 'weaponDetection', 'crowdAnalysis',
-            'shadowAnalysis', 'infrastructureAnalysis'
+            'shadowAnalysis', 'infrastructureAnalysis',
+            'temporalComparison', 'nightVision'
         ];
         agentIds.forEach(id => {
             const content = document.getElementById(`${id}Content`);
@@ -248,6 +249,17 @@ For more information, consult your organization's Data Protection Officer.
         }
         const crowdCount = document.getElementById('crowdCount');
         if (crowdCount) crowdCount.textContent = '-';
+        // Block 2 badges
+        const postureLevel = document.getElementById('postureLevel');
+        if (postureLevel) {
+            postureLevel.textContent = '-';
+            postureLevel.className = 'posture-badge';
+        }
+        const nightRiskLevel = document.getElementById('nightRiskLevel');
+        if (nightRiskLevel) {
+            nightRiskLevel.textContent = '-';
+            nightRiskLevel.className = 'risk-level-badge';
+        }
         
         // Hide key inferences
         if (this.keyInferencesPanel) {
@@ -280,11 +292,14 @@ For more information, consult your organization's Data Protection Officer.
         this.renderCrowdAnalysisCard(agents.crowd_analysis);
         this.renderShadowAnalysisCard(agents.shadow_analysis);
         this.renderInfrastructureAnalysisCard(agents.infrastructure_analysis);
+        // Military Intelligence Block 2
+        this.renderTemporalComparisonCard(agents.temporal_comparison);
+        this.renderNightVisionCard(agents.night_vision);
         
         // Render key inferences from context_intel
         this.renderKeyInferences(agents.context_intel);
         
-        log.info('Military-Grade Intel Dashboard rendered with 12 agents');
+        log.info('Military-Grade Intel Dashboard rendered with 14 agents');
     }
 
     updateAgentCard(agentName, result) {
@@ -308,7 +323,10 @@ For more information, consult your organization's Data Protection Officer.
             weapon_detection: data => this.renderWeaponDetectionCard(data),
             crowd_analysis: data => this.renderCrowdAnalysisCard(data),
             shadow_analysis: data => this.renderShadowAnalysisCard(data),
-            infrastructure_analysis: data => this.renderInfrastructureAnalysisCard(data)
+            infrastructure_analysis: data => this.renderInfrastructureAnalysisCard(data),
+            // Military Intelligence Block 2
+            temporal_comparison: data => this.renderTemporalComparisonCard(data),
+            night_vision: data => this.renderNightVisionCard(data)
         };
 
         const renderer = renderMap[agentName];
@@ -336,7 +354,9 @@ For more information, consult your organization's Data Protection Officer.
             'weaponDetectionContent',
             'crowdAnalysisContent',
             'shadowAnalysisContent',
-            'infrastructureAnalysisContent'
+            'infrastructureAnalysisContent',
+            'temporalComparisonContent',
+            'nightVisionContent'
         ];
         const totalCount = agentIds.length;
         const completedCount = agentIds.filter(id => {
@@ -910,6 +930,175 @@ For more information, consult your organization's Data Protection Officer.
         }
     }
 
+    // =========================================================================
+    // MILITARY INTELLIGENCE BLOCK 2 — Card renderers
+    // =========================================================================
+
+    renderTemporalComparisonCard(data) {
+        const content = document.getElementById('temporalComparisonContent');
+        const postureBadge = document.getElementById('postureLevel');
+        if (!content) return;
+
+        if (!data || data.status === 'skipped') {
+            content.innerHTML = '<p class="placeholder">Agent not executed</p>';
+            return;
+        }
+
+        const posture = data.strategic_posture || {};
+        if (postureBadge && posture.posture_type) {
+            postureBadge.textContent = posture.posture_type;
+            postureBadge.className = `posture-badge ${this.getPostureClass(posture.posture_type)}`;
+        }
+
+        if (data.status === 'success') {
+            let html = '';
+            if (data.summary) {
+                html += `<p><em>${esc(this.truncateText(data.summary, 200))}</em></p>`;
+            }
+
+            if (posture.posture_type) {
+                const pClass = this.getPostureClass(posture.posture_type);
+                html += `<p class="threat-assessment ${pClass}"><strong>Strategic Posture:</strong> ${esc(posture.posture_type)}</p>`;
+            }
+
+            const structural = data.structural_changes || {};
+            const newItems = structural.new_constructions || [];
+            const removed = structural.removed_structures || [];
+            const modified = structural.modifications || [];
+            if (newItems.length || removed.length || modified.length) {
+                html += '<div class="infra-stats">';
+                if (newItems.length) html += `<span class="infra-stat">🆕 ${newItems.length} new</span>`;
+                if (removed.length) html += `<span class="infra-stat">🗑️ ${removed.length} removed</span>`;
+                if (modified.length) html += `<span class="infra-stat">🔄 ${modified.length} modified</span>`;
+                html += '</div>';
+            }
+
+            const activity = data.activity_detection || {};
+            if (Object.keys(activity).length > 0) {
+                html += '<p><strong>Activity Changes:</strong></p><ul>';
+                Object.entries(activity).slice(0, 4).forEach(([key, val]) => {
+                    html += `<li>${esc(key)}: ${esc(typeof val === 'string' ? val : JSON.stringify(val))}</li>`;
+                });
+                html += '</ul>';
+            }
+
+            const chronology = data.chronology || [];
+            if (chronology.length > 0) {
+                html += '<div class="chronology-list">';
+                chronology.slice(0, 4).forEach(event => {
+                    if (typeof event === 'object') {
+                        html += `<div class="chronology-item">`;
+                        html += `<strong>${esc(event.timeframe || 'N/A')}</strong>: ${esc(event.description || 'N/A')}`;
+                        html += '</div>';
+                    } else {
+                        html += `<div class="chronology-item">${esc(event)}</div>`;
+                    }
+                });
+                html += '</div>';
+            }
+
+            content.innerHTML = html || '<p class="placeholder">No temporal changes detected</p>';
+        } else {
+            content.innerHTML = `<p class="placeholder">Error: ${esc(data.error || 'Unknown error')}</p>`;
+        }
+    }
+
+    renderNightVisionCard(data) {
+        const content = document.getElementById('nightVisionContent');
+        const riskBadge = document.getElementById('nightRiskLevel');
+        if (!content) return;
+
+        if (!data || data.status === 'skipped') {
+            content.innerHTML = '<p class="placeholder">Agent not executed</p>';
+            return;
+        }
+
+        const assessment = data.tactical_assessment || {};
+        if (riskBadge && assessment.risk_level) {
+            riskBadge.textContent = assessment.risk_level;
+            riskBadge.className = `risk-level-badge ${this.getRiskClass(assessment.risk_level)}`;
+        }
+
+        if (data.status === 'success') {
+            let html = '';
+            if (data.summary) {
+                html += `<p><em>${esc(this.truncateText(data.summary, 200))}</em></p>`;
+            }
+
+            const visibility = data.visibility_conditions || {};
+            if (Object.keys(visibility).length > 0) {
+                html += '<div class="visibility-info">';
+                if (visibility.ambient_light) html += `<p><strong>Ambient Light:</strong> ${esc(visibility.ambient_light)}</p>`;
+                if (visibility.visibility_range) html += `<p><strong>Visibility Range:</strong> ${esc(visibility.visibility_range)}</p>`;
+                if (visibility.quality) html += `<p><strong>Image Quality:</strong> ${esc(visibility.quality)}</p>`;
+                html += '</div>';
+            }
+
+            const lightSources = data.light_sources || {};
+            const sources = lightSources.identified_sources || [];
+            if (sources.length > 0) {
+                html += '<div class="light-source-info">';
+                html += '<p><strong>Light Sources:</strong></p><ul>';
+                sources.slice(0, 4).forEach(src => {
+                    if (typeof src === 'object') {
+                        html += `<li>${esc(src.type || 'N/A')}: ${esc(src.description || 'N/A')}</li>`;
+                    } else {
+                        html += `<li>${esc(src)}</li>`;
+                    }
+                });
+                html += '</ul></div>';
+            }
+
+            const nocturnal = data.nocturnal_activity || {};
+            if (Object.keys(nocturnal).length > 0) {
+                html += '<p><strong>Night Activity:</strong></p><ul>';
+                Object.entries(nocturnal).slice(0, 4).forEach(([key, val]) => {
+                    html += `<li>${esc(key)}: ${esc(typeof val === 'string' ? val : JSON.stringify(val))}</li>`;
+                });
+                html += '</ul>';
+            }
+
+            const covert = data.covert_indicators || {};
+            const indicators = covert.indicators || [];
+            if (indicators.length > 0) {
+                html += '<p><strong>Covert Indicators:</strong></p><ul>';
+                indicators.slice(0, 3).forEach(ind => {
+                    html += `<li>${esc(typeof ind === 'string' ? ind : JSON.stringify(ind))}</li>`;
+                });
+                html += '</ul>';
+            }
+
+            if (assessment.risk_level) {
+                const rClass = this.getRiskClass(assessment.risk_level);
+                html += `<p class="threat-assessment ${rClass}"><strong>Night Risk:</strong> ${esc(assessment.risk_level)}</p>`;
+            }
+
+            content.innerHTML = html || '<p class="placeholder">No night vision data</p>';
+        } else {
+            content.innerHTML = `<p class="placeholder">Error: ${esc(data.error || 'Unknown error')}</p>`;
+        }
+    }
+
+    getPostureClass(postureType) {
+        if (!postureType) return '';
+        const upper = postureType.toUpperCase();
+        if (upper.includes('BUILDUP') || upper.includes('CONCENTRACIÓN')) return 'posture-buildup';
+        if (upper.includes('WITHDRAWAL') || upper.includes('RETIRADA')) return 'posture-withdrawal';
+        if (upper.includes('FORTIF') || upper.includes('FORTIFICACIÓN')) return 'posture-fortification';
+        if (upper.includes('CRISIS') || upper.includes('EMERGENCY')) return 'posture-crisis';
+        return 'posture-normal';
+    }
+
+    getRiskClass(riskLevel) {
+        if (!riskLevel) return '';
+        const upper = riskLevel.toUpperCase();
+        if (upper.includes('CRITICAL') || upper.includes('CRÍTICO')) return 'risk-critical';
+        if (upper.includes('HIGH') || upper.includes('ALTO')) return 'risk-high';
+        if (upper.includes('MEDIUM') || upper.includes('MEDIO')) return 'risk-medium';
+        if (upper.includes('LOW') || upper.includes('BAJO')) return 'risk-low';
+        return 'risk-minimal';
+    }
+
     getThreatClass(threatLevel) {
         if (!threatLevel) return '';
         const upper = threatLevel.toUpperCase();
@@ -1179,6 +1368,17 @@ For more information, consult your organization's Data Protection Officer.
         }
         const crowdCount = document.getElementById('crowdCount');
         if (crowdCount) crowdCount.textContent = '-';
+        // Block 2 badges
+        const postureLevel = document.getElementById('postureLevel');
+        if (postureLevel) {
+            postureLevel.textContent = '-';
+            postureLevel.className = 'posture-badge';
+        }
+        const nightRiskLevel = document.getElementById('nightRiskLevel');
+        if (nightRiskLevel) {
+            nightRiskLevel.textContent = '-';
+            nightRiskLevel.className = 'risk-level-badge';
+        }
         
         window.roiSelector?.clearROI();
         log.debug('Analysis reset');

@@ -2,11 +2,12 @@
 Agent Execution Functions
 Single Responsibility: Run individual agents and handle their errors
 
-Military-Grade OSINT Analysis with 12 parallel agents:
+Military-Grade OSINT Analysis with 14 parallel agents:
 - vision, ocr, detection, geolocation (original)
 - face_analysis, forensic_analysis, context_intel (CIA-level)
 - vehicle_detection, weapon_detection, crowd_analysis,
-  shadow_analysis, infrastructure_analysis (military intel)
+  shadow_analysis, infrastructure_analysis (military intel B1)
+- temporal_comparison, night_vision (military intel B2)
 """
 
 import logging
@@ -21,8 +22,10 @@ from ..face_analysis import FaceAnalysisAgent
 from ..forensic_analysis import ForensicAnalysisAgent
 from ..geolocation_agent import GeolocationAgent
 from ..infrastructure_analysis import InfrastructureAnalysisAgent
+from ..night_vision import NightVisionAgent
 from ..ocr_agent import OCRAgent
 from ..shadow_analysis import ShadowAnalysisAgent
+from ..temporal_comparison import TemporalComparisonAgent
 from ..vehicle_detection import VehicleDetectionAgent
 from ..vision_agent import VisionAgent
 from ..weapon_detection import WeaponDetectionAgent
@@ -32,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 
 class AgentRunners:
-    """Encapsulates execution logic for all 12 analysis agents."""
+    """Encapsulates execution logic for all 14 analysis agents."""
 
     def __init__(self):
         """Initialize all agents."""
@@ -52,6 +55,9 @@ class AgentRunners:
         self.crowd_analysis_agent = CrowdAnalysisAgent()
         self.shadow_analysis_agent = ShadowAnalysisAgent()
         self.infrastructure_analysis_agent = InfrastructureAnalysisAgent()
+        # Military Intelligence Block 2
+        self.temporal_comparison_agent = TemporalComparisonAgent()
+        self.night_vision_agent = NightVisionAgent()
 
     def run_vision_agent(self, state: AnalysisState) -> dict[str, Any]:
         """
@@ -614,6 +620,96 @@ class AgentRunners:
                     "bridges": [],
                     "signage": [],
                     "strategic_assessment": {},
+                    "limitations": [str(e)],
+                }
+            }
+
+    # =========================================================================
+    # MILITARY INTELLIGENCE BLOCK 2 — 2 new agents
+    # =========================================================================
+
+    def run_temporal_comparison_agent(self, state: AnalysisState) -> dict[str, Any]:
+        """Execute Temporal Comparison Agent (native parallel)."""
+        try:
+            logger.info("🕐 Running Temporal Comparison Agent (native parallel)...")
+            result = self.temporal_comparison_agent.analyze(
+                state["image_base64"], state.get("context", "")
+            )
+            return {"temporal_comparison_result": result}
+        except AgentTimeoutError as e:
+            logger.warning("⏱️ Temporal comparison agent timeout: %s", e)
+            return {
+                "temporal_comparison_result": {
+                    "agent": "temporal_comparison",
+                    "status": "timeout",
+                    "error": str(e),
+                    "analysis": "Temporal comparison timed out",
+                    "summary": None,
+                    "structural_changes": {},
+                    "activity_detection": {},
+                    "strategic_posture": {},
+                    "environmental_changes": {},
+                    "chronology": [],
+                    "limitations": ["Analysis timed out"],
+                }
+            }
+        except (ValueError, TypeError, KeyError, AttributeError, RuntimeError) as e:
+            logger.error("❌ Temporal comparison agent error: %s", e)
+            return {
+                "temporal_comparison_result": {
+                    "agent": "temporal_comparison",
+                    "status": "error",
+                    "error": str(e),
+                    "analysis": "Temporal comparison failed",
+                    "summary": None,
+                    "structural_changes": {},
+                    "activity_detection": {},
+                    "strategic_posture": {},
+                    "environmental_changes": {},
+                    "chronology": [],
+                    "limitations": [str(e)],
+                }
+            }
+
+    def run_night_vision_agent(self, state: AnalysisState) -> dict[str, Any]:
+        """Execute Night Vision Enhancement Agent (native parallel)."""
+        try:
+            logger.info("🌙 Running Night Vision Agent (native parallel)...")
+            result = self.night_vision_agent.analyze(
+                state["image_base64"], state.get("context", "")
+            )
+            return {"night_vision_result": result}
+        except AgentTimeoutError as e:
+            logger.warning("⏱️ Night vision agent timeout: %s", e)
+            return {
+                "night_vision_result": {
+                    "agent": "night_vision",
+                    "status": "timeout",
+                    "error": str(e),
+                    "analysis": "Night vision analysis timed out",
+                    "summary": None,
+                    "visibility_conditions": {},
+                    "light_sources": {},
+                    "nocturnal_activity": {},
+                    "covert_indicators": {},
+                    "tactical_assessment": {},
+                    "limitations": ["Analysis timed out"],
+                }
+            }
+        except (ValueError, TypeError, KeyError, AttributeError, RuntimeError) as e:
+            logger.error("❌ Night vision agent error: %s", e)
+            return {
+                "night_vision_result": {
+                    "agent": "night_vision",
+                    "status": "error",
+                    "error": str(e),
+                    "analysis": "Night vision analysis failed",
+                    "summary": None,
+                    "visibility_conditions": {},
+                    "light_sources": {},
+                    "nocturnal_activity": {},
+                    "covert_indicators": {},
+                    "tactical_assessment": {},
                     "limitations": [str(e)],
                 }
             }

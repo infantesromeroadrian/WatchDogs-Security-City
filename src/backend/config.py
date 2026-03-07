@@ -117,6 +117,14 @@ INFRASTRUCTURE_ANALYSIS_ENABLED = (
     os.getenv("INFRASTRUCTURE_ANALYSIS_ENABLED", "True").lower() == "true"
 )
 
+# =============================================================================
+# MILITARY INTELLIGENCE AGENTS (Block 2)
+# =============================================================================
+# Temporal change detection and night/low-light analysis
+
+TEMPORAL_COMPARISON_ENABLED = os.getenv("TEMPORAL_COMPARISON_ENABLED", "True").lower() == "true"
+NIGHT_VISION_ENABLED = os.getenv("NIGHT_VISION_ENABLED", "True").lower() == "true"
+
 # Mapbox Configuration (optional — map features degrade gracefully)
 MAPBOX_ACCESS_TOKEN = os.getenv("MAP_BOX_ACCESS_TOKEN")
 

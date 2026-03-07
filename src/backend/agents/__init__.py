@@ -1,7 +1,7 @@
 """
 LangGraph agents package for video frame analysis.
 
-Military-Grade OSINT Analysis Agents (12 total):
+Military-Grade OSINT Analysis Agents (14 total):
 
 Original CIA-Level (7):
 - VisionAgent: General scene analysis
@@ -18,6 +18,10 @@ Military Intelligence Block 1 (5):
 - CrowdAnalysisAgent: Crowd density and behavioral analysis
 - ShadowAnalysisAgent: Sun position and temporal estimation
 - InfrastructureAnalysisAgent: Strategic infrastructure classification
+
+Military Intelligence Block 2 (2):
+- TemporalComparisonAgent: Temporal change detection and strategic posture
+- NightVisionAgent: Night/low-light scene analysis
 """
 
 # Original agents
@@ -36,6 +40,10 @@ from .shadow_analysis import ShadowAnalysisAgent
 from .vehicle_detection import VehicleDetectionAgent
 from .weapon_detection import WeaponDetectionAgent
 
+# Military Intelligence Block 2
+from .night_vision import NightVisionAgent
+from .temporal_comparison import TemporalComparisonAgent
+
 __all__ = [
     # Original
     "ContextIntelAgent",
@@ -51,4 +59,7 @@ __all__ = [
     "ShadowAnalysisAgent",
     "VehicleDetectionAgent",
     "WeaponDetectionAgent",
+    # Military Intelligence Block 2
+    "NightVisionAgent",
+    "TemporalComparisonAgent",
 ]

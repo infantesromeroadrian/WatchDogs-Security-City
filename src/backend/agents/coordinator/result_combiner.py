@@ -1,11 +1,13 @@
 """
 Result Combination Logic
 Single Responsibility: Combine and validate agent results
-Max: 300 lines
 
-CIA-Level OSINT Analysis with 7 agents:
+Military-Grade OSINT Analysis with 14 agents:
 - vision, ocr, detection, geolocation (original)
 - face_analysis, forensic_analysis, context_intel (CIA-level)
+- vehicle_detection, weapon_detection, crowd_analysis,
+  shadow_analysis, infrastructure_analysis (military intel B1)
+- temporal_comparison, night_vision (military intel B2)
 """
 
 import logging
@@ -22,8 +24,10 @@ from ...models.agent_results import (
     ForensicAnalysisResult,
     GeolocationResult,
     InfrastructureAnalysisResult,
+    NightVisionResult,
     OCRResult,
     ShadowAnalysisResult,
+    TemporalComparisonResult,
     VehicleDetectionResult,
     VisionResult,
     WeaponDetectionResult,
@@ -34,12 +38,12 @@ logger = logging.getLogger(__name__)
 
 
 class ResultCombiner:
-    """Combines and validates results from all 12 agents."""
+    """Combines and validates results from all 14 agents."""
 
     @staticmethod
     def combine_results(state: AnalysisState) -> dict[str, Any]:
         """
-        Combine all 12 agent results into final report with validation.
+        Combine all 14 agent results into final report with validation.
 
         Args:
             state: Analysis state with all agent results
@@ -47,7 +51,7 @@ class ResultCombiner:
         Returns:
             Dict with final_report key containing JSON and text reports
         """
-        logger.info("📊 Combining 12 agent results...")
+        logger.info("📊 Combining 14 agent results...")
 
         # Extract all results — original 7
         vision = state.get("vision_result") or {}
@@ -63,6 +67,9 @@ class ResultCombiner:
         crowd_analysis = state.get("crowd_analysis_result") or {}
         shadow_analysis = state.get("shadow_analysis_result") or {}
         infrastructure_analysis = state.get("infrastructure_analysis_result") or {}
+        # Military Intelligence Block 2
+        temporal_comparison = state.get("temporal_comparison_result") or {}
+        night_vision = state.get("night_vision_result") or {}
 
         # Validate results with Pydantic
         try:
@@ -87,6 +94,11 @@ class ResultCombiner:
                 if infrastructure_analysis
                 else None
             )
+            # Military Intelligence Block 2
+            temporal_result = (
+                TemporalComparisonResult(**temporal_comparison) if temporal_comparison else None
+            )
+            night_result = NightVisionResult(**night_vision) if night_vision else None
 
             # Build validated report
             if vision_result and ocr_result and detection_result:
@@ -103,6 +115,8 @@ class ResultCombiner:
                     crowd_analysis=crowd_result,
                     shadow_analysis=shadow_result,
                     infrastructure_analysis=infra_result,
+                    temporal_comparison=temporal_result,
+                    night_vision=night_result,
                 )
             else:
                 # Handle partial results with defaults
@@ -135,6 +149,8 @@ class ResultCombiner:
                     crowd_analysis=crowd_result,
                     shadow_analysis=shadow_result,
                     infrastructure_analysis=infra_result,
+                    temporal_comparison=temporal_result,
+                    night_vision=night_result,
                 )
 
             # Build final report
@@ -162,6 +178,8 @@ class ResultCombiner:
                 crowd_analysis,
                 shadow_analysis,
                 infrastructure_analysis,
+                temporal_comparison,
+                night_vision,
             )
 
         # Build human-readable text report
@@ -180,9 +198,11 @@ class ResultCombiner:
             crowd_analysis,
             shadow_analysis,
             infrastructure_analysis,
+            temporal_comparison,
+            night_vision,
         )
 
-        logger.info("✅ Analysis complete - military-grade report generated with 12 agents")
+        logger.info("✅ Analysis complete - military-grade report generated with 14 agents")
         return {"final_report": {"json": json_report, "text": text_report}}
 
     @staticmethod
@@ -199,6 +219,8 @@ class ResultCombiner:
         crowd_analysis: dict[str, Any] | None = None,
         shadow_analysis: dict[str, Any] | None = None,
         infrastructure_analysis: dict[str, Any] | None = None,
+        temporal_comparison: dict[str, Any] | None = None,
+        night_vision: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Build fallback report when Pydantic validation fails."""
         report: dict[str, Any] = {
@@ -305,6 +327,28 @@ class ResultCombiner:
                     "analysis": infrastructure_analysis.get("analysis", "")
                     if infrastructure_analysis
                     else "",
+                },
+                # Military Intelligence Block 2
+                "temporal_comparison": {
+                    "status": temporal_comparison.get("status", "unknown")
+                    if temporal_comparison
+                    else "skipped",
+                    "strategic_posture": temporal_comparison.get("strategic_posture", {})
+                    if temporal_comparison
+                    else {},
+                    "analysis": temporal_comparison.get("analysis", "")
+                    if temporal_comparison
+                    else "",
+                },
+                "night_vision": {
+                    "status": night_vision.get("status", "unknown") if night_vision else "skipped",
+                    "visibility_conditions": night_vision.get("visibility_conditions", {})
+                    if night_vision
+                    else {},
+                    "tactical_assessment": night_vision.get("tactical_assessment", {})
+                    if night_vision
+                    else {},
+                    "analysis": night_vision.get("analysis", "") if night_vision else "",
                 },
             },
         }

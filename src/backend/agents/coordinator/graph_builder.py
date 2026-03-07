@@ -2,11 +2,12 @@
 LangGraph Construction
 Single Responsibility: Build and configure the LangGraph workflow
 
-Military-Grade OSINT Analysis Graph with 12 parallel agents:
+Military-Grade OSINT Analysis Graph with 14 parallel agents:
 - vision, ocr, detection, geolocation (original)
 - face_analysis, forensic_analysis, context_intel (CIA-level)
 - vehicle_detection, weapon_detection, crowd_analysis,
-  shadow_analysis, infrastructure_analysis (military intel)
+  shadow_analysis, infrastructure_analysis (military intel B1)
+- temporal_comparison, night_vision (military intel B2)
 """
 
 import logging
@@ -92,6 +93,9 @@ class GraphBuilder:
         workflow.add_node(
             "infrastructure_analysis", agent_runners.run_infrastructure_analysis_agent
         )
+        # Military Intelligence Block 2
+        workflow.add_node("temporal_comparison", agent_runners.run_temporal_comparison_agent)
+        workflow.add_node("night_vision", agent_runners.run_night_vision_agent)
 
         # Add result combiner node
         workflow.add_node("combine", ResultCombiner.combine_results)
@@ -112,6 +116,8 @@ class GraphBuilder:
         workflow.add_edge("crowd_analysis", "combine")
         workflow.add_edge("shadow_analysis", "combine")
         workflow.add_edge("infrastructure_analysis", "combine")
+        workflow.add_edge("temporal_comparison", "combine")
+        workflow.add_edge("night_vision", "combine")
 
         # Combine to END
         workflow.add_edge("combine", END)

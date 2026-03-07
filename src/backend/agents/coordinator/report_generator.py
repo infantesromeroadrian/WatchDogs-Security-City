@@ -2,11 +2,12 @@
 Report Generation
 Single Responsibility: Format analysis results into human-readable reports
 
-Military-Grade OSINT Intelligence Brief with 12 agents:
+Military-Grade OSINT Intelligence Brief with 14 agents:
 - vision, ocr, detection, geolocation (original)
 - face_analysis, forensic_analysis, context_intel (CIA-level)
 - vehicle_detection, weapon_detection, crowd_analysis,
-  shadow_analysis, infrastructure_analysis (military intel)
+  shadow_analysis, infrastructure_analysis (military intel B1)
+- temporal_comparison, night_vision (military intel B2)
 """
 
 import logging
@@ -19,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 class ReportGenerator:
-    """Generates human-readable intelligence briefs from 12 agent results."""
+    """Generates human-readable intelligence briefs from 14 agent results."""
 
     @staticmethod
     def format_text_report(
@@ -35,6 +36,8 @@ class ReportGenerator:
         crowd_analysis: dict[str, Any] | None = None,
         shadow_analysis: dict[str, Any] | None = None,
         infrastructure_analysis: dict[str, Any] | None = None,
+        temporal_comparison: dict[str, Any] | None = None,
+        night_vision: dict[str, Any] | None = None,
     ) -> str:
         """
         Format combined results into CIA-level intelligence brief.
@@ -53,7 +56,7 @@ class ReportGenerator:
         """
         report_lines = [
             "=" * 80,
-            "INTELLIGENCE BRIEF - SISTEMA OSINT MILITARY-GRADE (12 AGENTES)",
+            "INTELLIGENCE BRIEF - SISTEMA OSINT MILITARY-GRADE (14 AGENTES)",
             "=" * 80,
             "",
             "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
@@ -200,6 +203,36 @@ class ReportGenerator:
             ]
         )
         report_lines.extend(ReportGenerator._format_infrastructure_section(infrastructure_analysis))
+
+        # =====================================================================
+        # MILITARY INTELLIGENCE BLOCK 2 (2 new agents)
+        # =====================================================================
+
+        # Temporal Comparison section
+        report_lines.extend(
+            [
+                "",
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+                "🕐 13. COMPARACIÓN TEMPORAL (MILITAR)",
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+                "",
+            ]
+        )
+        report_lines.extend(
+            ReportGenerator._format_temporal_comparison_section(temporal_comparison)
+        )
+
+        # Night Vision section
+        report_lines.extend(
+            [
+                "",
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+                "🌙 14. VISIÓN NOCTURNA (MILITAR)",
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+                "",
+            ]
+        )
+        report_lines.extend(ReportGenerator._format_night_vision_section(night_vision))
 
         # Metrics section
         if METRICS_ENABLED:
@@ -646,6 +679,139 @@ class ReportGenerator:
             lines.append(f"⚠️ Error: {infra.get('error', 'Infrastructure analysis failed')}")
         else:
             lines.append("⏭️ Infrastructure Analysis Agent no ejecutado")
+        return lines
+
+    # =========================================================================
+    # MILITARY INTELLIGENCE BLOCK 2 — Report formatters
+    # =========================================================================
+
+    @staticmethod
+    def _format_temporal_comparison_section(
+        temporal: dict[str, Any] | None = None,
+    ) -> list[str]:
+        """Format temporal comparison / change detection section."""
+        lines: list[str] = []
+        if temporal and temporal.get("status") == "success":
+            summary = temporal.get("summary")
+            if summary:
+                lines.append(f"📋 Resumen: {summary}")
+                lines.append("")
+
+            posture = temporal.get("strategic_posture", {})
+            if posture.get("posture_type"):
+                lines.append(f"⚔️ Postura estratégica: {posture['posture_type']}")
+            if posture.get("confidence"):
+                lines.append(f"   Confianza: {posture['confidence']}")
+
+            structural = temporal.get("structural_changes", {})
+            if structural:
+                new_items = structural.get("new_constructions", [])
+                removed = structural.get("removed_structures", [])
+                modified = structural.get("modifications", [])
+                if new_items:
+                    lines.append("")
+                    lines.append(f"🆕 Nuevas construcciones: {len(new_items)}")
+                if removed:
+                    lines.append(f"🗑️ Estructuras eliminadas: {len(removed)}")
+                if modified:
+                    lines.append(f"🔄 Modificaciones: {len(modified)}")
+
+            activity = temporal.get("activity_detection", {})
+            if activity:
+                lines.append("")
+                lines.append("📊 Cambios de actividad detectados:")
+                for key, val in list(activity.items())[:5]:
+                    lines.append(f"   - {key}: {val}")
+
+            chronology = temporal.get("chronology", [])
+            if chronology:
+                lines.append("")
+                lines.append("📅 Cronología de cambios:")
+                for i, event in enumerate(chronology[:5], 1):
+                    if isinstance(event, dict):
+                        lines.append(
+                            f"   {i}. {event.get('description', 'N/A')} "
+                            f"({event.get('timeframe', 'N/A')})"
+                        )
+                    else:
+                        lines.append(f"   {i}. {event}")
+
+            lines.append("")
+            lines.append(temporal.get("analysis", "No temporal comparison available"))
+
+        elif temporal and temporal.get("status") == "skipped":
+            lines.append("⏭️ Temporal Comparison Agent fue omitido")
+        elif temporal:
+            lines.append(f"⚠️ Error: {temporal.get('error', 'Temporal comparison failed')}")
+        else:
+            lines.append("⏭️ Temporal Comparison Agent no ejecutado")
+        return lines
+
+    @staticmethod
+    def _format_night_vision_section(
+        night: dict[str, Any] | None = None,
+    ) -> list[str]:
+        """Format night vision / low-light analysis section."""
+        lines: list[str] = []
+        if night and night.get("status") == "success":
+            summary = night.get("summary")
+            if summary:
+                lines.append(f"📋 Resumen: {summary}")
+                lines.append("")
+
+            visibility = night.get("visibility_conditions", {})
+            if visibility:
+                if visibility.get("ambient_light"):
+                    lines.append(f"💡 Luz ambiental: {visibility['ambient_light']}")
+                if visibility.get("visibility_range"):
+                    lines.append(f"👁️ Rango de visibilidad: {visibility['visibility_range']}")
+                if visibility.get("quality"):
+                    lines.append(f"📊 Calidad de imagen: {visibility['quality']}")
+
+            light_sources = night.get("light_sources", {})
+            if light_sources:
+                sources = light_sources.get("identified_sources", [])
+                if sources:
+                    lines.append("")
+                    lines.append("🔦 Fuentes de luz identificadas:")
+                    for src in sources[:5]:
+                        if isinstance(src, dict):
+                            lines.append(
+                                f"   - {src.get('type', 'N/A')}: {src.get('description', 'N/A')}"
+                            )
+                        else:
+                            lines.append(f"   - {src}")
+
+            nocturnal = night.get("nocturnal_activity", {})
+            if nocturnal:
+                lines.append("")
+                lines.append("🌙 Actividad nocturna:")
+                for key, val in list(nocturnal.items())[:5]:
+                    lines.append(f"   - {key}: {val}")
+
+            covert = night.get("covert_indicators", {})
+            if covert:
+                indicators = covert.get("indicators", [])
+                if indicators:
+                    lines.append("")
+                    lines.append("🕵️ Indicadores de actividad encubierta:")
+                    for ind in indicators[:5]:
+                        lines.append(f"   - {ind}")
+
+            assessment = night.get("tactical_assessment", {})
+            if assessment.get("risk_level"):
+                lines.append("")
+                lines.append(f"🎯 Nivel de riesgo nocturno: {assessment['risk_level']}")
+
+            lines.append("")
+            lines.append(night.get("analysis", "No night vision analysis available"))
+
+        elif night and night.get("status") == "skipped":
+            lines.append("⏭️ Night Vision Agent fue omitido")
+        elif night:
+            lines.append(f"⚠️ Error: {night.get('error', 'Night vision failed')}")
+        else:
+            lines.append("⏭️ Night Vision Agent no ejecutado")
         return lines
 
     @staticmethod
