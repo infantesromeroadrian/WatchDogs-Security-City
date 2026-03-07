@@ -13,8 +13,8 @@ WORKDIR /build
 # Copy dependency files
 COPY requirements.txt .
 
-# Install dependencies to a target directory
-RUN pip install --no-cache-dir --target=/build/deps -r requirements.txt
+# Install dependencies system-wide (so bin scripts like gunicorn land in /usr/local/bin)
+RUN pip install --no-cache-dir -r requirements.txt
 
 # ============================================================================
 # Stage 2: Runtime - Minimal production image
@@ -49,8 +49,9 @@ RUN useradd -m -u 1000 -s /bin/bash watchdogs && \
 
 WORKDIR /app
 
-# Copy dependencies from builder
-COPY --from=builder /build/deps /usr/local/lib/python3.12/site-packages/
+# Copy dependencies from builder (packages + executable scripts like gunicorn)
+COPY --from=builder /usr/local/lib/python3.12/site-packages/ /usr/local/lib/python3.12/site-packages/
+COPY --from=builder /usr/local/bin/ /usr/local/bin/
 
 # Copy application code
 COPY --chown=watchdogs:watchdogs src/ ./src/
@@ -67,10 +68,9 @@ EXPOSE 5000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:5000/api/health')" || exit 1
 
-# Production WSGI server — gunicorn via python -m (--target pip install doesn't put scripts in $PATH).
+# Production WSGI server — gunicorn with gthread workers for parallel agent calls.
 # Workers: 2 (demo/internal use). Timeout: 300s (16 agents calling Groq in parallel).
-# Falls back to Flask dev server if gunicorn is unavailable.
-CMD ["python", "-m", "gunicorn", \
+CMD ["gunicorn", \
      "--bind", "0.0.0.0:5000", \
      "--workers", "2", \
      "--timeout", "300", \
