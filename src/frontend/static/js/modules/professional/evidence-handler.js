@@ -5,6 +5,17 @@
 
 import { log } from '../logger.js';
 
+/** H-5: Escape HTML special chars to prevent XSS from server data. */
+function esc(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 export class EvidenceHandler {
     constructor(baseURL, showToast, createMetadataRow) {
         this.baseURL = baseURL;
@@ -73,10 +84,10 @@ export class EvidenceHandler {
         this.evidencePanel.style.display = 'block';
         let html = '';
         
-        html += `<div class="evidence-id">Evidence ID: ${evidence.evidence_id}</div>`;
+        html += `<div class="evidence-id">Evidence ID: ${esc(evidence.evidence_id)}</div>`;
         
         html += '<div style="margin-bottom: 15px;">';
-        html += this.createMetadataRow('Generated', new Date(evidence.timestamp).toLocaleString());
+        html += this.createMetadataRow('Generated', esc(new Date(evidence.timestamp).toLocaleString()));
         html += '</div>';
         
         // Chain of Custody
@@ -85,10 +96,10 @@ export class EvidenceHandler {
             html += '<h5 style="color: #ff6464; margin-bottom: 8px;">🔗 Chain of Custody</h5>';
             evidence.chain_of_custody.forEach((entry, i) => {
                 html += `<div style="padding: 8px; background: rgba(255,255,255,0.05); margin-bottom: 5px; border-radius: 3px;">`;
-                html += `<strong>${i + 1}. ${entry.action.toUpperCase()}</strong><br/>`;
-                html += `<small>Timestamp: ${new Date(entry.timestamp).toLocaleString()}</small><br/>`;
-                if (entry.system) html += `<small>System: ${entry.system}</small><br/>`;
-                if (entry.hash) html += `<small>Hash: ${entry.hash.substring(0, 16)}...</small>`;
+                html += `<strong>${i + 1}. ${esc(entry.action?.toUpperCase())}</strong><br/>`;
+                html += `<small>Timestamp: ${esc(new Date(entry.timestamp).toLocaleString())}</small><br/>`;
+                if (entry.system) html += `<small>System: ${esc(entry.system)}</small><br/>`;
+                if (entry.hash) html += `<small>Hash: ${esc(entry.hash.substring(0, 16))}...</small>`;
                 html += `</div>`;
             });
             html += '</div>';
@@ -98,16 +109,23 @@ export class EvidenceHandler {
         if (evidence.integrity) {
             html += '<div style="margin-bottom: 15px;">';
             html += '<h5 style="color: #ff6464; margin-bottom: 8px;">✓ Integrity Verification</h5>';
-            html += this.createMetadataRow('SHA-256', evidence.integrity.sha256);
+            html += this.createMetadataRow('SHA-256', esc(evidence.integrity.sha256));
             html += this.createMetadataRow('Verified', evidence.integrity.verified ? '✅ Yes' : '❌ No');
             html += '</div>';
         }
         
         html += '<div style="margin-top: 15px;">';
-        html += `<button class="btn btn-secondary" onclick="professionalFeatures.downloadEvidenceJSON()" style="width: 100%;">💾 Download Evidence Package (JSON)</button>`;
+        html += `<button class="btn btn-secondary evidence-download-btn" style="width: 100%;">💾 Download Evidence Package (JSON)</button>`;
         html += '</div>';
         
         this.evidenceContent.innerHTML = html;
+        
+        // C-6: Attach listener via DOM instead of inline onclick (CSP-safe)
+        const downloadBtn = this.evidenceContent.querySelector('.evidence-download-btn');
+        if (downloadBtn) {
+            downloadBtn.addEventListener('click', () => this.downloadJSON());
+        }
+        
         this.evidencePanel.scrollIntoView({behavior: 'smooth', block: 'nearest'});
     }
     

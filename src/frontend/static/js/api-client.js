@@ -20,7 +20,6 @@ class APIClient {
         
         // State
         this.lastResults = null;
-        this.chatHistory = [];
         this.currentFrame = null;
         this.currentROI = null;
         this.currentSessionId = null;  // Server-side session for image persistence

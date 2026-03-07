@@ -818,7 +818,11 @@ For more information, consult your organization's Data Protection Officer.
         this.analysisSection.style.display = 'none';
         this.apiClient.lastResults = null;
         this.apiClient.currentFrame = null;
-        this.apiClient.chatHistory = [];
+        // H-7: Clear stale session so next analysis starts fresh
+        this.apiClient.currentSessionId = null;
+        this.apiClient.currentROI = null;
+        this.apiClient.isMultiFrameAnalysis = false;
+        this.apiClient.frameCollection = null;
         
         if (this.apiClient.chatHandler) {
             this.apiClient.chatHandler.reset();

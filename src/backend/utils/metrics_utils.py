@@ -3,12 +3,17 @@ Metrics and observability utilities for agent operations.
 """
 
 import logging
+import threading
 import time
 from collections import defaultdict
 from functools import wraps
 from typing import Any
 
 logger = logging.getLogger(__name__)
+
+# H-1: Thread lock — protects _metrics and _agent_stats from data races
+# when 7 agents update concurrently.
+_lock = threading.Lock()
 
 # In-memory metrics storage
 _metrics: dict[str, list[dict[str, Any]]] = defaultdict(list)
@@ -76,36 +81,38 @@ def track_agent_metrics(agent_name: str):
                 # Calculate latency
                 latency_ms = (time.perf_counter() - start_time) * 1000
 
-                # Update stats
-                stats = _agent_stats[agent_name]
-                stats["total_calls"] += 1
+                with _lock:
+                    # Update stats
+                    stats = _agent_stats[agent_name]
+                    stats["total_calls"] += 1
 
-                if status == "success":
-                    stats["success_count"] += 1
-                elif status == "error":
-                    stats["error_count"] += 1
-                elif status == "timeout":
-                    stats["timeout_count"] += 1
+                    if status == "success":
+                        stats["success_count"] += 1
+                    elif status == "error":
+                        stats["error_count"] += 1
+                    elif status == "timeout":
+                        stats["timeout_count"] += 1
 
-                stats["total_latency_ms"] += latency_ms
-                stats["min_latency_ms"] = min(stats["min_latency_ms"], latency_ms)
-                stats["max_latency_ms"] = max(stats["max_latency_ms"], latency_ms)
+                    stats["total_latency_ms"] += latency_ms
+                    stats["min_latency_ms"] = min(stats["min_latency_ms"], latency_ms)
+                    stats["max_latency_ms"] = max(stats["max_latency_ms"], latency_ms)
 
-                # Store metric entry
-                _metrics[agent_name].append(
-                    {
-                        "timestamp": time.time(),
-                        "status": status,
-                        "latency_ms": latency_ms,
-                        "error_type": error_type,
-                    }
-                )
+                    # Store metric entry
+                    _metrics[agent_name].append(
+                        {
+                            "timestamp": time.time(),
+                            "status": status,
+                            "latency_ms": latency_ms,
+                            "error_type": error_type,
+                        }
+                    )
 
-                # Keep only last 1000 entries per agent
-                if len(_metrics[agent_name]) > 1000:
-                    _metrics[agent_name] = _metrics[agent_name][-1000:]
+                    # Keep only last 1000 entries per agent
+                    if len(_metrics[agent_name]) > 1000:
+                        _metrics[agent_name] = _metrics[agent_name][-1000:]
 
-                avg_ms = stats["total_latency_ms"] / stats["total_calls"]
+                    avg_ms = stats["total_latency_ms"] / stats["total_calls"]
+
                 logger.debug(
                     "📊 %s: %s in %.2fms (avg: %.2fms)",
                     agent_name,
@@ -129,32 +136,34 @@ def get_agent_metrics(agent_name: str | None = None) -> dict[str, Any]:
     Returns:
         Dict with metrics
     """
-    if agent_name:
-        stats = _agent_stats.get(agent_name, {})
-        if stats["total_calls"] > 0:
-            stats["avg_latency_ms"] = stats["total_latency_ms"] / stats["total_calls"]
-            stats["success_rate"] = stats["success_count"] / stats["total_calls"]
-        else:
-            stats["avg_latency_ms"] = 0.0
-            stats["success_rate"] = 0.0
-        return {agent_name: stats}
+    with _lock:
+        if agent_name:
+            stats = _agent_stats.get(agent_name, {})
+            if stats and stats["total_calls"] > 0:
+                stats["avg_latency_ms"] = stats["total_latency_ms"] / stats["total_calls"]
+                stats["success_rate"] = stats["success_count"] / stats["total_calls"]
+            elif stats:
+                stats["avg_latency_ms"] = 0.0
+                stats["success_rate"] = 0.0
+            return {agent_name: stats}
 
-    # Return all metrics
-    result = {}
-    for name, stats in _agent_stats.items():
-        if stats["total_calls"] > 0:
-            stats["avg_latency_ms"] = stats["total_latency_ms"] / stats["total_calls"]
-            stats["success_rate"] = stats["success_count"] / stats["total_calls"]
-        else:
-            stats["avg_latency_ms"] = 0.0
-            stats["success_rate"] = 0.0
-        result[name] = stats.copy()
+        # Return all metrics
+        result = {}
+        for name, stats in _agent_stats.items():
+            if stats["total_calls"] > 0:
+                stats["avg_latency_ms"] = stats["total_latency_ms"] / stats["total_calls"]
+                stats["success_rate"] = stats["success_count"] / stats["total_calls"]
+            else:
+                stats["avg_latency_ms"] = 0.0
+                stats["success_rate"] = 0.0
+            result[name] = stats.copy()
 
-    return result
+        return result
 
 
 def reset_metrics() -> None:
     """Reset all metrics."""
-    _metrics.clear()
-    _agent_stats.clear()
+    with _lock:
+        _metrics.clear()
+        _agent_stats.clear()
     logger.info("📊 Metrics reset")

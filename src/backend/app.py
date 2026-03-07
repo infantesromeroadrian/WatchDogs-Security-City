@@ -46,7 +46,7 @@ CORS(
         r"/api/*": {
             "origins": ALLOWED_ORIGINS,
             "methods": ["GET", "POST"],
-            "allow_headers": ["Content-Type"],
+            "allow_headers": ["Content-Type", "Authorization"],
         }
     },
 )
@@ -94,8 +94,9 @@ def set_security_headers(response):
         "default-src 'self'; "
         "script-src 'self' 'unsafe-inline' https://api.mapbox.com; "
         "style-src 'self' 'unsafe-inline' https://api.mapbox.com; "
+        "font-src 'self' https://fonts.mapbox.com; "
         "img-src 'self' data: blob: https://*.mapbox.com; "
-        "connect-src 'self' https://api.mapbox.com https://*.tiles.mapbox.com; "
+        "connect-src 'self' https://api.mapbox.com https://*.tiles.mapbox.com https://events.mapbox.com; "
         "worker-src 'self' blob:; "
         "frame-ancestors 'none';"
     )

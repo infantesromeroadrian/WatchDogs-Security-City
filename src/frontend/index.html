@@ -333,7 +333,23 @@
     </div>
 
     <!-- Scripts -->
-    <!-- L-2: Logger module (must load before classic scripts for window.__wdLog) -->
+    <!-- C-5: Pre-initialize logger synchronously so classic (non-module) scripts get it -->
+    <script>
+    (function() {
+        var _isDebug = function() {
+            return window.__WATCHDOGS_DEBUG__ === true ||
+                document.documentElement.dataset.debug === 'true';
+        };
+        var _noop = function() {};
+        window.__wdLog = {
+            get debug() { return _isDebug() ? console.debug.bind(console) : _noop; },
+            get info() { return _isDebug() ? console.log.bind(console) : _noop; },
+            get warn() { return console.warn.bind(console); },
+            get error() { return console.error.bind(console); }
+        };
+    })();
+    </script>
+    <!-- L-2: Logger module (re-exports same API for ES module imports) -->
     <script type="module" src="static/js/modules/logger.js"></script>
     <script src="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.js"></script>
     <script src="static/js/video-player.js"></script>

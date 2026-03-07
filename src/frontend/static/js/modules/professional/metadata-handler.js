@@ -5,6 +5,17 @@
 
 import { log } from '../logger.js';
 
+/** H-5: Escape HTML special chars to prevent XSS from server data. */
+function esc(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 export class MetadataHandler {
     constructor(baseURL, showToast) {
         this.baseURL = baseURL;
@@ -142,8 +153,8 @@ export class MetadataHandler {
     createRow(label, value) {
         return `
             <div class="metadata-row">
-                <div class="metadata-label">${label}:</div>
-                <div class="metadata-value">${value}</div>
+                <div class="metadata-label">${esc(label)}:</div>
+                <div class="metadata-value">${esc(value)}</div>
             </div>
         `;
     }

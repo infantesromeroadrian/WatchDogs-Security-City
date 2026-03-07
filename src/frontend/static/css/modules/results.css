@@ -509,29 +509,45 @@
     background: rgba(0, 210, 255, 0.5);
 }
 
-.message {
+.message,
+.chat-message {
     margin-bottom: var(--spacing-sm);
     padding: var(--spacing-sm);
     border-radius: var(--radius-sm);
     line-height: 1.6;
 }
 
-.message.user {
+.message.user,
+.chat-message.user-message {
     background: rgba(0, 210, 255, 0.15);
     border-left: 3px solid var(--accent-primary);
     margin-left: var(--spacing-md);
 }
 
-.message.assistant {
+.message.assistant,
+.chat-message.assistant-message {
     background: rgba(255, 255, 255, 0.05);
     border-left: 3px solid var(--text-secondary);
     margin-right: var(--spacing-md);
 }
 
-.message strong {
+.message strong,
+.chat-message .message-header {
     color: var(--accent-primary);
     display: block;
     margin-bottom: var(--spacing-xs);
+}
+
+.chat-message .message-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.chat-message .message-content {
+    font-size: 0.9rem;
 }
 
 .chat-input-container {

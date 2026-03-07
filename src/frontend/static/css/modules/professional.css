@@ -69,10 +69,9 @@
     margin-bottom: 15px;
 }
 
-.toast-notification {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
+/* H-6: .toast matches JS class names; .toast-notification kept for backwards compat */
+.toast-notification,
+.toast {
     background: linear-gradient(45deg, #00d2ff, #3a7bd5);
     color: white;
     padding: 15px 25px;
@@ -80,7 +79,19 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     z-index: 10000;
     animation: slideInRight 0.3s ease-out;
+    opacity: 0;
+    transform: translateX(100px);
+    transition: opacity 0.3s, transform 0.3s;
 }
+
+.toast.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.toast.toast-success { background: linear-gradient(45deg, #00c853, #009624); }
+.toast.toast-error   { background: linear-gradient(45deg, #ff4444, #cc0000); }
+.toast.toast-warning { background: linear-gradient(45deg, #ffab00, #ff8f00); }
 
 @keyframes slideInRight {
     from {

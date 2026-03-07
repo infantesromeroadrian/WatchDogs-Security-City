@@ -263,8 +263,9 @@ class ROISelector {
         
         const { x, y } = this.screenToCanvas(e.clientX, e.clientY);
         
-        // If holding Space or Middle mouse button, start panning
-        if (e.button === 1 || e.shiftKey || this.scale > 1.0) {
+        // H-2: Pan only on middle-click or Shift+click — left click draws ROI
+        // even when zoomed (previously scale > 1.0 forced panning, blocking ROI)
+        if (e.button === 1 || e.shiftKey) {
             this.startPan(x, y);
             this.canvas.style.cursor = 'grabbing';
         } else {
@@ -331,7 +332,13 @@ class ROISelector {
     
     handleTouchEnd(e) {
         e.preventDefault();
-        this.handleMouseUp();
+        // H-3: Use changedTouches to get final position (touches is empty on touchend)
+        const touch = e.changedTouches?.[0];
+        if (touch) {
+            this.handleMouseUp({ clientX: touch.clientX, clientY: touch.clientY });
+        } else {
+            this.handleMouseUp();
+        }
     }
     
     // ========================================================================

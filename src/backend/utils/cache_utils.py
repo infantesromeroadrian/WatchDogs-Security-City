@@ -4,6 +4,7 @@ Caching utilities for agent results with LRU eviction.
 
 import hashlib
 import logging
+import threading
 import time
 from collections import OrderedDict
 from typing import Any
@@ -12,6 +13,10 @@ logger = logging.getLogger(__name__)
 
 # Maximum cache size (LRU eviction when exceeded)
 MAX_CACHE_SIZE = 500  # Configurable global limit
+
+# H-1: Thread lock — protects _cache and _cache_ttl from data races
+# when 7 agents write concurrently.
+_lock = threading.Lock()
 
 # In-memory cache with LRU (OrderedDict maintains insertion order)
 _cache: OrderedDict[str, dict[str, Any]] = OrderedDict()
@@ -78,22 +83,23 @@ def get_cached_result(cache_key: str, ttl_seconds: int = 3600) -> dict[str, Any]
     Returns:
         Cached result or None
     """
-    if cache_key not in _cache:
-        return None
+    with _lock:
+        if cache_key not in _cache:
+            return None
 
-    # Check TTL
-    if cache_key in _cache_ttl and time.time() > _cache_ttl[cache_key]:
-        # Expired, remove
-        del _cache[cache_key]
-        del _cache_ttl[cache_key]
-        logger.debug("🗑️ Cache expired for key: %s...", cache_key[:20])
-        return None
+        # Check TTL
+        if cache_key in _cache_ttl and time.time() > _cache_ttl[cache_key]:
+            # Expired, remove
+            del _cache[cache_key]
+            del _cache_ttl[cache_key]
+            logger.debug("🗑️ Cache expired for key: %s...", cache_key[:20])
+            return None
 
-    # Move to end (mark as recently used in LRU)
-    _cache.move_to_end(cache_key)
+        # Move to end (mark as recently used in LRU)
+        _cache.move_to_end(cache_key)
 
-    logger.info("💾 Cache hit for key: %s...", cache_key[:20])
-    return _cache[cache_key].copy()
+        logger.info("💾 Cache hit for key: %s...", cache_key[:20])
+        return _cache[cache_key].copy()
 
 
 def set_cached_result(cache_key: str, result: dict[str, Any], ttl_seconds: int = 3600) -> None:
@@ -105,27 +111,29 @@ def set_cached_result(cache_key: str, result: dict[str, Any], ttl_seconds: int =
         result: Result to cache
         ttl_seconds: Time to live in seconds
     """
-    # Evict oldest entry if at limit (LRU policy)
-    if len(_cache) >= MAX_CACHE_SIZE:
-        # Remove oldest (first item in OrderedDict)
-        oldest_key = next(iter(_cache))
-        del _cache[oldest_key]
-        _cache_ttl.pop(oldest_key, None)
-        logger.debug("🗑️ LRU eviction: removed %s... (cache at max size)", oldest_key[:20])
+    with _lock:
+        # Evict oldest entry if at limit (LRU policy)
+        if len(_cache) >= MAX_CACHE_SIZE:
+            # Remove oldest (first item in OrderedDict)
+            oldest_key = next(iter(_cache))
+            del _cache[oldest_key]
+            _cache_ttl.pop(oldest_key, None)
+            logger.debug("🗑️ LRU eviction: removed %s... (cache at max size)", oldest_key[:20])
 
-    _cache[cache_key] = result.copy()
-    _cache_ttl[cache_key] = time.time() + ttl_seconds
+        _cache[cache_key] = result.copy()
+        _cache_ttl[cache_key] = time.time() + ttl_seconds
 
-    # Move to end (most recently used)
-    _cache.move_to_end(cache_key)
+        # Move to end (most recently used)
+        _cache.move_to_end(cache_key)
 
     logger.debug("💾 Cached result for key: %s... (TTL: %ss)", cache_key[:20], ttl_seconds)
 
 
 def clear_cache() -> None:
     """Clear all cached results."""
-    _cache.clear()
-    _cache_ttl.clear()
+    with _lock:
+        _cache.clear()
+        _cache_ttl.clear()
     logger.info("🗑️ Cache cleared")
 
 
@@ -136,19 +144,20 @@ def get_cache_stats() -> dict[str, Any]:
     Returns:
         Dict with cache stats
     """
-    now = time.time()
-    expired = sum(1 for ttl in _cache_ttl.values() if now > ttl)
-    active = len(_cache) - expired
+    with _lock:
+        now = time.time()
+        expired = sum(1 for ttl in _cache_ttl.values() if now > ttl)
+        active = len(_cache) - expired
 
-    # Calculate memory usage (approximate)
-    memory_bytes = sum(len(str(v).encode()) for v in _cache.values())
-    memory_mb = memory_bytes / 1024 / 1024
+        # Calculate memory usage (approximate)
+        memory_bytes = sum(len(str(v).encode()) for v in _cache.values())
+        memory_mb = memory_bytes / 1024 / 1024
 
-    return {
-        "total_entries": len(_cache),
-        "active_entries": active,
-        "expired_entries": expired,
-        "max_size": MAX_CACHE_SIZE,
-        "utilization_pct": (len(_cache) / MAX_CACHE_SIZE) * 100 if MAX_CACHE_SIZE > 0 else 0,
-        "memory_usage_mb": round(memory_mb, 2),
-    }
+        return {
+            "total_entries": len(_cache),
+            "active_entries": active,
+            "expired_entries": expired,
+            "max_size": MAX_CACHE_SIZE,
+            "utilization_pct": (len(_cache) / MAX_CACHE_SIZE) * 100 if MAX_CACHE_SIZE > 0 else 0,
+            "memory_usage_mb": round(memory_mb, 2),
+        }

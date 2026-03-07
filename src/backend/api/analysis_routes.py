@@ -12,6 +12,7 @@ from flask import Blueprint, Response, jsonify, request
 from ..agents.coordinator import CoordinatorAgent
 from ..agents.vision_agent import VisionAgent
 from ..config import MAX_BASE64_SIZE_BYTES, MAX_BASE64_SIZE_MB
+from ..exceptions import ImageProcessingError
 from ..services.image_service import ImageService
 from ..services.session_store import session_store
 from ..utils.location_extractor import LocationExtractor
@@ -36,14 +37,22 @@ def validate_base64_size(base64_string: str) -> tuple[bool, str | None]:
     """
     Validate base64 string size to prevent DoS attacks.
 
+    H-8: Base64 encodes 3 bytes into 4 chars, so the decoded byte size is
+    approximately ``len(string) * 3 / 4``.  We compare *decoded* bytes
+    against MAX_BASE64_SIZE_BYTES to avoid the ~33 % under-counting bug
+    of comparing character length directly.
+
     Args:
         base64_string: Base64 encoded string
 
     Returns:
         Tuple of (is_valid, error_message)
     """
-    if len(base64_string) > MAX_BASE64_SIZE_BYTES:
-        size_mb = len(base64_string) / (1024 * 1024)
+    # Strip optional data-URI prefix for accurate measurement
+    raw = base64_string.split(",", 1)[-1] if "," in base64_string else base64_string
+    estimated_bytes = len(raw) * 3 // 4
+    if estimated_bytes > MAX_BASE64_SIZE_BYTES:
+        size_mb = estimated_bytes / (1024 * 1024)
         return (
             False,
             f"Frame too large ({size_mb:.1f}MB). Max allowed: {MAX_BASE64_SIZE_MB}MB",
@@ -216,6 +225,10 @@ def analyze_frame():
         logger.error("Validation error: %s", e)
         return jsonify({"success": False, "error": str(e)}), 400
 
+    except ImageProcessingError as e:
+        logger.error("Image processing error: %s", e)
+        return jsonify({"success": False, "error": f"Image processing failed: {e}"}), 422
+
     except (TypeError, KeyError) as e:
         logger.error("Analysis error: %s", e)
         return jsonify({"success": False, "error": "Internal analysis error"}), 500
@@ -323,6 +336,9 @@ def analyze_frame_stream():
     except ValueError as e:
         logger.error("SSE validation error: %s", e)
         return jsonify({"success": False, "error": str(e)}), 400
+    except ImageProcessingError as e:
+        logger.error("SSE image processing error: %s", e)
+        return jsonify({"success": False, "error": f"Image processing failed: {e}"}), 422
     except (TypeError, KeyError) as e:
         logger.error("SSE analysis error: %s", e)
         return jsonify({"success": False, "error": str(e)}), 500
