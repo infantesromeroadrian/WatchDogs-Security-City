@@ -6,6 +6,9 @@
 import { log } from './logger.js';
 
 export class ChatHandler {
+    /** L-6: Max stored chat messages to prevent unbounded memory growth. */
+    static MAX_HISTORY = 50;
+
     constructor(apiClient) {
         this.apiClient = apiClient;
         this.baseURL = apiClient.baseURL;
@@ -109,7 +112,7 @@ export class ChatHandler {
                 });
             }
             
-            // Update chat history
+            // Update chat history (L-6: cap at MAX_HISTORY to prevent memory leak)
             this.chatHistory.push({
                 role: 'user',
                 content: message
@@ -117,6 +120,9 @@ export class ChatHandler {
                 role: 'assistant',
                 content: data.response
             });
+            if (this.chatHistory.length > ChatHandler.MAX_HISTORY) {
+                this.chatHistory = this.chatHistory.slice(-ChatHandler.MAX_HISTORY);
+            }
             
         } catch (error) {
             log.error('Chat error:', error);

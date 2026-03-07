@@ -60,18 +60,16 @@ export class UIManager {
             });
         });
         
-        // Copy JSON button
-        this.copyJsonBtn.addEventListener('click', () => {
+        // L-10: Defensive null guards on action buttons
+        this.copyJsonBtn?.addEventListener('click', () => {
             this.copyJSON();
         });
         
-        // Download report button
-        this.downloadReportBtn.addEventListener('click', () => {
+        this.downloadReportBtn?.addEventListener('click', () => {
             this.downloadReport();
         });
         
-        // New analysis button
-        this.newAnalysisBtn.addEventListener('click', () => {
+        this.newAnalysisBtn?.addEventListener('click', () => {
             this.resetAnalysis();
         });
         
@@ -768,11 +766,16 @@ For more information, consult your organization's Data Protection Officer.
     }
     
     switchTab(tabName) {
-        // Update tab buttons
+        // Update tab buttons (L-7: toggle aria-selected for accessibility)
         document.querySelectorAll('.tab').forEach(tab => {
             tab.classList.remove('active');
+            tab.setAttribute('aria-selected', 'false');
         });
-        document.querySelector(`.tab[data-tab="${tabName}"]`)?.classList.add('active');
+        const activeTab = document.querySelector(`.tab[data-tab="${tabName}"]`);
+        if (activeTab) {
+            activeTab.classList.add('active');
+            activeTab.setAttribute('aria-selected', 'true');
+        }
         
         // Update tab content
         document.querySelectorAll('.tab-content').forEach(content => {
@@ -785,15 +788,38 @@ For more information, consult your organization's Data Protection Officer.
         if (!this.apiClient.lastResults) return;
         
         const jsonText = JSON.stringify(this.apiClient.lastResults.json, null, 2);
-        navigator.clipboard.writeText(jsonText).then(() => {
+
+        // L-8: Clipboard API fallback — navigator.clipboard requires secure context (HTTPS/localhost)
+        const onSuccess = () => {
             this.copyJsonBtn.textContent = '✅ Copiado';
-            setTimeout(() => {
-                this.copyJsonBtn.textContent = '📋 Copiar JSON';
-            }, 2000);
-        }).catch(err => {
-            log.error('Failed to copy:', err);
-            alert('Error al copiar al portapapeles');
-        });
+            setTimeout(() => { this.copyJsonBtn.textContent = '📋 Copiar JSON'; }, 2000);
+        };
+
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(jsonText).then(onSuccess).catch(err => {
+                log.warn('Clipboard API failed, trying fallback:', err);
+                this._copyFallback(jsonText) ? onSuccess() : alert('Error al copiar al portapapeles');
+            });
+        } else {
+            this._copyFallback(jsonText) ? onSuccess() : alert('Error al copiar al portapapeles');
+        }
+    }
+
+    /** L-8: Textarea-based copy fallback for insecure contexts. */
+    _copyFallback(text) {
+        try {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.cssText = 'position:fixed;left:-9999px;top:-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            const ok = document.execCommand('copy');
+            ta.remove();
+            return ok;
+        } catch (e) {
+            log.error('Copy fallback failed:', e);
+            return false;
+        }
     }
     
     downloadReport() {

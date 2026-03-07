@@ -8,7 +8,14 @@ from datetime import UTC, datetime
 from flask import Blueprint, jsonify, request, send_file
 from werkzeug.utils import secure_filename
 
-from ..config import METRICS_ENABLED, TEMP_VIDEO_PATH, VIDEO_RETENTION_HOURS
+from ..config import (
+    MAPBOX_ACCESS_TOKEN,
+    METRICS_ENABLED,
+    OPENAI_API_KEY,
+    OPENAI_MODEL,
+    TEMP_VIDEO_PATH,
+    VIDEO_RETENTION_HOURS,
+)
 from ..services.video_service import VideoService
 from ..utils.cache_utils import get_cache_stats
 from ..utils.metrics_utils import get_agent_metrics
@@ -25,11 +32,20 @@ video_service = VideoService()
 
 @system_bp.route("/health", methods=["GET"])
 def health_check():
-    """Health check endpoint."""
+    """Health check endpoint with dependency verification."""
+    # L-5: Verify critical dependencies beyond a simple "ok"
+    checks = {
+        "llm_configured": bool(OPENAI_API_KEY and OPENAI_API_KEY != "lm-studio"),
+        "llm_model": OPENAI_MODEL,
+        "temp_dir_writable": TEMP_VIDEO_PATH.is_dir(),
+        "map_configured": bool(MAPBOX_ACCESS_TOKEN),
+    }
+    all_ok = checks["llm_configured"] and checks["temp_dir_writable"]
     return jsonify(
         {
-            "status": "healthy",
+            "status": "healthy" if all_ok else "degraded",
             "service": "video-analysis-agents",
+            "checks": checks,
             "timestamp": datetime.now(UTC).isoformat(),
         }
     )

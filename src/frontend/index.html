@@ -9,7 +9,7 @@
     <meta name="robots" content="noindex, nofollow">
     <title>WatchDogs - Video Analysis System</title>
     <link rel="stylesheet" href="static/css/style.css">
-    <link href="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.css" rel="stylesheet">
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.css" rel="stylesheet" crossorigin="anonymous">
 </head>
 <body>
     <div class="container">
@@ -57,14 +57,14 @@
             <h2>🎬 2. Reproducir y Seleccionar Frame</h2>
             
             <div class="video-container">
-                <video id="videoPlayer" controls></video>
-                <canvas id="roiCanvas"></canvas>
+                <video id="videoPlayer" controls aria-label="Reproductor de video para análisis OSINT"></video>
+                <canvas id="roiCanvas" aria-label="Selector de región de interés sobre el frame capturado"></canvas>
                 <!-- Zoom Controls Overlay -->
                 <div class="zoom-controls" style="position: absolute; top: 10px; right: 10px; background: rgba(0, 0, 0, 0.8); padding: 10px; border-radius: 8px; display: none; z-index: 20; border: 2px solid #00d2ff;">
                     <div style="color: #00d2ff; font-size: 11px; text-align: center; margin-bottom: 8px; font-weight: bold;">ZOOM</div>
-                    <button id="zoomInBtn" class="btn-zoom" style="display: block; width: 100%; margin-bottom: 5px; padding: 8px 12px; background: #00d2ff; border: none; border-radius: 4px; cursor: pointer; color: white; font-weight: bold; font-size: 14px;">🔍 +</button>
-                    <button id="zoomOutBtn" class="btn-zoom" style="display: block; width: 100%; margin-bottom: 5px; padding: 8px 12px; background: #00d2ff; border: none; border-radius: 4px; cursor: pointer; color: white; font-weight: bold; font-size: 14px;">🔍 -</button>
-                    <button id="zoomResetBtn" class="btn-zoom" style="display: block; width: 100%; margin-bottom: 5px; padding: 8px 12px; background: #764ba2; border: none; border-radius: 4px; cursor: pointer; color: white; font-weight: bold; font-size: 14px;">↺ Reset</button>
+                    <button id="zoomInBtn" class="btn-zoom" aria-label="Acercar zoom" style="display: block; width: 100%; margin-bottom: 5px; padding: 8px 12px; background: #00d2ff; border: none; border-radius: 4px; cursor: pointer; color: white; font-weight: bold; font-size: 14px;">🔍 +</button>
+                    <button id="zoomOutBtn" class="btn-zoom" aria-label="Alejar zoom" style="display: block; width: 100%; margin-bottom: 5px; padding: 8px 12px; background: #00d2ff; border: none; border-radius: 4px; cursor: pointer; color: white; font-weight: bold; font-size: 14px;">🔍 -</button>
+                    <button id="zoomResetBtn" class="btn-zoom" aria-label="Resetear zoom" style="display: block; width: 100%; margin-bottom: 5px; padding: 8px 12px; background: #764ba2; border: none; border-radius: 4px; cursor: pointer; color: white; font-weight: bold; font-size: 14px;">↺ Reset</button>
                     <div id="zoomLevel" style="color: #00ff00; font-size: 13px; text-align: center; margin-top: 8px; font-weight: bold; background: rgba(0, 255, 0, 0.1); padding: 5px; border-radius: 4px;">100%</div>
                 </div>
             </div>
@@ -118,24 +118,24 @@
         <section class="analysis-section" id="analysisSection" style="display: none;">
             <h2>📊 3. Resultados del Análisis</h2>
             
-            <div class="loading-indicator" id="loadingIndicator" style="display: none;">
+            <div class="loading-indicator" id="loadingIndicator" style="display: none;" role="status" aria-live="polite">
                 <div class="spinner"></div>
                 <p>🤖 Ejecutando agentes de análisis...</p>
                 <p class="loading-subtext">Vision Agent → OCR Agent → Detection Agent</p>
             </div>
 
             <div class="results-container" id="resultsContainer" style="display: none;">
-                <!-- Tabs -->
-                <div class="tabs">
-                    <button class="tab active" data-tab="intel">🕵️ CIA Intel</button>
-                    <button class="tab" data-tab="text">📄 Reporte Texto</button>
-                    <button class="tab" data-tab="json">📋 Datos JSON</button>
-                    <button class="tab" data-tab="preview">🖼️ Preview</button>
+                <!-- Tabs (L-7: ARIA tab pattern) -->
+                <div class="tabs" role="tablist" aria-label="Pestañas de resultados del análisis">
+                    <button class="tab active" data-tab="intel" role="tab" id="tab-intel" aria-selected="true" aria-controls="intelTab">🕵️ CIA Intel</button>
+                    <button class="tab" data-tab="text" role="tab" id="tab-text" aria-selected="false" aria-controls="textTab">📄 Reporte Texto</button>
+                    <button class="tab" data-tab="json" role="tab" id="tab-json" aria-selected="false" aria-controls="jsonTab">📋 Datos JSON</button>
+                    <button class="tab" data-tab="preview" role="tab" id="tab-preview" aria-selected="false" aria-controls="previewTab">🖼️ Preview</button>
                 </div>
 
                 <!-- Tab Contents -->
                 <!-- CIA Intel Tab (NEW - CIA-Level Dashboard) -->
-                <div class="tab-content active" id="intelTab">
+                <div class="tab-content active" id="intelTab" role="tabpanel" aria-labelledby="tab-intel">
                     <div class="intel-dashboard">
                         <!-- Privacy Warning Banner -->
                         <div class="privacy-warning" id="privacyWarning">
@@ -254,16 +254,16 @@
                     </div>
                 </div>
 
-                <div class="tab-content" id="textTab">
+                <div class="tab-content" id="textTab" role="tabpanel" aria-labelledby="tab-text">
                     <pre id="textResults" class="results-text"></pre>
                 </div>
 
-                <div class="tab-content" id="jsonTab">
+                <div class="tab-content" id="jsonTab" role="tabpanel" aria-labelledby="tab-json">
                     <pre id="jsonResults" class="results-json"></pre>
                 </div>
 
-                <div class="tab-content" id="previewTab">
-                    <canvas id="previewCanvas"></canvas>
+                <div class="tab-content" id="previewTab" role="tabpanel" aria-labelledby="tab-preview">
+                    <canvas id="previewCanvas" aria-label="Vista previa del frame analizado con ROI superpuesto"></canvas>
                 </div>
 
                 <div class="actions">
@@ -306,8 +306,8 @@
                     <h3>💬 Chat con el Agente - Análisis Conversacional</h3>
                     <div id="chatMessages"></div>
                     <div class="chat-input-container">
-                        <textarea id="chatInput" placeholder="Pregunta sobre la imagen analizada..."></textarea>
-                        <button id="sendChat" class="btn" disabled>Enviar</button>
+                        <textarea id="chatInput" placeholder="Pregunta sobre la imagen analizada..." aria-label="Escribe tu pregunta sobre el análisis"></textarea>
+                        <button id="sendChat" class="btn" disabled aria-label="Enviar pregunta al agente">Enviar</button>
                     </div>
                 </div>
             </div>
@@ -315,7 +315,7 @@
     </div>
 
     <!-- Fullscreen Map Overlay -->
-    <div id="mapFullscreenOverlay">
+    <div id="mapFullscreenOverlay" role="dialog" aria-modal="true" aria-label="Mapa táctico en pantalla completa">
         <div class="map-fullscreen-layout">
             <div class="map-fullscreen-main">
                 <div id="fullMapContainer" style="width:100%;height:100%;"></div>
@@ -331,6 +331,13 @@
             </div>
         </div>
     </div>
+
+    <!-- L-9: Fallback for browsers with JavaScript disabled -->
+    <noscript>
+        <div style="background:#1a1a2e;color:#ff4444;text-align:center;padding:40px;font-family:monospace;font-size:16px;">
+            WatchDogs OSINT requiere JavaScript habilitado para funcionar.
+        </div>
+    </noscript>
 
     <!-- Scripts -->
     <!-- C-5: Pre-initialize logger synchronously so classic (non-module) scripts get it -->
@@ -351,7 +358,7 @@
     </script>
     <!-- L-2: Logger module (re-exports same API for ES module imports) -->
     <script type="module" src="static/js/modules/logger.js"></script>
-    <script src="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.js"></script>
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.js" crossorigin="anonymous"></script>
     <script src="static/js/video-player.js"></script>
     <script src="static/js/roi-selector.js"></script>
     <!-- API Client with ES6 Modules -->
