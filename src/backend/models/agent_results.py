@@ -1,7 +1,7 @@
 """
 Pydantic models for validating agent results.
 
-Each *Result model corresponds to one of the 14 analysis agents.
+Each *Result model corresponds to one of the 16 analysis agents.
 Fields use generic ``dict`` / ``list`` types because the LLM response
 is parsed from free-text into dicts by each agent's response_parser —
 typed sub-models were defined historically but never wired up and have
@@ -543,12 +543,85 @@ class NightVisionResult(BaseModel):
 
 
 # =============================================================================
+# MILITARY INTELLIGENCE RESULTS (Block 3 - 2 new agents)
+# =============================================================================
+
+
+class NATOSymbologyResult(BaseModel):
+    """
+    Result from NATO APP-6 Symbology Agent.
+
+    Military-grade entity classification using NATO APP-6D standard.
+    """
+
+    agent: str = Field(default="nato_symbology", description="Agent identifier")
+    status: str = Field(description="Status: success, error, timeout")
+    analysis: str = Field(description="Full NATO symbology analysis text")
+
+    summary: str | None = Field(default=None, description="NATO symbology summary")
+    identified_entities: list = Field(
+        default_factory=list,
+        description="Entities with SIDC codes and affiliations",
+    )
+    force_composition: dict = Field(
+        default_factory=dict,
+        description="Force composition (friendly, hostile, neutral, unknown counts)",
+    )
+    operational_environment: dict = Field(
+        default_factory=dict,
+        description="Operational environment (domain, weather, terrain)",
+    )
+    tactical_graphics: list = Field(
+        default_factory=list,
+        description="Recommended tactical graphic overlays",
+    )
+    limitations: list = Field(default_factory=list, description="Analysis limitations")
+    error: str | None = Field(default=None, description="Error message if failed")
+
+    model_config = ConfigDict(frozen=False)
+
+
+class MultiMonitorResult(BaseModel):
+    """
+    Result from Multi-Monitor Layout Agent.
+
+    Command center multi-monitor display optimization.
+    """
+
+    agent: str = Field(default="multi_monitor", description="Agent identifier")
+    status: str = Field(description="Status: success, error, timeout")
+    analysis: str = Field(description="Full multi-monitor layout analysis text")
+
+    summary: str | None = Field(default=None, description="Multi-monitor layout summary")
+    scene_complexity: dict = Field(
+        default_factory=dict,
+        description="Scene complexity assessment (level, density, priority agents)",
+    )
+    layout_recommendation: dict = Field(
+        default_factory=dict,
+        description="Layout recommendation (monitor count, arrangement, type)",
+    )
+    information_density: dict = Field(
+        default_factory=dict,
+        description="Information density (critical data, zoom areas, declutter)",
+    )
+    alert_priorities: list = Field(
+        default_factory=list,
+        description="Alert priorities with recommended actions",
+    )
+    limitations: list = Field(default_factory=list, description="Analysis limitations")
+    error: str | None = Field(default=None, description="Error message if failed")
+
+    model_config = ConfigDict(frozen=False)
+
+
+# =============================================================================
 # COMBINED RESULTS
 # =============================================================================
 
 
 class AgentResults(BaseModel):
-    """Combined results from all 14 agents (7 original + 5 military B1 + 2 military B2)."""
+    """Combined results from all 16 agents (7 original + 5 military B1 + 2 military B2 + 2 military B3)."""
 
     # Original agents
     vision: VisionResult
@@ -567,6 +640,9 @@ class AgentResults(BaseModel):
     # Military intelligence agents (Block 2)
     temporal_comparison: TemporalComparisonResult | None = None
     night_vision: NightVisionResult | None = None
+    # Military intelligence agents (Block 3)
+    nato_symbology: NATOSymbologyResult | None = None
+    multi_monitor: MultiMonitorResult | None = None
 
     model_config = ConfigDict(frozen=False)
 

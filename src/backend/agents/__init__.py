@@ -1,7 +1,7 @@
 """
 LangGraph agents package for video frame analysis.
 
-Military-Grade OSINT Analysis Agents (14 total):
+Military-Grade OSINT Analysis Agents (16 total):
 
 Original CIA-Level (7):
 - VisionAgent: General scene analysis
@@ -22,6 +22,10 @@ Military Intelligence Block 1 (5):
 Military Intelligence Block 2 (2):
 - TemporalComparisonAgent: Temporal change detection and strategic posture
 - NightVisionAgent: Night/low-light scene analysis
+
+Military Intelligence Block 3 (2):
+- NATOSymbologyAgent: NATO APP-6D entity classification and SIDC codes
+- MultiMonitorAgent: Multi-monitor command center layout optimization
 """
 
 # Original agents
@@ -44,6 +48,10 @@ from .weapon_detection import WeaponDetectionAgent
 from .night_vision import NightVisionAgent
 from .temporal_comparison import TemporalComparisonAgent
 
+# Military Intelligence Block 3
+from .multi_monitor import MultiMonitorAgent
+from .nato_symbology import NATOSymbologyAgent
+
 __all__ = [
     # Original
     "ContextIntelAgent",
@@ -62,4 +70,7 @@ __all__ = [
     # Military Intelligence Block 2
     "NightVisionAgent",
     "TemporalComparisonAgent",
+    # Military Intelligence Block 3
+    "MultiMonitorAgent",
+    "NATOSymbologyAgent",
 ]

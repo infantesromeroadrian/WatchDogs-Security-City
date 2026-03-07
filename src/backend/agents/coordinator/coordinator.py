@@ -3,7 +3,7 @@ Coordinator Agent - Main Orchestrator
 Single Responsibility: Coordinate multi-agent analysis using LangGraph
 Max: 150 lines (thin orchestrator - delegates to modules)
 
-Military-Grade OSINT Analysis with 14 parallel agents:
+Military-Grade OSINT Analysis with 16 parallel agents:
 
 Original CIA-Level (7):
 - vision, ocr, detection, geolocation
@@ -15,6 +15,9 @@ Military Intelligence Block 1 (5):
 
 Military Intelligence Block 2 (2):
 - temporal_comparison, night_vision
+
+Military Intelligence Block 3 (2):
+- nato_symbology, multi_monitor
 """
 
 import logging
@@ -37,11 +40,11 @@ logger = logging.getLogger(__name__)
 
 class CoordinatorAgent:
     """
-    Coordinator that orchestrates all 14 analysis agents using LangGraph.
+    Coordinator that orchestrates all 16 analysis agents using LangGraph.
 
     This is a thin orchestrator - actual logic is delegated to specialized modules:
-    - AgentRunners: Execute individual agents (14 agents)
-    - GraphBuilder: Build LangGraph workflow with 14-way parallelism
+    - AgentRunners: Execute individual agents (16 agents)
+    - GraphBuilder: Build LangGraph workflow with 16-way parallelism
     - MultiFrameHandler: Handle multi-frame analysis
     - ResultCombiner: Combine agent results (called by graph)
     - ReportGenerator: Generate text reports (called by combiner)
@@ -49,7 +52,7 @@ class CoordinatorAgent:
 
     def __init__(self):
         """Initialize coordinator and all sub-agents."""
-        # Initialize agent runners (contains all 14 agents)
+        # Initialize agent runners (contains all 16 agents)
         self.agent_runners = AgentRunners()
 
         # LangGraph checkpointer for state persistence across invocations
@@ -68,7 +71,7 @@ class CoordinatorAgent:
         self.multi_frame_handler = MultiFrameHandler(self.analyze_frame)
 
         logger.info(
-            "CoordinatorAgent initialized with LangGraph checkpointer (14 agents + chat graph)"
+            "CoordinatorAgent initialized with LangGraph checkpointer (16 agents + chat graph)"
         )
 
     def analyze_frame(
@@ -109,7 +112,7 @@ class CoordinatorAgent:
                 thread_id[:8],
             )
 
-            # Initialize state with all 14 result slots
+            # Initialize state with all 16 result slots
             initial_state: AnalysisState = {
                 "image_base64": image_base64,
                 "context": context,
@@ -132,6 +135,9 @@ class CoordinatorAgent:
                 # Military Intelligence Block 2
                 "temporal_comparison_result": None,
                 "night_vision_result": None,
+                # Military Intelligence Block 3
+                "nato_symbology_result": None,
+                "multi_monitor_result": None,
                 # Final output
                 "final_report": None,
             }
@@ -220,6 +226,9 @@ class CoordinatorAgent:
                 # Military Intelligence Block 2
                 "temporal_comparison_result": None,
                 "night_vision_result": None,
+                # Military Intelligence Block 3
+                "nato_symbology_result": None,
+                "multi_monitor_result": None,
                 # Final output
                 "final_report": None,
             }

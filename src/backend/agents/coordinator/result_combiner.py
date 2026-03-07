@@ -2,12 +2,13 @@
 Result Combination Logic
 Single Responsibility: Combine and validate agent results
 
-Military-Grade OSINT Analysis with 14 agents:
+Military-Grade OSINT Analysis with 16 agents:
 - vision, ocr, detection, geolocation (original)
 - face_analysis, forensic_analysis, context_intel (CIA-level)
 - vehicle_detection, weapon_detection, crowd_analysis,
   shadow_analysis, infrastructure_analysis (military intel B1)
 - temporal_comparison, night_vision (military intel B2)
+- nato_symbology, multi_monitor (military intel B3)
 """
 
 import logging
@@ -24,6 +25,8 @@ from ...models.agent_results import (
     ForensicAnalysisResult,
     GeolocationResult,
     InfrastructureAnalysisResult,
+    MultiMonitorResult,
+    NATOSymbologyResult,
     NightVisionResult,
     OCRResult,
     ShadowAnalysisResult,
@@ -38,12 +41,12 @@ logger = logging.getLogger(__name__)
 
 
 class ResultCombiner:
-    """Combines and validates results from all 14 agents."""
+    """Combines and validates results from all 16 agents."""
 
     @staticmethod
     def combine_results(state: AnalysisState) -> dict[str, Any]:
         """
-        Combine all 14 agent results into final report with validation.
+        Combine all 16 agent results into final report with validation.
 
         Args:
             state: Analysis state with all agent results
@@ -51,7 +54,7 @@ class ResultCombiner:
         Returns:
             Dict with final_report key containing JSON and text reports
         """
-        logger.info("📊 Combining 14 agent results...")
+        logger.info("📊 Combining 16 agent results...")
 
         # Extract all results — original 7
         vision = state.get("vision_result") or {}
@@ -70,6 +73,9 @@ class ResultCombiner:
         # Military Intelligence Block 2
         temporal_comparison = state.get("temporal_comparison_result") or {}
         night_vision = state.get("night_vision_result") or {}
+        # Military Intelligence Block 3
+        nato_symbology = state.get("nato_symbology_result") or {}
+        multi_monitor = state.get("multi_monitor_result") or {}
 
         # Validate results with Pydantic
         try:
@@ -99,6 +105,9 @@ class ResultCombiner:
                 TemporalComparisonResult(**temporal_comparison) if temporal_comparison else None
             )
             night_result = NightVisionResult(**night_vision) if night_vision else None
+            # Military Intelligence Block 3
+            nato_result = NATOSymbologyResult(**nato_symbology) if nato_symbology else None
+            monitor_result = MultiMonitorResult(**multi_monitor) if multi_monitor else None
 
             # Build validated report
             if vision_result and ocr_result and detection_result:
@@ -117,6 +126,8 @@ class ResultCombiner:
                     infrastructure_analysis=infra_result,
                     temporal_comparison=temporal_result,
                     night_vision=night_result,
+                    nato_symbology=nato_result,
+                    multi_monitor=monitor_result,
                 )
             else:
                 # Handle partial results with defaults
@@ -151,6 +162,8 @@ class ResultCombiner:
                     infrastructure_analysis=infra_result,
                     temporal_comparison=temporal_result,
                     night_vision=night_result,
+                    nato_symbology=nato_result,
+                    multi_monitor=monitor_result,
                 )
 
             # Build final report
@@ -180,6 +193,8 @@ class ResultCombiner:
                 infrastructure_analysis,
                 temporal_comparison,
                 night_vision,
+                nato_symbology,
+                multi_monitor,
             )
 
         # Build human-readable text report
@@ -200,9 +215,11 @@ class ResultCombiner:
             infrastructure_analysis,
             temporal_comparison,
             night_vision,
+            nato_symbology,
+            multi_monitor,
         )
 
-        logger.info("✅ Analysis complete - military-grade report generated with 14 agents")
+        logger.info("✅ Analysis complete - military-grade report generated with 16 agents")
         return {"final_report": {"json": json_report, "text": text_report}}
 
     @staticmethod
@@ -221,6 +238,8 @@ class ResultCombiner:
         infrastructure_analysis: dict[str, Any] | None = None,
         temporal_comparison: dict[str, Any] | None = None,
         night_vision: dict[str, Any] | None = None,
+        nato_symbology: dict[str, Any] | None = None,
+        multi_monitor: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Build fallback report when Pydantic validation fails."""
         report: dict[str, Any] = {
@@ -349,6 +368,31 @@ class ResultCombiner:
                     if night_vision
                     else {},
                     "analysis": night_vision.get("analysis", "") if night_vision else "",
+                },
+                # Military Intelligence Block 3
+                "nato_symbology": {
+                    "status": nato_symbology.get("status", "unknown")
+                    if nato_symbology
+                    else "skipped",
+                    "identified_entities": nato_symbology.get("identified_entities", [])
+                    if nato_symbology
+                    else [],
+                    "force_composition": nato_symbology.get("force_composition", {})
+                    if nato_symbology
+                    else {},
+                    "analysis": nato_symbology.get("analysis", "") if nato_symbology else "",
+                },
+                "multi_monitor": {
+                    "status": multi_monitor.get("status", "unknown")
+                    if multi_monitor
+                    else "skipped",
+                    "scene_complexity": multi_monitor.get("scene_complexity", {})
+                    if multi_monitor
+                    else {},
+                    "layout_recommendation": multi_monitor.get("layout_recommendation", {})
+                    if multi_monitor
+                    else {},
+                    "analysis": multi_monitor.get("analysis", "") if multi_monitor else "",
                 },
             },
         }

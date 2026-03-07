@@ -2,12 +2,13 @@
 Agent Execution Functions
 Single Responsibility: Run individual agents and handle their errors
 
-Military-Grade OSINT Analysis with 14 parallel agents:
+Military-Grade OSINT Analysis with 16 parallel agents:
 - vision, ocr, detection, geolocation (original)
 - face_analysis, forensic_analysis, context_intel (CIA-level)
 - vehicle_detection, weapon_detection, crowd_analysis,
   shadow_analysis, infrastructure_analysis (military intel B1)
 - temporal_comparison, night_vision (military intel B2)
+- nato_symbology, multi_monitor (military intel B3)
 """
 
 import logging
@@ -22,6 +23,8 @@ from ..face_analysis import FaceAnalysisAgent
 from ..forensic_analysis import ForensicAnalysisAgent
 from ..geolocation_agent import GeolocationAgent
 from ..infrastructure_analysis import InfrastructureAnalysisAgent
+from ..multi_monitor import MultiMonitorAgent
+from ..nato_symbology import NATOSymbologyAgent
 from ..night_vision import NightVisionAgent
 from ..ocr_agent import OCRAgent
 from ..shadow_analysis import ShadowAnalysisAgent
@@ -35,7 +38,7 @@ logger = logging.getLogger(__name__)
 
 
 class AgentRunners:
-    """Encapsulates execution logic for all 14 analysis agents."""
+    """Encapsulates execution logic for all 16 analysis agents."""
 
     def __init__(self):
         """Initialize all agents."""
@@ -58,6 +61,9 @@ class AgentRunners:
         # Military Intelligence Block 2
         self.temporal_comparison_agent = TemporalComparisonAgent()
         self.night_vision_agent = NightVisionAgent()
+        # Military Intelligence Block 3
+        self.nato_symbology_agent = NATOSymbologyAgent()
+        self.multi_monitor_agent = MultiMonitorAgent()
 
     def run_vision_agent(self, state: AnalysisState) -> dict[str, Any]:
         """
@@ -710,6 +716,92 @@ class AgentRunners:
                     "nocturnal_activity": {},
                     "covert_indicators": {},
                     "tactical_assessment": {},
+                    "limitations": [str(e)],
+                }
+            }
+
+    # =========================================================================
+    # MILITARY INTELLIGENCE BLOCK 3 — 2 new agents
+    # =========================================================================
+
+    def run_nato_symbology_agent(self, state: AnalysisState) -> dict[str, Any]:
+        """Execute NATO APP-6 Symbology Agent (native parallel)."""
+        try:
+            logger.info("⚔️ Running NATO Symbology Agent (native parallel)...")
+            result = self.nato_symbology_agent.analyze(
+                state["image_base64"], state.get("context", "")
+            )
+            return {"nato_symbology_result": result}
+        except AgentTimeoutError as e:
+            logger.warning("⏱️ NATO symbology agent timeout: %s", e)
+            return {
+                "nato_symbology_result": {
+                    "agent": "nato_symbology",
+                    "status": "timeout",
+                    "error": str(e),
+                    "analysis": "NATO symbology analysis timed out",
+                    "summary": None,
+                    "identified_entities": [],
+                    "force_composition": {},
+                    "operational_environment": {},
+                    "tactical_graphics": [],
+                    "limitations": ["Analysis timed out"],
+                }
+            }
+        except (ValueError, TypeError, KeyError, AttributeError, RuntimeError) as e:
+            logger.error("❌ NATO symbology agent error: %s", e)
+            return {
+                "nato_symbology_result": {
+                    "agent": "nato_symbology",
+                    "status": "error",
+                    "error": str(e),
+                    "analysis": "NATO symbology analysis failed",
+                    "summary": None,
+                    "identified_entities": [],
+                    "force_composition": {},
+                    "operational_environment": {},
+                    "tactical_graphics": [],
+                    "limitations": [str(e)],
+                }
+            }
+
+    def run_multi_monitor_agent(self, state: AnalysisState) -> dict[str, Any]:
+        """Execute Multi-Monitor Layout Agent (native parallel)."""
+        try:
+            logger.info("🖥️ Running Multi-Monitor Layout Agent (native parallel)...")
+            result = self.multi_monitor_agent.analyze(
+                state["image_base64"], state.get("context", "")
+            )
+            return {"multi_monitor_result": result}
+        except AgentTimeoutError as e:
+            logger.warning("⏱️ Multi-monitor agent timeout: %s", e)
+            return {
+                "multi_monitor_result": {
+                    "agent": "multi_monitor",
+                    "status": "timeout",
+                    "error": str(e),
+                    "analysis": "Multi-monitor layout analysis timed out",
+                    "summary": None,
+                    "scene_complexity": {},
+                    "layout_recommendation": {},
+                    "information_density": {},
+                    "alert_priorities": [],
+                    "limitations": ["Analysis timed out"],
+                }
+            }
+        except (ValueError, TypeError, KeyError, AttributeError, RuntimeError) as e:
+            logger.error("❌ Multi-monitor agent error: %s", e)
+            return {
+                "multi_monitor_result": {
+                    "agent": "multi_monitor",
+                    "status": "error",
+                    "error": str(e),
+                    "analysis": "Multi-monitor layout analysis failed",
+                    "summary": None,
+                    "scene_complexity": {},
+                    "layout_recommendation": {},
+                    "information_density": {},
+                    "alert_priorities": [],
                     "limitations": [str(e)],
                 }
             }

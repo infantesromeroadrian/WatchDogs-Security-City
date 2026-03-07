@@ -2,12 +2,13 @@
 Report Generation
 Single Responsibility: Format analysis results into human-readable reports
 
-Military-Grade OSINT Intelligence Brief with 14 agents:
+Military-Grade OSINT Intelligence Brief with 16 agents:
 - vision, ocr, detection, geolocation (original)
 - face_analysis, forensic_analysis, context_intel (CIA-level)
 - vehicle_detection, weapon_detection, crowd_analysis,
   shadow_analysis, infrastructure_analysis (military intel B1)
 - temporal_comparison, night_vision (military intel B2)
+- nato_symbology, multi_monitor (military intel B3)
 """
 
 import logging
@@ -20,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 class ReportGenerator:
-    """Generates human-readable intelligence briefs from 14 agent results."""
+    """Generates human-readable intelligence briefs from 16 agent results."""
 
     @staticmethod
     def format_text_report(
@@ -38,6 +39,8 @@ class ReportGenerator:
         infrastructure_analysis: dict[str, Any] | None = None,
         temporal_comparison: dict[str, Any] | None = None,
         night_vision: dict[str, Any] | None = None,
+        nato_symbology: dict[str, Any] | None = None,
+        multi_monitor: dict[str, Any] | None = None,
     ) -> str:
         """
         Format combined results into CIA-level intelligence brief.
@@ -56,7 +59,7 @@ class ReportGenerator:
         """
         report_lines = [
             "=" * 80,
-            "INTELLIGENCE BRIEF - SISTEMA OSINT MILITARY-GRADE (14 AGENTES)",
+            "INTELLIGENCE BRIEF - SISTEMA OSINT MILITARY-GRADE (16 AGENTES)",
             "=" * 80,
             "",
             "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
@@ -233,6 +236,34 @@ class ReportGenerator:
             ]
         )
         report_lines.extend(ReportGenerator._format_night_vision_section(night_vision))
+
+        # =====================================================================
+        # MILITARY INTELLIGENCE BLOCK 3 (2 new agents)
+        # =====================================================================
+
+        # NATO Symbology section
+        report_lines.extend(
+            [
+                "",
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+                "⚔️ 15. SIMBOLOGÍA NATO APP-6D (MILITAR)",
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+                "",
+            ]
+        )
+        report_lines.extend(ReportGenerator._format_nato_symbology_section(nato_symbology))
+
+        # Multi-Monitor Layout section
+        report_lines.extend(
+            [
+                "",
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+                "🖥️ 16. LAYOUT MULTI-MONITOR (MILITAR)",
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+                "",
+            ]
+        )
+        report_lines.extend(ReportGenerator._format_multi_monitor_section(multi_monitor))
 
         # Metrics section
         if METRICS_ENABLED:
@@ -812,6 +843,158 @@ class ReportGenerator:
             lines.append(f"⚠️ Error: {night.get('error', 'Night vision failed')}")
         else:
             lines.append("⏭️ Night Vision Agent no ejecutado")
+        return lines
+
+    # =========================================================================
+    # MILITARY INTELLIGENCE BLOCK 3 — Report formatters
+    # =========================================================================
+
+    @staticmethod
+    def _format_nato_symbology_section(
+        nato: dict[str, Any] | None = None,
+    ) -> list[str]:
+        """Format NATO APP-6D symbology classification section."""
+        lines: list[str] = []
+        if nato and nato.get("status") == "success":
+            summary = nato.get("summary")
+            if summary:
+                lines.append(f"📋 Resumen: {summary}")
+                lines.append("")
+
+            entities = nato.get("identified_entities", [])
+            if entities:
+                lines.append(f"🎖️ Entidades clasificadas: {len(entities)}")
+                for i, entity in enumerate(entities[:8], 1):
+                    if isinstance(entity, dict):
+                        name = entity.get("name", "N/A")
+                        sidc = entity.get("sidc", "N/A")
+                        affiliation = entity.get("affiliation", "N/A")
+                        lines.append(f"   {i}. {name} — SIDC: {sidc} ({affiliation})")
+                    else:
+                        lines.append(f"   {i}. {entity}")
+
+            composition = nato.get("force_composition", {})
+            if composition:
+                lines.append("")
+                lines.append("⚔️ Composición de fuerzas:")
+                for key, val in composition.items():
+                    lines.append(f"   - {key}: {val}")
+
+            environment = nato.get("operational_environment", {})
+            if environment:
+                lines.append("")
+                lines.append("🌐 Entorno operacional:")
+                for key, val in list(environment.items())[:5]:
+                    if val:
+                        lines.append(f"   - {key}: {val}")
+
+            graphics = nato.get("tactical_graphics", [])
+            if graphics:
+                lines.append("")
+                lines.append("📐 Gráficos tácticos recomendados:")
+                for g in graphics[:5]:
+                    if isinstance(g, dict):
+                        lines.append(f"   - {g.get('type', 'N/A')}: {g.get('description', 'N/A')}")
+                    else:
+                        lines.append(f"   - {g}")
+
+            lines.append("")
+            lines.append(nato.get("analysis", "No NATO symbology analysis available"))
+
+        elif nato and nato.get("status") == "skipped":
+            lines.append("⏭️ NATO Symbology Agent fue omitido")
+        elif nato:
+            lines.append(f"⚠️ Error: {nato.get('error', 'NATO symbology failed')}")
+        else:
+            lines.append("⏭️ NATO Symbology Agent no ejecutado")
+        return lines
+
+    @staticmethod
+    def _format_multi_monitor_section(
+        monitor: dict[str, Any] | None = None,
+    ) -> list[str]:
+        """Format multi-monitor command center layout section."""
+        lines: list[str] = []
+        if monitor and monitor.get("status") == "success":
+            summary = monitor.get("summary")
+            if summary:
+                lines.append(f"📋 Resumen: {summary}")
+                lines.append("")
+
+            complexity = monitor.get("scene_complexity", {})
+            if complexity:
+                level = complexity.get("level")
+                if level:
+                    lines.append(f"📊 Complejidad de escena: {level}")
+                density = complexity.get("detail_density")
+                if density:
+                    lines.append(f"   Densidad de detalle: {density}")
+                panels = complexity.get("recommended_panels")
+                if panels:
+                    lines.append(f"   Paneles recomendados: {panels}")
+
+            layout = monitor.get("layout_recommendation", {})
+            if layout:
+                lines.append("")
+                lines.append("🖥️ Configuración de monitores:")
+                monitor_count = layout.get("monitor_count")
+                if monitor_count:
+                    lines.append(f"   Monitores: {monitor_count}")
+                primary = layout.get("primary_display")
+                if primary:
+                    lines.append(f"   Display principal: {primary}")
+                layout_type = layout.get("layout_type")
+                if layout_type:
+                    lines.append(f"   Tipo de layout: {layout_type}")
+                secondary = layout.get("secondary_displays", [])
+                if secondary:
+                    lines.append("   Displays secundarios:")
+                    for s in secondary[:4]:
+                        if isinstance(s, dict):
+                            lines.append(
+                                f"     - {s.get('purpose', 'N/A')}: {s.get('content', 'N/A')}"
+                            )
+                        else:
+                            lines.append(f"     - {s}")
+
+            info_density = monitor.get("information_density", {})
+            if info_density:
+                critical = info_density.get("critical_data_points", [])
+                if critical:
+                    lines.append("")
+                    lines.append("🎯 Datos críticos:")
+                    for c in critical[:5]:
+                        lines.append(f"   - {c}")
+
+                zoom = info_density.get("recommended_zoom_areas", [])
+                if zoom:
+                    lines.append("")
+                    lines.append("🔍 Áreas de zoom recomendadas:")
+                    for z in zoom[:3]:
+                        lines.append(f"   - {z}")
+
+            alerts = monitor.get("alert_priorities", [])
+            if alerts:
+                lines.append("")
+                lines.append("🚨 Prioridades de alerta:")
+                for i, alert in enumerate(alerts[:5], 1):
+                    if isinstance(alert, dict):
+                        lines.append(
+                            f"   {i}. [{alert.get('priority', 'N/A')}] "
+                            f"{alert.get('description', 'N/A')}"
+                        )
+                    else:
+                        lines.append(f"   {i}. {alert}")
+
+            lines.append("")
+            lines.append(monitor.get("analysis", "No multi-monitor analysis available"))
+
+        elif monitor and monitor.get("status") == "skipped":
+            lines.append("⏭️ Multi-Monitor Agent fue omitido")
+        elif monitor:
+            lines.append(f"⚠️ Error: {monitor.get('error', 'Multi-monitor layout failed')}")
+        else:
+            lines.append("⏭️ Multi-Monitor Agent no ejecutado")
         return lines
 
     @staticmethod

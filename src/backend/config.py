@@ -125,6 +125,14 @@ INFRASTRUCTURE_ANALYSIS_ENABLED = (
 TEMPORAL_COMPARISON_ENABLED = os.getenv("TEMPORAL_COMPARISON_ENABLED", "True").lower() == "true"
 NIGHT_VISION_ENABLED = os.getenv("NIGHT_VISION_ENABLED", "True").lower() == "true"
 
+# =============================================================================
+# MILITARY INTELLIGENCE AGENTS (Block 3)
+# =============================================================================
+# NATO symbology classification and multi-monitor command center layouts
+
+NATO_SYMBOLOGY_ENABLED = os.getenv("NATO_SYMBOLOGY_ENABLED", "True").lower() == "true"
+MULTI_MONITOR_ENABLED = os.getenv("MULTI_MONITOR_ENABLED", "True").lower() == "true"
+
 # Mapbox Configuration (optional — map features degrade gracefully)
 MAPBOX_ACCESS_TOKEN = os.getenv("MAP_BOX_ACCESS_TOKEN")
 

@@ -2,7 +2,7 @@
 State Management - TypedDict definitions for LangGraph
 Single Responsibility: Define state structures only
 
-Military-Grade OSINT Analysis State with 14 parallel agents:
+Military-Grade OSINT Analysis State with 16 parallel agents:
 
 Original CIA-Level (7):
 - vision, ocr, detection, geolocation
@@ -15,6 +15,9 @@ Military Intelligence Block 1 (5):
 Military Intelligence Block 2 (2):
 - temporal_comparison, night_vision
 
+Military Intelligence Block 3 (2):
+- nato_symbology, multi_monitor
+
 Privacy controls are loaded from config to allow disabling sensitive agents.
 """
 
@@ -26,6 +29,8 @@ from ...config import (
     FACE_ANALYSIS_ENABLED,
     FORENSIC_ANALYSIS_ENABLED,
     INFRASTRUCTURE_ANALYSIS_ENABLED,
+    MULTI_MONITOR_ENABLED,
+    NATO_SYMBOLOGY_ENABLED,
     NIGHT_VISION_ENABLED,
     PRIVACY_MODE,
     SHADOW_ANALYSIS_ENABLED,
@@ -53,6 +58,9 @@ AgentType = Literal[
     # Military Intelligence Block 2
     "temporal_comparison",
     "night_vision",
+    # Military Intelligence Block 3
+    "nato_symbology",
+    "multi_monitor",
 ]
 
 
@@ -92,6 +100,12 @@ def get_enabled_agents() -> list[AgentType]:
     if NIGHT_VISION_ENABLED:
         agents.append("night_vision")
 
+    # Military Intelligence Block 3 (always available, controlled individually)
+    if NATO_SYMBOLOGY_ENABLED:
+        agents.append("nato_symbology")
+    if MULTI_MONITOR_ENABLED:
+        agents.append("multi_monitor")
+
     return agents
 
 
@@ -100,7 +114,7 @@ DEFAULT_AGENTS: list[AgentType] = get_enabled_agents()
 
 
 class AnalysisState(TypedDict):
-    """State structure for analysis graph with 14 agents."""
+    """State structure for analysis graph with 16 agents."""
 
     image_base64: str
     context: str
@@ -123,5 +137,8 @@ class AnalysisState(TypedDict):
     # Military Intelligence Block 2
     temporal_comparison_result: dict[str, Any] | None
     night_vision_result: dict[str, Any] | None
+    # Military Intelligence Block 3
+    nato_symbology_result: dict[str, Any] | None
+    multi_monitor_result: dict[str, Any] | None
     # Final output
     final_report: dict[str, Any] | None
