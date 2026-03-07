@@ -12,8 +12,9 @@ services:
     region: frankfurt  # EU — closest to Spain
 
     # Override Dockerfile CMD for free tier (1 worker, memory-optimized)
+    # NOTE: python -m gunicorn because --target pip install doesn't put scripts in $PATH
     dockerCommand: >
-      gunicorn
+      python -m gunicorn
       --bind 0.0.0.0:5000
       --workers 1
       --threads 4

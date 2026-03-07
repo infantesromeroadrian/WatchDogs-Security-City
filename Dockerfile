@@ -67,10 +67,10 @@ EXPOSE 5000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:5000/api/health')" || exit 1
 
-# Production WSGI server — gunicorn with gevent workers for parallel agent calls.
+# Production WSGI server — gunicorn via python -m (--target pip install doesn't put scripts in $PATH).
 # Workers: 2 (demo/internal use). Timeout: 300s (16 agents calling Groq in parallel).
 # Falls back to Flask dev server if gunicorn is unavailable.
-CMD ["gunicorn", \
+CMD ["python", "-m", "gunicorn", \
      "--bind", "0.0.0.0:5000", \
      "--workers", "2", \
      "--timeout", "300", \
