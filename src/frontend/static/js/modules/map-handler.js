@@ -1,8 +1,8 @@
 /**
- * Map Handler Module — Mapbox GL JS integration
+ * Map Handler Module — Tactical Map (Mapbox GL JS)
  *
- * Manages interactive maps for OSINT geolocation:
- * - Mini-map inside the geolocation agent card
+ * Always-visible command-center map for OSINT geolocation:
+ * - Tactical map in dedicated section (top of page)
  * - Fullscreen overlay with marker sidebar
  * - Listens to 'watchdogs:location-found' CustomEvents
  */
@@ -12,7 +12,7 @@ import { log } from './logger.js';
 export class MapHandler {
     constructor() {
         /** @type {mapboxgl.Map|null} */
-        this.miniMap = null;
+        this.tacticalMap = null;
         /** @type {mapboxgl.Map|null} */
         this.fullMap = null;
         /** @type {string|null} */
@@ -24,6 +24,12 @@ export class MapHandler {
 
         this._MAX_MARKERS = 50;
         this._STYLE = 'mapbox://styles/mapbox/dark-v11';
+
+        // DOM refs for tactical HUD
+        this._statusEl = document.getElementById('mapStatus');
+        this._coordsEl = document.getElementById('mapCoords');
+        this._counterEl = document.getElementById('markerCount');
+        this._expandBtn = document.getElementById('mapExpandBtn');
 
         this._bindEvents();
         log.debug('MapHandler constructed — waiting for init()');
@@ -59,11 +65,11 @@ export class MapHandler {
 
             mapboxgl.accessToken = this.token;
 
-            this._initMiniMap();
+            this._initTacticalMap();
             this._initFullscreenOverlay();
 
             this.ready = true;
-            log.info('MapHandler initialised with Mapbox GL JS');
+            log.info('MapHandler initialised — tactical map active');
         } catch (err) {
             log.error('MapHandler init failed:', err);
             this._renderUnavailable();
@@ -71,39 +77,55 @@ export class MapHandler {
     }
 
     // ========================================================================
-    // Mini-map (inside geolocation card)
+    // Tactical Map (always-visible command center)
     // ========================================================================
 
-    _initMiniMap() {
-        const container = document.getElementById('geolocationContent');
-        if (!container) return;
-
-        // Inject mini-map container if not present
-        let mapDiv = document.getElementById('miniMapContainer');
-        if (!mapDiv) {
-            const wrapper = document.createElement('div');
-            wrapper.className = 'map-container-mini';
-            wrapper.innerHTML = `
-                <div id="miniMapContainer" style="width:100%;height:100%;"></div>
-                <button class="map-expand-btn" title="Expandir mapa">⛶</button>
-                <div class="map-marker-count" id="markerCount">0 ubicaciones</div>
-            `;
-            container.appendChild(wrapper);
-
-            // Expand button
-            wrapper.querySelector('.map-expand-btn')
-                .addEventListener('click', () => this.toggleFullscreen(true));
+    _initTacticalMap() {
+        const container = document.getElementById('tacticalMapContainer');
+        if (!container) {
+            log.error('tacticalMapContainer not found in DOM');
+            return;
         }
 
-        this.miniMap = new mapboxgl.Map({
-            container: 'miniMapContainer',
+        this.tacticalMap = new mapboxgl.Map({
+            container: 'tacticalMapContainer',
             style: this._STYLE,
             center: [0, 20],
-            zoom: 1.5,
+            zoom: 1.8,
             attributionControl: false,
+            pitch: 0,
         });
 
-        this.miniMap.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'bottom-right');
+        this.tacticalMap.addControl(
+            new mapboxgl.NavigationControl({ showCompass: true }),
+            'bottom-right'
+        );
+
+        // Update coordinate display on mouse move
+        this.tacticalMap.on('mousemove', (e) => {
+            if (this._coordsEl) {
+                const lat = e.lngLat.lat.toFixed(4);
+                const lon = e.lngLat.lng.toFixed(4);
+                const latDir = e.lngLat.lat >= 0 ? 'N' : 'S';
+                const lonDir = e.lngLat.lng >= 0 ? 'E' : 'W';
+                this._coordsEl.textContent =
+                    `${Math.abs(lat).toString().padStart(8, ' ')}${latDir} / ${Math.abs(lon).toString().padStart(9, ' ')}${lonDir}`;
+            }
+        });
+
+        // Reset coords when mouse leaves
+        this.tacticalMap.on('mouseout', () => {
+            if (this._coordsEl) {
+                this._coordsEl.textContent = '---.----N / ---.----E';
+            }
+        });
+
+        // Expand button
+        if (this._expandBtn) {
+            this._expandBtn.addEventListener('click', () => this.toggleFullscreen(true));
+        }
+
+        log.debug('Tactical map created in #tacticalMapContainer');
     }
 
     // ========================================================================
@@ -118,7 +140,7 @@ export class MapHandler {
             container: 'fullMapContainer',
             style: this._STYLE,
             center: [0, 20],
-            zoom: 1.5,
+            zoom: 1.8,
         });
 
         this.fullMap.addControl(new mapboxgl.NavigationControl(), 'top-right');
@@ -180,11 +202,11 @@ export class MapHandler {
         // Marker colour by source
         const color = source === 'analysis' ? '#ff4444' : '#4da6ff';
 
-        // Create mini-map marker
+        // Create tactical map marker
         const marker = new mapboxgl.Marker({ color })
             .setLngLat([lon, lat])
             .setPopup(new mapboxgl.Popup({ offset: 20 }).setHTML(this._popupHTML(label, lat, lon, location.confidence_radius, source)))
-            .addTo(this.miniMap);
+            .addTo(this.tacticalMap);
 
         // Create fullscreen marker (if overlay is open)
         let fullMarker = null;
@@ -197,10 +219,11 @@ export class MapHandler {
 
         this.markers.push({ lat, lon, label, source, marker, fullMarker, id });
 
-        // Fly mini-map
-        this.miniMap?.flyTo({ center: [lon, lat], zoom: 10, duration: 1200 });
+        // Fly tactical map to new marker
+        this.tacticalMap?.flyTo({ center: [lon, lat], zoom: 10, duration: 1200 });
 
-        // Update counter & sidebar
+        // Update HUD
+        this._setStatus('active');
         this._updateCounter();
         this._updateSidebar();
 
@@ -212,7 +235,7 @@ export class MapHandler {
      */
     flyTo(lat, lon, zoom = 12) {
         if (!this.ready) return;
-        this.miniMap?.flyTo({ center: [lon, lat], zoom, duration: 1200 });
+        this.tacticalMap?.flyTo({ center: [lon, lat], zoom, duration: 1200 });
         if (document.getElementById('mapFullscreenOverlay')?.classList.contains('active')) {
             this.fullMap?.flyTo({ center: [lon, lat], zoom, duration: 1200 });
         }
@@ -224,6 +247,7 @@ export class MapHandler {
             m.fullMarker?.remove();
         });
         this.markers = [];
+        this._setStatus('standby');
         this._updateCounter();
         this._updateSidebar();
     }
@@ -232,7 +256,17 @@ export class MapHandler {
         this.clearMarkers();
         this.toggleFullscreen(false);
         // Reset view
-        this.miniMap?.flyTo({ center: [0, 20], zoom: 1.5, duration: 600 });
+        this.tacticalMap?.flyTo({ center: [0, 20], zoom: 1.8, duration: 600 });
+    }
+
+    // ========================================================================
+    // HUD status helpers
+    // ========================================================================
+
+    _setStatus(status) {
+        if (!this._statusEl) return;
+        this._statusEl.textContent = status === 'active' ? 'ACTIVE' : 'STANDBY';
+        this._statusEl.className = `tactical-status ${status}`;
     }
 
     // ========================================================================
@@ -250,9 +284,10 @@ export class MapHandler {
     }
 
     _updateCounter() {
-        const el = document.getElementById('markerCount');
-        if (el) {
-            el.textContent = `${this.markers.length} ubicacion${this.markers.length !== 1 ? 'es' : ''}`;
+        if (this._counterEl) {
+            const count = this.markers.length;
+            this._counterEl.textContent = `${count} TARGET${count !== 1 ? 'S' : ''}`;
+            this._counterEl.classList.toggle('has-targets', count > 0);
         }
     }
 
@@ -261,14 +296,14 @@ export class MapHandler {
         if (!list) return;
 
         if (this.markers.length === 0) {
-            list.innerHTML = '<div class="map-no-markers">Sin ubicaciones detectadas todavia</div>';
+            list.innerHTML = '<div class="map-no-markers">No targets acquired</div>';
             return;
         }
 
         list.innerHTML = this.markers.map(m => `
             <div class="map-marker-item" data-lat="${m.lat}" data-lon="${m.lon}">
                 <div class="marker-label">
-                    📍 ${m.label}
+                    &#x1F4CD; ${m.label}
                     <span class="marker-source ${m.source}">${m.source}</span>
                 </div>
                 <div class="marker-coords">${m.lat.toFixed(5)}, ${m.lon.toFixed(5)}</div>
@@ -302,16 +337,14 @@ export class MapHandler {
     }
 
     _renderUnavailable() {
-        const container = document.getElementById('geolocationContent');
+        const container = document.getElementById('tacticalMapContainer');
         if (!container) return;
 
-        // Only inject if no map already exists
-        if (!container.querySelector('.map-unavailable')) {
-            const div = document.createElement('div');
-            div.className = 'map-unavailable';
-            div.textContent = '🗺️ Mapa no disponible — configure MAP_BOX_ACCESS_TOKEN';
-            container.appendChild(div);
-        }
+        container.innerHTML = `
+            <div class="map-unavailable" style="height:100%;display:flex;align-items:center;justify-content:center;">
+                MAP OFFLINE — CONFIGURE MAP_BOX_ACCESS_TOKEN
+            </div>
+        `;
     }
 
     // ========================================================================

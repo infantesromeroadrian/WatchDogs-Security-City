@@ -20,9 +20,31 @@
             <div id="connectionStatus" class="connection-status" role="status" aria-live="polite"></div>
         </header>
 
+        <!-- Tactical Map Section — always visible command center -->
+        <section class="tactical-map-section" id="tacticalMapSection" role="region" aria-label="Tactical Map">
+            <div class="tactical-map-header">
+                <div class="tactical-map-title">
+                    <span class="tactical-icon">&#x2316;</span>
+                    <h2>TACTICAL MAP</h2>
+                    <span class="tactical-status" id="mapStatus">STANDBY</span>
+                </div>
+                <div class="tactical-map-controls">
+                    <span class="tactical-coords" id="mapCoords">---.----N / ---.----E</span>
+                    <button class="tactical-btn" id="mapExpandBtn" title="Fullscreen">&#x26F6;</button>
+                </div>
+            </div>
+            <div class="tactical-map-container" id="tacticalMapContainer">
+                <!-- Mapbox GL JS map renders here -->
+            </div>
+            <div class="tactical-map-footer">
+                <span class="tactical-marker-count" id="markerCount">0 TARGETS</span>
+                <span class="tactical-provider">MAPBOX GL / NOMINATIM OSM</span>
+            </div>
+        </section>
+
         <!-- Media Upload Section -->
         <section class="upload-section" role="region" aria-labelledby="upload-heading">
-            <h2 id="upload-heading">📤 1. Cargar Video o Imagen</h2>
+            <h2 id="upload-heading">&#x1F4E4; 1. Cargar Video o Imagen</h2>
             <div class="upload-area">
                 <input type="file" id="videoInput" accept="video/*,image/*" aria-label="Seleccionar archivo de video o imagen" hidden>
                 <button id="uploadBtn" class="btn btn-primary" aria-describedby="uploadStatus">Seleccionar Video / Imagen</button>
