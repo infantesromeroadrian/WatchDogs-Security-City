@@ -19,48 +19,76 @@ TEMP_VIDEO_PATH = BASE_DIR / "data" / "temp"
 # Ensure temp directory exists
 TEMP_VIDEO_PATH.mkdir(parents=True, exist_ok=True)
 
-# LLM Configuration — supports OpenAI API and compatible servers (LM Studio, Ollama, vLLM)
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "lm-studio")
-OPENAI_BASE_URL = os.getenv(
-    "OPENAI_BASE_URL"
-)  # None → default OpenAI, or e.g. "http://host.docker.internal:1234/v1"
-OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-5.1")
-OPENAI_MAX_TOKENS = int(os.getenv("OPENAI_MAX_TOKENS", "3000"))
+# LLM Configuration — OpenAI-compatible endpoints (OpenAI, Groq, Ollama, LM Studio, vLLM).
+# LLM_PROVIDER picks default endpoint + model (see llm/provider.py); the OPENAI_* variables
+# below override each piece individually. Default: Groq (the deployed provider).
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "groq").lower()
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL") or None
+OPENAI_MODEL = os.getenv("OPENAI_MODEL") or None  # None → provider's default model
+OPENAI_MAX_TOKENS = int(os.getenv("OPENAI_MAX_TOKENS", "4096"))
 OPENAI_TEMPERATURE = float(os.getenv("OPENAI_TEMPERATURE", "0.3"))
+# Hard HTTP timeout per LLM request (closes the socket; a thread timeout cannot)
+LLM_TIMEOUT_SECONDS = float(os.getenv("LLM_TIMEOUT_SECONDS", "120"))
+# Max simultaneous LLM requests per process (rate-limit and CPU protection)
+LLM_MAX_CONCURRENCY = int(os.getenv("LLM_MAX_CONCURRENCY", "16"))
 
 # Flask Configuration
 FLASK_ENV = os.getenv("FLASK_ENV", "development")
+# Render sets RENDER=true; treat it as production even if FLASK_ENV is missing.
+IS_PRODUCTION = FLASK_ENV == "production" or bool(os.getenv("RENDER"))
 # M-2: Default to False — debug mode must be explicitly opted-in, never on by accident
 FLASK_DEBUG = os.getenv("FLASK_DEBUG", "False").lower() == "true"
 FLASK_HOST = os.getenv("FLASK_HOST", "0.0.0.0")
 FLASK_PORT = int(os.getenv("FLASK_PORT", "5000"))
 
 # Video Configuration
-MAX_VIDEO_SIZE_MB = int(os.getenv("MAX_VIDEO_SIZE_MB", "100"))
+MAX_VIDEO_SIZE_MB = int(os.getenv("MAX_VIDEO_SIZE_MB", "50"))
 MAX_VIDEO_SIZE_BYTES = MAX_VIDEO_SIZE_MB * 1024 * 1024
-VIDEO_RETENTION_HOURS = int(os.getenv("VIDEO_RETENTION_HOURS", "1"))
+# Uploaded videos are deleted by a background janitor after this many minutes
+VIDEO_RETENTION_MINUTES = int(os.getenv("VIDEO_RETENTION_MINUTES", "15"))
+VIDEO_RETENTION_HOURS = VIDEO_RETENTION_MINUTES / 60  # legacy name, kept for callers
 ALLOWED_VIDEO_EXTENSIONS = {".mp4", ".avi", ".mov", ".mkv", ".webm"}
 
 # Flask Upload Configuration
 MAX_CONTENT_LENGTH = MAX_VIDEO_SIZE_BYTES  # Use same limit as video size
 
 # Security Configuration
-ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:5000").split(",")
-RATE_LIMIT_PER_MINUTE = int(
-    os.getenv("RATE_LIMIT_PER_MINUTE", "30")
-)  # 30 requests per minute per IP
+# CORS: the SPA is same-origin, so by default NO cross-origin access is allowed.
+# Set ALLOWED_ORIGINS=https://a.example,https://b.example only if a separate frontend needs it.
+ALLOWED_ORIGINS = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", "").split(",") if o.strip()]
+if "*" in ALLOWED_ORIGINS:
+    raise RuntimeError("ALLOWED_ORIGINS must list explicit origins; '*' is not allowed")
+RATE_LIMIT_PER_MINUTE = int(os.getenv("RATE_LIMIT_PER_MINUTE", "30"))  # per IP
 
-# Authentication — set AUTH_ENABLED=True to enforce Bearer token auth on all endpoints
-# When False (default for local dev), endpoints are open. Enable for any exposed deployment.
-AUTH_ENABLED = os.getenv("AUTH_ENABLED", "False").lower() == "true"
+# Authentication is ON by default for every /api route and the SPA (deny-by-default guard in
+# app.py). Credentials come from ADMIN_USERNAME / ADMIN_PASSWORD (env); sessions are signed with
+# FLASK_SECRET_KEY. It can be disabled for local development only; never in production.
+AUTH_ENABLED = os.getenv("AUTH_ENABLED", "true").lower() != "false"
+AUTH_COOKIE_NAME = "wd_session"
+SESSION_HOURS = float(os.getenv("SESSION_HOURS", "8"))
+# Behind Render's TLS-terminating proxy: trust X-Forwarded-Proto/For (set TRUST_PROXY=1)
+TRUST_PROXY = os.getenv("TRUST_PROXY", "1" if os.getenv("RENDER") else "0") == "1"
+if not AUTH_ENABLED and IS_PRODUCTION:
+    raise RuntimeError("AUTH_ENABLED=false is not allowed in production")
+
+# LLM budget: hard daily caps on provider calls (a full analysis = 16 calls per frame).
+# The counter is persisted in SQLite so worker recycling does not reset it.
+LLM_DAILY_CALL_LIMIT = int(os.getenv("LLM_DAILY_CALL_LIMIT", "480"))  # ~30 full analyses/day
+LLM_DAILY_CALL_LIMIT_PER_USER = int(os.getenv("LLM_DAILY_CALL_LIMIT_PER_USER", "320"))
+LLM_BUDGET_DB = os.getenv("LLM_BUDGET_DB", str(BASE_DIR / "data" / "llm_budget.sqlite3"))
+
+# Request body cap for JSON endpoints (frames are base64; videos use MAX_VIDEO_SIZE_MB)
+MAX_JSON_BODY_MB = int(os.getenv("MAX_JSON_BODY_MB", "30"))
+MAX_IMAGE_PIXELS = int(os.getenv("MAX_IMAGE_PIXELS", str(40_000_000)))  # decompression-bomb guard
 
 # Base64 Image Size Limits (for DoS prevention)
 # M-3: Aligned with frontend 20MB image upload limit (video-player.js loadImage)
-MAX_BASE64_SIZE_MB = int(os.getenv("MAX_BASE64_SIZE_MB", "20"))  # 20MB default
+MAX_BASE64_SIZE_MB = int(os.getenv("MAX_BASE64_SIZE_MB", "12"))  # per image
 MAX_BASE64_SIZE_BYTES = MAX_BASE64_SIZE_MB * 1024 * 1024
 
 # Agent Configuration
-# Note: GPT-5.1 Vision with complex prompts (geolocation, forensic) can take 30-45s
+# Note: vision LLMs with complex prompts (geolocation, forensic) can take 30-45s
 # Default increased to 60s for reliability; configurable via env var
 AGENT_TIMEOUT_SECONDS = int(os.getenv("AGENT_TIMEOUT_SECONDS", "60"))  # Timeout per agent
 AGENT_RETRY_MAX_ATTEMPTS = int(os.getenv("AGENT_RETRY_MAX_ATTEMPTS", "3"))  # Max retry attempts
@@ -69,7 +97,7 @@ AGENT_RETRY_MAX_WAIT = float(os.getenv("AGENT_RETRY_MAX_WAIT", "10.0"))  # Max w
 
 # Caching Configuration
 CACHE_ENABLED = os.getenv("CACHE_ENABLED", "True").lower() == "true"
-CACHE_TTL_SECONDS = int(os.getenv("CACHE_TTL_SECONDS", "3600"))  # 1 hour default
+CACHE_TTL_SECONDS = int(os.getenv("CACHE_TTL_SECONDS", "300"))  # 5 min: results of an image are not kept longer than needed
 
 # Circuit Breaker Configuration
 CIRCUIT_BREAKER_ENABLED = os.getenv("CIRCUIT_BREAKER_ENABLED", "True").lower() == "true"
@@ -147,11 +175,11 @@ logging.basicConfig(level=LOG_LEVEL, format=LOG_FORMAT)
 logger = logging.getLogger(__name__)
 logger.info("ℹ️ Configuration loaded successfully")
 logger.info("ℹ️ Temp video path: %s", TEMP_VIDEO_PATH)
-logger.info("ℹ️ OpenAI model: %s", OPENAI_MODEL)
+logger.info("ℹ️ LLM provider: %s (model override: %s)", LLM_PROVIDER, OPENAI_MODEL)
 if AUTH_ENABLED:
-    logger.info("🔐 AUTH_ENABLED=True — API endpoints require Bearer token")
+    logger.info("🔐 Authentication required on all /api routes and the SPA")
 else:
-    logger.warning("⚠️ AUTH_ENABLED=False — API endpoints are OPEN (local dev mode)")
+    logger.warning("⚠️ AUTH_ENABLED=false — API is OPEN (local development only)")
 if not MAPBOX_ACCESS_TOKEN:
     logger.warning("⚠️ MAP_BOX_ACCESS_TOKEN not found — interactive map features disabled")
 

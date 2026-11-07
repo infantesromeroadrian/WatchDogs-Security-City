@@ -8,6 +8,7 @@ from typing import Annotated, Any, NotRequired, TypedDict, cast
 from langgraph.graph import END, START, StateGraph
 from langgraph.types import Send
 
+from ...utils.untrusted import sanitize_text, wrap_untrusted
 from .geolocation_combiner import GeolocationCombiner
 from .multi_frame_reporter import MultiFrameReporter
 
@@ -280,18 +281,17 @@ class MultiFrameHandler:
         Returns:
             Context string for frame analysis.
         """
-        context = f"Imagen {idx + 1}/{total_frames}: {description}"
+        context = f"Imagen {idx + 1}/{total_frames}: {sanitize_text(description, 200)}"
         if enable_context and idx > 0:
-            context += "\n\n🔍 PISTAS ACUMULADAS DE IMÁGENES ANTERIORES:\n"
+            # Clues were read out of earlier images by models: untrusted DATA, fenced and capped
+            clues = "🔍 PISTAS ACUMULADAS DE IMÁGENES ANTERIORES:"
             if geo_clues:
-                context += "\n📍 Geolocalización:\n"
-                context += "\n".join(geo_clues[-10:])
+                clues += "\n📍 Geolocalización:\n" + "\n".join(sanitize_text(c, 300) for c in geo_clues[-10:])
             if ocr_texts:
-                context += "\n\n📝 Textos encontrados:\n"
-                context += "\n".join(ocr_texts[-5:])
+                clues += "\n📝 Textos encontrados:\n" + "\n".join(sanitize_text(t, 300) for t in ocr_texts[-5:])
             if detections:
-                context += "\n\n🎯 Objetos detectados:\n"
-                context += "\n".join(detections[-5:])
+                clues += "\n🎯 Objetos detectados:\n" + "\n".join(sanitize_text(d, 300) for d in detections[-5:])
+            context += "\n\n" + wrap_untrusted(clues, "frames_anteriores", 4000)
         return context
 
     @staticmethod

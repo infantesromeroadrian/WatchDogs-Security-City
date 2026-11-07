@@ -1,89 +1,58 @@
 """
-Session management
+Session management with signed, stateless tokens.
+
+A token is an itsdangerous URL-safe timed signature over ``{u, r, j}`` (username, role, token id)
+made with FLASK_SECRET_KEY. Because nothing is stored server-side, sessions survive worker
+recycling and Render restarts. Logout adds the token id to an in-memory revocation set (best effort:
+the set is lost on restart, but tokens expire after SESSION_HOURS anyway).
 """
 
+import os
 import secrets
-from datetime import UTC, datetime, timedelta
+import threading
 
-# Session duration
-SESSION_DURATION = timedelta(hours=24)
+from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
+
+from ... import config
 
 
 class SessionManager:
-    """Manages user sessions"""
+    """Issues and validates signed session tokens."""
 
-    def __init__(self):
-        self.sessions: dict[str, dict] = {}
+    def __init__(self, secret_key: str | None = None, max_age_seconds: int | None = None):
+        key = secret_key or os.environ.get("FLASK_SECRET_KEY")
+        if not key:
+            if config.IS_PRODUCTION:
+                raise RuntimeError("FLASK_SECRET_KEY is required in production")
+            key = secrets.token_hex(32)  # development: sessions die with the process
+        self._serializer = URLSafeTimedSerializer(key, salt="watchdogs-session")
+        self.max_age = max_age_seconds or int(config.SESSION_HOURS * 3600)
+        self._revoked: set[str] = set()
+        self._lock = threading.Lock()
 
     def create_session(self, username: str, role: str, ip_address: str | None = None) -> str:
-        """
-        Create new session.
-
-        Args:
-            username: Username
-            role: User role
-            ip_address: Optional IP address for session binding
-
-        Returns:
-            Session token
-        """
-        # Create session token (cryptographically secure)
-        session_token = secrets.token_urlsafe(32)
-
-        # Store session
-        self.sessions[session_token] = {
-            "username": username,
-            "role": role,
-            "created_at": datetime.now(UTC),
-            "expires_at": datetime.now(UTC) + SESSION_DURATION,
-            "ip_address": ip_address,
-        }
-
-        return session_token
+        """Return a signed token (``ip_address`` is accepted for API compatibility, not bound)."""
+        return self._serializer.dumps({"u": username, "r": role, "j": secrets.token_hex(8)})
 
     def validate_session(self, session_token: str, ip_address: str | None = None) -> dict | None:
-        """
-        Validate session token.
-
-        Returns:
-            Session data or None if invalid
-        """
-        if session_token not in self.sessions:
+        """Return ``{"username", "role"}`` for a valid, unexpired, unrevoked token; else None."""
+        if not session_token:
             return None
-
-        session = self.sessions[session_token]
-
-        # Check expiration
-        if datetime.now(UTC) > session["expires_at"]:
-            del self.sessions[session_token]
+        try:
+            data = self._serializer.loads(session_token, max_age=self.max_age)
+        except (BadSignature, SignatureExpired):
             return None
-
-        # Optional: Check IP binding (commented out for ease of use)
-        # Uncomment in production if needed
-        # if ip_address and session.get('ip_address') != ip_address:
-        #     return None
-
-        # Return only necessary data
-        return {"username": session["username"], "role": session["role"]}
+        with self._lock:
+            if data.get("j") in self._revoked:
+                return None
+        return {"username": data["u"], "role": data["r"]}
 
     def logout(self, session_token: str) -> bool:
-        """
-        Logout user and invalidate session.
-
-        Returns:
-            True if session was found and deleted
-        """
-        if session_token in self.sessions:
-            del self.sessions[session_token]
-            return True
-        return False
-
-    def cleanup_expired(self):
-        """Remove expired sessions"""
-        now = datetime.now(UTC)
-        expired = [token for token, session in self.sessions.items() if now > session["expires_at"]]
-
-        for token in expired:
-            del self.sessions[token]
-
-        return len(expired)
+        """Revoke a token. True if it was valid."""
+        try:
+            data = self._serializer.loads(session_token, max_age=self.max_age)
+        except (BadSignature, SignatureExpired):
+            return False
+        with self._lock:
+            self._revoked.add(data["j"])
+        return True

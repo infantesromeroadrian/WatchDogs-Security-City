@@ -1,0 +1,462 @@
+{
+ "source": "COCO val2017 (https://cocodataset.org); annotations CC BY 4.0; images keep their Flickr licence",
+ "counts_note": "Counts come from COCO instance annotations (non-crowd, visible instances).",
+ "sets": {
+  "people": [
+   {
+    "id": 785,
+    "file_name": "000000000785.jpg",
+    "url": "http://images.cocodataset.org/val2017/000000000785.jpg",
+    "flickr_url": "http://farm8.staticflickr.com/7015/6795644157_f019453ae7_z.jpg",
+    "license": "Attribution License",
+    "persons": 1,
+    "vehicles": 0
+   },
+   {
+    "id": 3553,
+    "file_name": "000000003553.jpg",
+    "url": "http://images.cocodataset.org/val2017/000000003553.jpg",
+    "flickr_url": "http://farm4.staticflickr.com/3433/3863384254_02e869d699_z.jpg",
+    "license": "Attribution-ShareAlike License",
+    "persons": 1,
+    "vehicles": 0
+   },
+   {
+    "id": 872,
+    "file_name": "000000000872.jpg",
+    "url": "http://images.cocodataset.org/val2017/000000000872.jpg",
+    "flickr_url": "http://farm9.staticflickr.com/8447/7805810128_605424213d_z.jpg",
+    "license": "Attribution License",
+    "persons": 2,
+    "vehicles": 0
+   },
+   {
+    "id": 1296,
+    "file_name": "000000001296.jpg",
+    "url": "http://images.cocodataset.org/val2017/000000001296.jpg",
+    "flickr_url": "http://farm5.staticflickr.com/4010/4690487654_90536a4a16_z.jpg",
+    "license": "Attribution-ShareAlike License",
+    "persons": 2,
+    "vehicles": 0
+   },
+   {
+    "id": 8021,
+    "file_name": "000000008021.jpg",
+    "url": "http://images.cocodataset.org/val2017/000000008021.jpg",
+    "flickr_url": "http://farm7.staticflickr.com/6117/6240308255_77782d0723_z.jpg",
+    "license": "Attribution License",
+    "persons": 3,
+    "vehicles": 0
+   },
+   {
+    "id": 8844,
+    "file_name": "000000008844.jpg",
+    "url": "http://images.cocodataset.org/val2017/000000008844.jpg",
+    "flickr_url": "http://farm7.staticflickr.com/6109/6283843124_f4091ce78a_z.jpg",
+    "license": "Attribution-ShareAlike License",
+    "persons": 3,
+    "vehicles": 0
+   },
+   {
+    "id": 1268,
+    "file_name": "000000001268.jpg",
+    "url": "http://images.cocodataset.org/val2017/000000001268.jpg",
+    "flickr_url": "http://farm6.staticflickr.com/5454/9413846304_881d5e5c3b_z.jpg",
+    "license": "Attribution License",
+    "persons": 4,
+    "vehicles": 0
+   },
+   {
+    "id": 2153,
+    "file_name": "000000002153.jpg",
+    "url": "http://images.cocodataset.org/val2017/000000002153.jpg",
+    "flickr_url": "http://farm3.staticflickr.com/2220/2535221304_39d9542f76_z.jpg",
+    "license": "Attribution-ShareAlike License",
+    "persons": 4,
+    "vehicles": 0
+   },
+   {
+    "id": 13659,
+    "file_name": "000000013659.jpg",
+    "url": "http://images.cocodataset.org/val2017/000000013659.jpg",
+    "flickr_url": "http://farm7.staticflickr.com/6144/5987177856_785814a990_z.jpg",
+    "license": "Attribution License",
+    "persons": 5,
+    "vehicles": 0
+   },
+   {
+    "id": 81988,
+    "file_name": "000000081988.jpg",
+    "url": "http://images.cocodataset.org/val2017/000000081988.jpg",
+    "flickr_url": "http://farm7.staticflickr.com/6080/6038911779_36e4613d84_z.jpg",
+    "license": "Attribution License",
+    "persons": 5,
+    "vehicles": 0
+   },
+   {
+    "id": 13348,
+    "file_name": "000000013348.jpg",
+    "url": "http://images.cocodataset.org/val2017/000000013348.jpg",
+    "flickr_url": "http://farm9.staticflickr.com/8286/7733450942_0da3e941b4_z.jpg",
+    "license": "Attribution License",
+    "persons": 6,
+    "vehicles": 4
+   },
+   {
+    "id": 18837,
+    "file_name": "000000018837.jpg",
+    "url": "http://images.cocodataset.org/val2017/000000018837.jpg",
+    "flickr_url": "http://farm9.staticflickr.com/8219/8372455764_124e052754_z.jpg",
+    "license": "Attribution-ShareAlike License",
+    "persons": 6,
+    "vehicles": 2
+   },
+   {
+    "id": 14473,
+    "file_name": "000000014473.jpg",
+    "url": "http://images.cocodataset.org/val2017/000000014473.jpg",
+    "flickr_url": "http://farm9.staticflickr.com/8401/8607706408_e00725a54d_z.jpg",
+    "license": "Attribution License",
+    "persons": 7,
+    "vehicles": 0
+   },
+   {
+    "id": 52996,
+    "file_name": "000000052996.jpg",
+    "url": "http://images.cocodataset.org/val2017/000000052996.jpg",
+    "flickr_url": "http://farm6.staticflickr.com/5482/9358344788_7dd31c5a98_z.jpg",
+    "license": "Attribution-ShareAlike License",
+    "persons": 7,
+    "vehicles": 0
+   },
+   {
+    "id": 885,
+    "file_name": "000000000885.jpg",
+    "url": "http://images.cocodataset.org/val2017/000000000885.jpg",
+    "flickr_url": "http://farm4.staticflickr.com/3715/9639200419_ee41490b2a_z.jpg",
+    "license": "Attribution License",
+    "persons": 8,
+    "vehicles": 0
+   },
+   {
+    "id": 170116,
+    "file_name": "000000170116.jpg",
+    "url": "http://images.cocodataset.org/val2017/000000170116.jpg",
+    "flickr_url": "http://farm6.staticflickr.com/5049/5274554848_e82152e035_z.jpg",
+    "license": "Attribution License",
+    "persons": 8,
+    "vehicles": 0
+   },
+   {
+    "id": 28993,
+    "file_name": "000000028993.jpg",
+    "url": "http://images.cocodataset.org/val2017/000000028993.jpg",
+    "flickr_url": "http://farm6.staticflickr.com/5006/5355925412_5e33918131_z.jpg",
+    "license": "Attribution License",
+    "persons": 9,
+    "vehicles": 0
+   },
+   {
+    "id": 66231,
+    "file_name": "000000066231.jpg",
+    "url": "http://images.cocodataset.org/val2017/000000066231.jpg",
+    "flickr_url": "http://farm9.staticflickr.com/8352/8375313873_80051bc3e2_z.jpg",
+    "license": "Attribution License",
+    "persons": 9,
+    "vehicles": 0
+   },
+   {
+    "id": 7281,
+    "file_name": "000000007281.jpg",
+    "url": "http://images.cocodataset.org/val2017/000000007281.jpg",
+    "flickr_url": "http://farm5.staticflickr.com/4112/5022207571_74aab92fd5_z.jpg",
+    "license": "Attribution License",
+    "persons": 10,
+    "vehicles": 0
+   },
+   {
+    "id": 18491,
+    "file_name": "000000018491.jpg",
+    "url": "http://images.cocodataset.org/val2017/000000018491.jpg",
+    "flickr_url": "http://farm3.staticflickr.com/2134/5814907667_496ae24446_z.jpg",
+    "license": "Attribution-ShareAlike License",
+    "persons": 10,
+    "vehicles": 0
+   }
+  ],
+  "vehicles": [
+   {
+    "id": 11149,
+    "file_name": "000000011149.jpg",
+    "url": "http://images.cocodataset.org/val2017/000000011149.jpg",
+    "flickr_url": "http://farm4.staticflickr.com/3625/3323418866_ea5017538d_z.jpg",
+    "license": "Attribution License",
+    "persons": 2,
+    "vehicles": 1
+   },
+   {
+    "id": 70774,
+    "file_name": "000000070774.jpg",
+    "url": "http://images.cocodataset.org/val2017/000000070774.jpg",
+    "flickr_url": "http://farm6.staticflickr.com/5219/5517860224_7973e10013_z.jpg",
+    "license": "Attribution-ShareAlike License",
+    "persons": 0,
+    "vehicles": 1
+   },
+   {
+    "id": 8762,
+    "file_name": "000000008762.jpg",
+    "url": "http://images.cocodataset.org/val2017/000000008762.jpg",
+    "flickr_url": "http://farm5.staticflickr.com/4006/4466652187_5ba02f2ba9_z.jpg",
+    "license": "Attribution License",
+    "persons": 0,
+    "vehicles": 2
+   },
+   {
+    "id": 17029,
+    "file_name": "000000017029.jpg",
+    "url": "http://images.cocodataset.org/val2017/000000017029.jpg",
+    "flickr_url": "http://farm8.staticflickr.com/7304/8746020648_f1e2075b86_z.jpg",
+    "license": "Attribution License",
+    "persons": 0,
+    "vehicles": 2
+   },
+   {
+    "id": 53994,
+    "file_name": "000000053994.jpg",
+    "url": "http://images.cocodataset.org/val2017/000000053994.jpg",
+    "flickr_url": "http://farm4.staticflickr.com/3187/2851509696_0dd310fd82_z.jpg",
+    "license": "Attribution License",
+    "persons": 0,
+    "vehicles": 3
+   },
+   {
+    "id": 57149,
+    "file_name": "000000057149.jpg",
+    "url": "http://images.cocodataset.org/val2017/000000057149.jpg",
+    "flickr_url": "http://farm9.staticflickr.com/8505/8541387897_fbf4b3050a_z.jpg",
+    "license": "Attribution-ShareAlike License",
+    "persons": 0,
+    "vehicles": 3
+   },
+   {
+    "id": 196759,
+    "file_name": "000000196759.jpg",
+    "url": "http://images.cocodataset.org/val2017/000000196759.jpg",
+    "flickr_url": "http://farm8.staticflickr.com/7324/9356649003_5cf8fb57b3_z.jpg",
+    "license": "Attribution License",
+    "persons": 0,
+    "vehicles": 4
+   },
+   {
+    "id": 269632,
+    "file_name": "000000269632.jpg",
+    "url": "http://images.cocodataset.org/val2017/000000269632.jpg",
+    "flickr_url": "http://farm8.staticflickr.com/7287/9106564326_f1af288935_z.jpg",
+    "license": "Attribution-ShareAlike License",
+    "persons": 1,
+    "vehicles": 4
+   },
+   {
+    "id": 43737,
+    "file_name": "000000043737.jpg",
+    "url": "http://images.cocodataset.org/val2017/000000043737.jpg",
+    "flickr_url": "http://farm4.staticflickr.com/3593/3595526099_c28a93aaa0_z.jpg",
+    "license": "Attribution License",
+    "persons": 0,
+    "vehicles": 5
+   },
+   {
+    "id": 84170,
+    "file_name": "000000084170.jpg",
+    "url": "http://images.cocodataset.org/val2017/000000084170.jpg",
+    "flickr_url": "http://farm9.staticflickr.com/8190/8134254727_0b28cabe93_z.jpg",
+    "license": "Attribution License",
+    "persons": 2,
+    "vehicles": 5
+   },
+   {
+    "id": 6723,
+    "file_name": "000000006723.jpg",
+    "url": "http://images.cocodataset.org/val2017/000000006723.jpg",
+    "flickr_url": "http://farm5.staticflickr.com/4009/4575950642_c74342b147_z.jpg",
+    "license": "Attribution-ShareAlike License",
+    "persons": 0,
+    "vehicles": 6
+   },
+   {
+    "id": 206487,
+    "file_name": "000000206487.jpg",
+    "url": "http://images.cocodataset.org/val2017/000000206487.jpg",
+    "flickr_url": "http://farm9.staticflickr.com/8010/7686978996_27b7fdfdbf_z.jpg",
+    "license": "Attribution License",
+    "persons": 2,
+    "vehicles": 6
+   },
+   {
+    "id": 98392,
+    "file_name": "000000098392.jpg",
+    "url": "http://images.cocodataset.org/val2017/000000098392.jpg",
+    "flickr_url": "http://farm3.staticflickr.com/2502/4159425709_43b95a16d7_z.jpg",
+    "license": "Attribution License",
+    "persons": 3,
+    "vehicles": 7
+   },
+   {
+    "id": 100274,
+    "file_name": "000000100274.jpg",
+    "url": "http://images.cocodataset.org/val2017/000000100274.jpg",
+    "flickr_url": "http://farm8.staticflickr.com/7460/9267226612_d9df1e1d14_z.jpg",
+    "license": "Attribution-ShareAlike License",
+    "persons": 0,
+    "vehicles": 7
+   },
+   {
+    "id": 32941,
+    "file_name": "000000032941.jpg",
+    "url": "http://images.cocodataset.org/val2017/000000032941.jpg",
+    "flickr_url": "http://farm9.staticflickr.com/8067/8224728949_fa09beb316_z.jpg",
+    "license": "Attribution-ShareAlike License",
+    "persons": 3,
+    "vehicles": 8
+   },
+   {
+    "id": 225532,
+    "file_name": "000000225532.jpg",
+    "url": "http://images.cocodataset.org/val2017/000000225532.jpg",
+    "flickr_url": "http://farm3.staticflickr.com/2257/2299155495_0caaf58c5d_z.jpg",
+    "license": "Attribution-ShareAlike License",
+    "persons": 0,
+    "vehicles": 8
+   },
+   {
+    "id": 327890,
+    "file_name": "000000327890.jpg",
+    "url": "http://images.cocodataset.org/val2017/000000327890.jpg",
+    "flickr_url": "http://farm4.staticflickr.com/3753/9577665459_f56dac03f1_z.jpg",
+    "license": "Attribution-ShareAlike License",
+    "persons": 0,
+    "vehicles": 9
+   },
+   {
+    "id": 496722,
+    "file_name": "000000496722.jpg",
+    "url": "http://images.cocodataset.org/val2017/000000496722.jpg",
+    "flickr_url": "http://farm2.staticflickr.com/1106/3172117736_32ba3d5fc1_z.jpg",
+    "license": "Attribution License",
+    "persons": 0,
+    "vehicles": 9
+   },
+   {
+    "id": 85376,
+    "file_name": "000000085376.jpg",
+    "url": "http://images.cocodataset.org/val2017/000000085376.jpg",
+    "flickr_url": "http://farm8.staticflickr.com/7059/6867232585_0d4ea34bae_z.jpg",
+    "license": "Attribution-ShareAlike License",
+    "persons": 1,
+    "vehicles": 10
+   },
+   {
+    "id": 124798,
+    "file_name": "000000124798.jpg",
+    "url": "http://images.cocodataset.org/val2017/000000124798.jpg",
+    "flickr_url": "http://farm9.staticflickr.com/8090/8444499449_ec1094a7e2_z.jpg",
+    "license": "Attribution-ShareAlike License",
+    "persons": 1,
+    "vehicles": 10
+   }
+  ],
+  "crowd": [
+   {
+    "id": 1000,
+    "file_name": "000000001000.jpg",
+    "url": "http://images.cocodataset.org/val2017/000000001000.jpg",
+    "flickr_url": "http://farm5.staticflickr.com/4115/4906536419_6113bd7de4_z.jpg",
+    "license": "Attribution License",
+    "persons": 12,
+    "vehicles": 0
+   },
+   {
+    "id": 75612,
+    "file_name": "000000075612.jpg",
+    "url": "http://images.cocodataset.org/val2017/000000075612.jpg",
+    "flickr_url": "http://farm3.staticflickr.com/2579/4191595324_3c1f160567_z.jpg",
+    "license": "Attribution License",
+    "persons": 12,
+    "vehicles": 0
+   },
+   {
+    "id": 151480,
+    "file_name": "000000151480.jpg",
+    "url": "http://images.cocodataset.org/val2017/000000151480.jpg",
+    "flickr_url": "http://farm7.staticflickr.com/6061/6054578485_f6d7810ee6_z.jpg",
+    "license": "Attribution License",
+    "persons": 11,
+    "vehicles": 0
+   },
+   {
+    "id": 183709,
+    "file_name": "000000183709.jpg",
+    "url": "http://images.cocodataset.org/val2017/000000183709.jpg",
+    "flickr_url": "http://farm1.staticflickr.com/94/267588789_dc94d5a8a0_z.jpg",
+    "license": "Attribution License",
+    "persons": 12,
+    "vehicles": 5
+   },
+   {
+    "id": 274460,
+    "file_name": "000000274460.jpg",
+    "url": "http://images.cocodataset.org/val2017/000000274460.jpg",
+    "flickr_url": "http://farm7.staticflickr.com/6236/6267475434_0c28897158_z.jpg",
+    "license": "Attribution License",
+    "persons": 13,
+    "vehicles": 0
+   },
+   {
+    "id": 301135,
+    "file_name": "000000301135.jpg",
+    "url": "http://images.cocodataset.org/val2017/000000301135.jpg",
+    "flickr_url": "http://farm5.staticflickr.com/4135/4856973633_60deb1c609_z.jpg",
+    "license": "Attribution License",
+    "persons": 11,
+    "vehicles": 4
+   },
+   {
+    "id": 309655,
+    "file_name": "000000309655.jpg",
+    "url": "http://images.cocodataset.org/val2017/000000309655.jpg",
+    "flickr_url": "http://farm6.staticflickr.com/5011/5389083366_fdf13f2ee6_z.jpg",
+    "license": "Attribution License",
+    "persons": 13,
+    "vehicles": 0
+   },
+   {
+    "id": 342128,
+    "file_name": "000000342128.jpg",
+    "url": "http://images.cocodataset.org/val2017/000000342128.jpg",
+    "flickr_url": "http://farm8.staticflickr.com/7345/9296437874_b852f470d6_z.jpg",
+    "license": "Attribution License",
+    "persons": 13,
+    "vehicles": 1
+   },
+   {
+    "id": 386352,
+    "file_name": "000000386352.jpg",
+    "url": "http://images.cocodataset.org/val2017/000000386352.jpg",
+    "flickr_url": "http://farm8.staticflickr.com/7054/7105320959_32647b8dc0_z.jpg",
+    "license": "Attribution-ShareAlike License",
+    "persons": 11,
+    "vehicles": 0
+   },
+   {
+    "id": 399205,
+    "file_name": "000000399205.jpg",
+    "url": "http://images.cocodataset.org/val2017/000000399205.jpg",
+    "flickr_url": "http://farm4.staticflickr.com/3622/3567742683_f451d108b7_z.jpg",
+    "license": "Attribution-ShareAlike License",
+    "persons": 12,
+    "vehicles": 1
+   }
+  ]
+ }
+}

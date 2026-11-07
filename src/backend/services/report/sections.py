@@ -13,7 +13,9 @@ from typing import Any
 try:
     from reportlab.lib import colors
     from reportlab.lib.units import inch
-    from reportlab.platypus import PageBreak, Paragraph, Spacer, Table, TableStyle
+    from reportlab.platypus import PageBreak, Spacer, Table, TableStyle
+
+    from .safe_text import SafeParagraph as Paragraph
 
     REPORT_AVAILABLE = True
 except ImportError:
@@ -151,7 +153,7 @@ class ReportSectionBuilder:
             location = geo_data.get("location", {})
             city = location.get("city", "Unknown")
             country = location.get("country", "Unknown")
-            confidence = geo_data.get("confidence", "UNKNOWN")
+            confidence = geo_data.get("confidence") or "UNKNOWN"
 
             summary = f"<b>Probable Location:</b> {city}, {country}<br/>"
             summary += f"<b>Confidence Level:</b> {confidence}<br/>"
@@ -275,7 +277,7 @@ class ReportSectionBuilder:
         detection = face_data.get("detection_summary", {})
         total = detection.get("total_persons", face_data.get("person_count", 0))
         faces_visible = detection.get("faces_visible", 0)
-        quality = detection.get("identification_quality", "unknown")
+        quality = detection.get("identification_quality") or "unknown"
 
         summary_data = [
             ["Persons Detected:", str(total)],
@@ -366,8 +368,8 @@ class ReportSectionBuilder:
 
         # Verdict summary
         verdict = forensic_data.get("verdict", {})
-        classification = verdict.get("classification", "indeterminada")
-        confidence = verdict.get("confidence", "media")
+        classification = verdict.get("classification") or "indeterminada"
+        confidence = verdict.get("confidence") or "media"
         integrity_score = forensic_data.get("integrity_score")
 
         # Determine colors based on verdict

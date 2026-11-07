@@ -1,12 +1,13 @@
 """
-Detection Agent for object and person detection using GPT-5.1 (Improved with retry, timeout, caching, metrics).
+Detection Agent for object and person detection using the configured vision LLM (Improved with retry, timeout, caching, metrics).
 """
 
 import logging
 from typing import Any
 
 from langchain_core.messages import HumanMessage
-from langchain_openai import ChatOpenAI
+from ..llm import StructuredParser, build_chat_model, message_text
+from ..models.structured import DetectionSchema
 
 from ..config import (
     AGENT_RETRY_MAX_ATTEMPTS,
@@ -17,10 +18,6 @@ from ..config import (
     CACHE_TTL_SECONDS,
     CIRCUIT_BREAKER_ENABLED,
     METRICS_ENABLED,
-    OPENAI_API_KEY,
-    OPENAI_BASE_URL,
-    OPENAI_MODEL,
-    OPENAI_TEMPERATURE,
 )
 from ..models.agent_results import DetectionResult
 from ..utils.cache_utils import get_cache_key, get_cached_result, set_cached_result
@@ -42,13 +39,9 @@ class DetectionAgent:
     """Agent specialized in object and person detection."""
 
     def __init__(self):
-        """Initialize Detection Agent with GPT-5.1 model."""
-        self.llm = ChatOpenAI(
-            model=OPENAI_MODEL,
-            api_key=OPENAI_API_KEY,
-            temperature=OPENAI_TEMPERATURE,
-            **({"base_url": OPENAI_BASE_URL} if OPENAI_BASE_URL else {}),
-        )
+        """Initialize Detection Agent with the configured vision LLM."""
+        self.llm = build_chat_model(schema=DetectionSchema)
+        self.parser = StructuredParser(DetectionSchema)
 
         # Initialize circuit breaker ONCE per agent instance (shared state)
         if CIRCUIT_BREAKER_ENABLED:
@@ -106,7 +99,7 @@ Sé factual y objetivo. RESPONDE EN ESPAÑOL."""
         )
 
         response = self.llm.invoke([message])
-        detection_text = response.content
+        parsed, detection_text = self.parser.parse_with_text(message_text(response.content))
 
         logger.info("✅ Object/person detection complete")
 
@@ -114,7 +107,10 @@ Sé factual y objetivo. RESPONDE EN ESPAÑOL."""
             "agent": "detection",
             "status": "success",
             "analysis": detection_text,
-            "confidence": "high",
+            "objects": parsed["objects"],
+            "total_people": parsed["total_people"],
+            "total_vehicles": parsed["total_vehicles"],
+            "confidence": parsed["confidence"] or "medium",
         }
 
     @(track_agent_metrics("detection") if METRICS_ENABLED else _noop_decorator)

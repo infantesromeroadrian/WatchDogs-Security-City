@@ -129,6 +129,17 @@ def set_cached_result(cache_key: str, result: dict[str, Any], ttl_seconds: int =
     logger.debug("💾 Cached result for key: %s... (TTL: %ss)", cache_key[:20], ttl_seconds)
 
 
+def purge_expired() -> int:
+    """Drop expired entries now (the lazy check in get_cached_result only runs on access)."""
+    now = time.time()
+    with _lock:
+        dead = [k for k, expiry in _cache_ttl.items() if expiry <= now]
+        for key in dead:
+            _cache.pop(key, None)
+            _cache_ttl.pop(key, None)
+    return len(dead)
+
+
 def clear_cache() -> None:
     """Clear all cached results."""
     with _lock:

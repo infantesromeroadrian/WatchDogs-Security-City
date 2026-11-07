@@ -10,7 +10,13 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from .lockout_manager import LockoutManager
-from .password_handler import hash_password, validate_password_strength
+from ... import config
+from .password_handler import (
+    LEGACY_ITERATIONS,
+    PBKDF2_ITERATIONS,
+    hash_password,
+    validate_password_strength,
+)
 from .session_manager import SessionManager
 
 logger = logging.getLogger(__name__)
@@ -36,9 +42,9 @@ class AuthService:
         # Load from disk
         self._load_from_disk()
 
-        # Create default admin if none exists
-        if not self.users:
-            self._create_default_admin()
+        # The environment is the source of truth for the admin account
+        if config.AUTH_ENABLED:
+            self._sync_admin_from_env()
 
     def _load_from_disk(self):
         """Load users from persistent storage"""
@@ -74,26 +80,40 @@ class AuthService:
         except (ValueError, TypeError, KeyError, OSError) as e:
             logger.error("❌ Error saving auth storage: %s", e)
 
-    def _create_default_admin(self):
-        """Create default admin user from environment variables"""
-        # Get credentials from environment or use secure defaults
-        admin_username = os.getenv("ADMIN_USERNAME", "admin")
-        admin_password = os.getenv("ADMIN_PASSWORD")
+    def _sync_admin_from_env(self) -> None:
+        """Create/refresh the admin account from ADMIN_USERNAME / ADMIN_PASSWORD.
 
-        if not admin_password:
-            # Generate random password if none provided
-            admin_password = secrets.token_urlsafe(16)
-            logger.warning("No ADMIN_PASSWORD set in environment!")
-            # Print to stdout ONCE — never log credentials
-            print(  # noqa: T201
-                f"\n{'=' * 60}\n"
-                f"  GENERATED ADMIN PASSWORD (shown once, not logged):\n"
-                f"  {admin_password}\n"
-                f"{'=' * 60}\n"
+        No password is ever generated or printed: with auth enabled and no ADMIN_PASSWORD the
+        application refuses to start (even if a stale storage file holds users), so a deployment
+        can never come up open or with an unknown password. Re-running with a new ADMIN_PASSWORD rotates it.
+        """
+        username = os.getenv("ADMIN_USERNAME", "admin")
+        password = os.getenv("ADMIN_PASSWORD")
+        if not password:
+            raise RuntimeError(
+                "ADMIN_PASSWORD is not set. Authentication is mandatory: set ADMIN_USERNAME and "
+                "ADMIN_PASSWORD (min 12 chars, upper/lower/digit) in the environment."
             )
-
-        self.register_user(admin_username, admin_password, role="admin")
-        logger.info("🔐 Default admin user created: %s", admin_username)
+        is_valid, error_msg = validate_password_strength(password)
+        if not is_valid:
+            raise RuntimeError(f"ADMIN_PASSWORD rejected: {error_msg}")
+        hashed_pw, salt = hash_password(password)
+        existing = self.users.get(username, {})
+        self.users[username] = {
+            **existing,
+            "password_hash": hashed_pw,
+            "salt": salt,
+            "iterations": PBKDF2_ITERATIONS,
+            "role": "admin",
+            "created_at": existing.get("created_at", datetime.now(UTC).isoformat()),
+            "last_login": existing.get("last_login"),
+            "analysis_count": existing.get("analysis_count", 0),
+            "is_active": True,
+            "failed_login_attempts": 0,
+            "locked_until": None,
+        }
+        self._save_to_disk()
+        logger.info("🔐 Admin account provisioned from environment")
 
     def register_user(
         self, username: str, password: str, role: str = "analyst"
@@ -133,6 +153,7 @@ class AuthService:
         self.users[username] = {
             "password_hash": hashed_pw,
             "salt": salt,
+            "iterations": PBKDF2_ITERATIONS,
             "role": role,
             "created_at": datetime.now(UTC).isoformat(),
             "last_login": None,
@@ -164,15 +185,16 @@ class AuthService:
         """
         # Check if user exists
         if username not in self.users:
-            logger.warning("⚠️ Authentication attempt for non-existent user: %s", username)
-            # Don't reveal if user exists (security)
+            # Spend the same CPU as a real check so response time does not reveal valid usernames.
+            hash_password(password, "0" * 64)
+            logger.warning("⚠️ Authentication attempt for unknown user")
             return None
 
         user = self.users[username]
 
         # Check if account is active
         if not user.get("is_active", True):
-            logger.warning("⚠️ Authentication attempt for disabled user: %s", username)
+            logger.warning("⚠️ Authentication attempt for disabled user")
             return None
 
         # Check account lockout
@@ -181,11 +203,13 @@ class AuthService:
             return None
 
         # Hash provided password with stored salt
-        hashed_pw, _ = hash_password(password, user["salt"])
+        hashed_pw, _ = hash_password(
+            password, user["salt"], user.get("iterations", LEGACY_ITERATIONS)
+        )
 
         # Compare hashes (constant-time comparison)
         if not secrets.compare_digest(hashed_pw, user["password_hash"]):
-            logger.warning("⚠️ Failed login attempt for %s", username)
+            logger.warning("⚠️ Failed login attempt")
             self.lockout_manager.record_failure(user, username)
             self._save_to_disk()
             return None
@@ -200,12 +224,18 @@ class AuthService:
         user["last_login"] = datetime.now(UTC).isoformat()
         self._save_to_disk()
 
-        logger.info("✅ User authenticated: %s from IP %s", username, ip_address or "unknown")
+        logger.info("✅ User authenticated")
         return session_token
 
     def validate_session(self, session_token: str, ip_address: str | None = None) -> dict | None:
-        """Validate session token"""
-        return self.session_manager.validate_session(session_token, ip_address)
+        """Validate session token and make sure the account is still active."""
+        session = self.session_manager.validate_session(session_token, ip_address)
+        if session is None:
+            return None
+        user = self.users.get(session["username"])
+        if user is None or not user.get("is_active", True):
+            return None
+        return session
 
     def logout(self, session_token: str) -> bool:
         """Logout user and invalidate session"""

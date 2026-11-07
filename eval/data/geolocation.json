@@ -1,0 +1,139 @@
+{
+ "source": "Wikimedia Commons geotagged photos (CC0 / public domain / CC BY / CC BY-SA)",
+ "truth": "Coordinates are the Commons geotag of the photo (camera or subject position); the nearest candidate to each city centre within 2.5 km was taken, so many are recognisable landmarks. Error figures are therefore optimistic for anonymous street scenes.",
+ "items": [
+  {
+   "city": "Madrid",
+   "title": "File:Gray triangles on a facade (Unsplash).jpg",
+   "license": "CC0",
+   "lat": 40.4167754,
+   "lon": -3.7037902
+  },
+  {
+   "city": "Tokyo",
+   "title": "File:神田川（方南町）.jpg",
+   "license": "CC BY-SA 4.0",
+   "lat": 35.68034444,
+   "lon": 139.65718056
+  },
+  {
+   "city": "Nairobi",
+   "title": "File:100DaysOfCode (Unsplash).jpg",
+   "license": "CC0",
+   "lat": -1.2920659,
+   "lon": 36.8219462
+  },
+  {
+   "city": "MexicoCity",
+   "title": "File:Dr. Edris Rice-Wray in Prosalud Maternal Clinic Association.jpg",
+   "license": "CC BY-SA 4.0",
+   "lat": 19.4326077,
+   "lon": -99.133208
+  },
+  {
+   "city": "Cairo",
+   "title": "File:2011 Egyptian Protests Cardboard in the Chinese Language.jpg",
+   "license": "CC BY-SA 3.0",
+   "lat": 30.04442222,
+   "lon": 31.23568889
+  },
+  {
+   "city": "Mumbai",
+   "title": "File:Election rally - Flickr - Al Jazeera English (1).jpg",
+   "license": "CC BY-SA 2.0",
+   "lat": 19.07619,
+   "lon": 72.875877
+  },
+  {
+   "city": "Sydney",
+   "title": "File:Flaunter - Interior (Unsplash).jpg",
+   "license": "CC0",
+   "lat": -33.8688197,
+   "lon": 151.2092955
+  },
+  {
+   "city": "Reykjavik",
+   "title": "File:Fríkirkjan Reykjavík (4596594120).jpg",
+   "license": "CC BY-SA 2.0",
+   "lat": 64.146088,
+   "lon": -21.942615
+  },
+  {
+   "city": "Istanbul",
+   "title": "File:2013-01-03 Istanbul 180.jpg",
+   "license": "CC BY-SA 4.0",
+   "lat": 41.00820833,
+   "lon": 28.97843056
+  },
+  {
+   "city": "Bangkok",
+   "title": "File:Old Bicycle meets Designer (Unsplash).jpg",
+   "license": "CC0",
+   "lat": 13.7563309,
+   "lon": 100.5017651
+  },
+  {
+   "city": "BuenosAires",
+   "title": "File:Buenos Aires - Obelisco (fachada norte) - 20061212a.jpg",
+   "license": "CC BY-SA 3.0",
+   "lat": -34.60369444,
+   "lon": -58.38166667
+  },
+  {
+   "city": "Moscow",
+   "title": "File:My working space (Unsplash).jpg",
+   "license": "CC0",
+   "lat": 55.755826,
+   "lon": 37.6173
+  },
+  {
+   "city": "Toronto",
+   "title": "File:Mořký koník, Aquarium Toronto - panoramio.jpg",
+   "license": "CC BY-SA 3.0",
+   "lat": 43.653225,
+   "lon": -79.38318633
+  },
+  {
+   "city": "CapeTown",
+   "title": "File:Prisca making bags 2.jpg",
+   "license": "CC BY-SA 4.0",
+   "lat": -33.9249,
+   "lon": 18.4241
+  },
+  {
+   "city": "Seoul",
+   "title": "File:1988 Seoul Paralympics Games. Israel's valleyball team wins silver medal.jpg",
+   "license": "CC BY-SA 3.0",
+   "lat": 37.5665,
+   "lon": 126.978
+  },
+  {
+   "city": "Prague",
+   "title": "File:Národní dům na Vinohradech (2).jpg",
+   "license": "CC BY-SA 3.0",
+   "lat": 50.0754147,
+   "lon": 14.4377547
+  },
+  {
+   "city": "Marrakesh",
+   "title": "File:Marrakech, Morocco (5415636433) (5).jpg",
+   "license": "CC BY 2.0",
+   "lat": 31.6274,
+   "lon": -7.97937
+  },
+  {
+   "city": "Lima",
+   "title": "File:Lima District, Peru (Unsplash).jpg",
+   "license": "CC0",
+   "lat": -12.046374,
+   "lon": -77.0427934
+  },
+  {
+   "city": "Hanoi",
+   "title": "File:Phố Phan Phu Tiên, Hà Nội 001.JPG",
+   "license": "CC BY-SA 4.0",
+   "lat": 21.02780556,
+   "lon": 105.83367222
+  }
+ ]
+}

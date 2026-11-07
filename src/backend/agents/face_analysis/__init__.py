@@ -7,7 +7,7 @@ including:
 - Body and posture analysis
 - Clothing and accessories identification
 - Distinguishing marks (scars, tattoos, birthmarks)
-- Age, gender, and ethnicity estimation
+- Age and apparent gender estimation (no ethnicity inference)
 """
 
 from .face_agent import FaceAnalysisAgent

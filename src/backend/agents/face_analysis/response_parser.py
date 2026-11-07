@@ -139,13 +139,12 @@ class FaceAnalysisResponseParser:
         return None
 
     def _extract_demographics(self, text: str) -> dict[str, Any]:
-        """Extract demographic estimates (age, gender, ethnicity)."""
+        """Extract demographic estimates (age, gender)."""
         demographics: dict[str, Any] = {
             "age_range": None,
             "age_confidence": None,
             "gender": None,
             "gender_confidence": None,
-            "ethnicity_description": None,
         }
 
         # Age
@@ -169,13 +168,6 @@ class FaceAnalysisResponseParser:
             demographics["gender"] = gender_match.group(1).strip()
             if gender_match.group(2):
                 demographics["gender_confidence"] = gender_match.group(2).lower()
-
-        # Ethnicity
-        ethnicity_match = re.search(
-            r"Grupo\s*étnico\s*(?:aparente)?:\s*(.+?)(?:\n|$)", text, re.IGNORECASE
-        )
-        if ethnicity_match:
-            demographics["ethnicity_description"] = ethnicity_match.group(1).strip()
 
         return demographics
 

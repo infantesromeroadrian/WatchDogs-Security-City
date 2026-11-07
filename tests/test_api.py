@@ -26,20 +26,30 @@ def client():
     """Create test client."""
     app.config["TESTING"] = True
     with app.test_client() as client:
+        from conftest import login
+
+        login(client)
         yield client
 
 
 class TestAPIEndpoints:
     """Test suite for API endpoints."""
 
-    def test_health_check(self, client):
-        """Test health check endpoint."""
+    def test_health_check(self, client, monkeypatch):
+        """Health is 'healthy' when an LLM key is configured, 'degraded' otherwise."""
+        from src.backend.api import system_routes
+
+        monkeypatch.setattr(system_routes, "OPENAI_API_KEY", "test-key")
         response = client.get("/api/health")
         assert response.status_code == 200
 
         data = json.loads(response.data)
         assert data["status"] == "healthy"
         assert "timestamp" in data
+
+        monkeypatch.setattr(system_routes, "OPENAI_API_KEY", "")
+        monkeypatch.setattr(system_routes, "LLM_PROVIDER", "groq")
+        assert json.loads(client.get("/api/health").data)["status"] == "degraded"
 
     def test_index_route(self, client):
         """Test that index route serves HTML."""

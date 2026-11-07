@@ -59,13 +59,17 @@ class CoordinatorAgent:
         self.checkpointer = InMemorySaver()
 
         # Build LangGraph workflow with checkpointer for thread-level state persistence
-        self.graph = GraphBuilder.build_analysis_graph(
-            self.agent_runners,
-            checkpointer=self.checkpointer,
-        )
+        # The analysis graph is NOT checkpointed: it is a single-shot DAG that is never
+        # resumed, and checkpointing kept every frame (base64) plus all 16 results in RAM
+        # for the life of the process. Only the chat history needs the checkpointer.
+        self.graph = GraphBuilder.build_analysis_graph(self.agent_runners, checkpointer=None)
 
         # Build chat graph with same checkpointer for shared thread state
         self.chat_graph = ChatGraphBuilder(checkpointer=self.checkpointer)
+        # Purge a chat thread when its session is evicted (TTL, capacity or delete)
+        from ...services.session_store import session_store
+
+        session_store.add_eviction_listener(self.checkpointer.delete_thread)
 
         # Initialize multi-frame handler
         self.multi_frame_handler = MultiFrameHandler(self.analyze_frame)
@@ -145,6 +149,9 @@ class CoordinatorAgent:
             # LangGraph config with thread_id for checkpointer state persistence
             config: RunnableConfig = {
                 "configurable": {"thread_id": thread_id},
+                # one worker thread per agent: the default pool is cpu_count+4, which would
+                # serialise agents on the 0.1-CPU Render free plan
+                "max_concurrency": 16,
             }
 
             # Execute graph (LangGraph handles parallelism natively)
@@ -236,6 +243,9 @@ class CoordinatorAgent:
             # LangGraph config with thread_id for checkpointer state persistence
             config: RunnableConfig = {
                 "configurable": {"thread_id": thread_id},
+                # one worker thread per agent: the default pool is cpu_count+4, which would
+                # serialise agents on the 0.1-CPU Render free plan
+                "max_concurrency": 16,
             }
 
             for update in self.graph.stream(initial_state, config=config, stream_mode="updates"):
