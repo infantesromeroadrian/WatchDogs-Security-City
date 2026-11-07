@@ -27,7 +27,7 @@ from pathlib import Path
 from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "tests"))
-from stub_llm import StubLLM  # noqa: E402
+from stub_llm import StubLLM, make_password  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 PORT = 15099
@@ -57,7 +57,7 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default="metrics.json")
     args = ap.parse_args()
-    password = "Aa1-" + secrets.token_urlsafe(14)
+    password = make_password()
     tmp = tempfile.mkdtemp(prefix="wd-probe-")
     with StubLLM(delay=STUB_DELAY) as stub:
         env = {

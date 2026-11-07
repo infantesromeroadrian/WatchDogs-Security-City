@@ -3,10 +3,24 @@
 from __future__ import annotations
 
 import json
+import secrets
+import string
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
+
+
+def make_password(extra: int = 14) -> str:
+    """Random password meeting the app policy (>=12 chars, upper, lower, digit); no fixed prefix."""
+    parts = [
+        secrets.choice(string.ascii_uppercase),
+        secrets.choice(string.ascii_lowercase),
+        secrets.choice(string.digits),
+        secrets.token_urlsafe(extra),
+    ]
+    secrets.SystemRandom().shuffle(parts)
+    return "".join(parts)
 
 
 class StubLLM:

@@ -9,12 +9,14 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import secrets
 import tempfile
 
+from stub_llm import make_password
+
 _tmp = tempfile.mkdtemp(prefix="watchdogs-tests-")
 os.environ.setdefault("ADMIN_USERNAME", "tester")
 # Credentials are generated per run: no secret-looking literals live in the repository.
 TEST_USER = "tester"
 # (stored in the environment so every import of this module in the process agrees on the value)
-TEST_PASSWORD = os.environ.setdefault("WD_TEST_PASSWORD", "Aa1-" + secrets.token_urlsafe(18))
+TEST_PASSWORD = os.environ.setdefault("WD_TEST_PASSWORD", make_password(18))
 os.environ["ADMIN_PASSWORD"] = TEST_PASSWORD
 os.environ.setdefault("FLASK_SECRET_KEY", secrets.token_hex(32))
 os.environ.setdefault("AUTH_STORAGE_FILE", os.path.join(_tmp, "auth.json"))
