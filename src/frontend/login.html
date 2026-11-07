@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>WatchDogs - Acceso</title>
+    <link rel="stylesheet" href="static/css/style.css">
+    <style>
+        .login-box { max-width: 360px; margin: 12vh auto; padding: 2rem; border-radius: 8px; background: rgba(255,255,255,0.06); }
+        .login-box label { display: block; margin-top: 1rem; }
+        .login-box input { width: 100%; padding: 0.6rem; margin-top: 0.3rem; box-sizing: border-box; }
+        .login-box button { margin-top: 1.5rem; width: 100%; padding: 0.7rem; cursor: pointer; }
+        #loginError { color: #ff6b6b; min-height: 1.2rem; margin-top: 1rem; }
+    </style>
+</head>
+<body>
+    <main class="login-box">
+        <h1>WatchDogs OSINT</h1>
+        <p>Acceso restringido. Introduzca sus credenciales.</p>
+        <form id="loginForm" autocomplete="on">
+            <label for="username">Usuario
+                <input id="username" name="username" type="text" autocomplete="username" required maxlength="256">
+            </label>
+            <label for="password">Contraseña
+                <input id="password" name="password" type="password" autocomplete="current-password" required maxlength="256">
+            </label>
+            <button type="submit">Entrar</button>
+            <div id="loginError" role="alert"></div>
+        </form>
+    </main>
+    <script src="static/js/login.js"></script>
+</body>
+</html>

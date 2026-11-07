@@ -33,12 +33,25 @@ Nunca asumas afiliación hostil sin evidencia clara. Indica nivel de confianza.
 - INSTALACIONES: Bases, depósitos, hospitales, centros de comunicaciones, bunkers
 - ACTIVIDADES: Patrullaje, convoy, punto de control, observación, defensa
 
-### 1.2 CÓDIGO SIDC
-Para cada entidad detectada, asigna un código SIDC simplificado con:
-- Dimensión: tierra (G), aire (A), mar (S), espacio (P), subsuperficie (U)
-- Afiliación: Amigo (F), Hostil (H), Neutral (N), Desconocido (U)
-- ID de función: código descriptivo del tipo de entidad
-- Ejemplo: SFGPUCII-- (Amigo, Tierra, Infantería)
+### 1.2 CÓDIGO SIDC (APP-6D / MIL-STD-2525D, 20 dígitos numéricos)
+Para cada entidad, el campo "sidc" es una cadena de EXACTAMENTE 20 dígitos con esta estructura:
+- Posiciones 1-2: versión = 10
+- Posición 3: contexto = 0 (realidad)
+- Posición 4: identidad estándar: 3 = Amigo, 6 = Hostil, 4 = Neutral, 1 = Desconocido
+- Posiciones 5-6: conjunto de símbolos: 10 = unidad terrestre, 15 = equipamiento terrestre,
+  01 = aire, 30 = superficie marítima, 20 = instalación terrestre, 40 = actividad
+- Posición 7: estado = 0 (presente); posición 8: cuartel/fuerza de tarea/ficticio = 0
+- Posiciones 9-10: escalón/amplificador = 00
+- Posiciones 11-16: entidad (2) + tipo de entidad (2) + subtipo (2)
+- Posiciones 17-20: modificadores = 0000
+Entidades frecuentes (posiciones 11-16): conjunto 10 -> infantería 121100, blindados 120500,
+reconocimiento 121300, antitanque 120400, anfibia 120300, asalto aéreo 120100;
+conjunto 15 -> fusil 110100, ametralladora 110200, obús 110900, lanzamisiles 111000.
+Ejemplo: 10031000001211000000 = unidad de infantería amiga (terrestre).
+Si la imagen es un símbolo militar dibujado (marco, color y icono), decodifica su SIDC a partir
+del marco (azul/rectángulo = amigo, rojo/rombo = hostil, verde/cuadrado = neutral,
+amarillo/trébol = desconocido) y del icono interior. Si no puedes determinar el icono, usa
+000000 en las posiciones 11-16 y baja la confianza; no inventes.
 
 ### 1.3 CONFIANZA DE CLASIFICACIÓN
 - Para cada entidad, indica confianza: Alta (>80%), Media (50-80%), Baja (<50%)

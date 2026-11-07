@@ -9,6 +9,19 @@
 
 import { log } from './logger.js';
 
+/**
+ * Escape HTML. Marker labels come from text the LLM read out of an image, so they are untrusted
+ * (visual prompt injection can make a label contain markup) and must never reach innerHTML raw.
+ */
+function esc(str) {
+    return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 export class MapHandler {
     constructor() {
         /** @type {mapboxgl.Map|null} */
@@ -276,10 +289,10 @@ export class MapHandler {
     _popupHTML(label, lat, lon, radius, source) {
         const radiusText = radius ? `~${radius >= 1000 ? (radius / 1000).toFixed(0) + ' km' : radius + ' m'} radius` : '';
         return `
-            <div class="map-popup-label">${label}</div>
+            <div class="map-popup-label">${esc(label)}</div>
             <div class="map-popup-coords">${lat.toFixed(5)}, ${lon.toFixed(5)}</div>
             ${radiusText ? `<div class="map-popup-meta">${radiusText}</div>` : ''}
-            <div class="map-popup-meta">Source: ${source}</div>
+            <div class="map-popup-meta">Source: ${esc(source)}</div>
         `;
     }
 
@@ -303,8 +316,8 @@ export class MapHandler {
         list.innerHTML = this.markers.map(m => `
             <div class="map-marker-item" data-lat="${m.lat}" data-lon="${m.lon}">
                 <div class="marker-label">
-                    &#x1F4CD; ${m.label}
-                    <span class="marker-source ${m.source}">${m.source}</span>
+                    &#x1F4CD; ${esc(m.label)}
+                    <span class="marker-source ${esc(m.source)}">${esc(m.source)}</span>
                 </div>
                 <div class="marker-coords">${m.lat.toFixed(5)}, ${m.lon.toFixed(5)}</div>
             </div>

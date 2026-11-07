@@ -9,7 +9,14 @@ import secrets
 MIN_PASSWORD_LENGTH = 12
 
 
-def hash_password(password: str, salt: str | None = None) -> tuple[str, str]:
+# OWASP (2023) minimum for PBKDF2-HMAC-SHA256. Stored per user so old hashes (100k) still verify.
+PBKDF2_ITERATIONS = 600_000
+LEGACY_ITERATIONS = 100_000
+
+
+def hash_password(
+    password: str, salt: str | None = None, iterations: int = PBKDF2_ITERATIONS
+) -> tuple[str, str]:
     """
     Hash password with salt using PBKDF2-HMAC-SHA256.
 
@@ -23,12 +30,11 @@ def hash_password(password: str, salt: str | None = None) -> tuple[str, str]:
     if not salt:
         salt = secrets.token_hex(32)
 
-    # Use PBKDF2 with 100,000 iterations (OWASP recommendation)
     hashed = hashlib.pbkdf2_hmac(
         "sha256",
         password.encode("utf-8"),
         salt.encode("utf-8"),
-        100000,  # iterations
+        iterations,
     )
 
     return hashed.hex(), salt

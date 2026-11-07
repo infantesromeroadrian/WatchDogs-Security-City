@@ -363,8 +363,8 @@ class ReportGenerator:
         if forensic and forensic.get("status") == "success":
             # Verdict summary
             verdict = forensic.get("verdict", {})
-            classification = verdict.get("classification", "indeterminada").upper()
-            confidence = verdict.get("confidence", "N/A")
+            classification = (verdict.get("classification") or "indeterminada").upper()
+            confidence = verdict.get("confidence") or "N/A"
             integrity = forensic.get("integrity_score")
 
             lines.append(f"🎯 VEREDICTO: {classification}")

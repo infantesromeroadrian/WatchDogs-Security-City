@@ -1,0 +1,106 @@
+{
+ "source": "Wikimedia Commons (public domain / CC0 only)",
+ "labeling": "Binary label assigned by the maintainer by visual inspection of each image: weapon_visible=true when a firearm is clearly visible; false = military setting with no weapon visible (hard negatives).",
+ "items": [
+  {
+   "title": "File:10th Mountain, 11th Airborne Division Soldiers Train on the Finnish RK 62 Assault Rifle (8882420).jpg",
+   "license": "Public domain",
+   "weapon_visible": true
+  },
+  {
+   "title": "File:9RAR instructs ARVN 18th Division soldier on M16 rifle aiming at the Horseshoe.jpg",
+   "license": "CC0",
+   "weapon_visible": true
+  },
+  {
+   "title": "File:A U.S. Soldier with Alpha Company, 412th Support Battalion, 12th Combat Aviation Brigade aims at a target with an M16A2 rifle during marksmanship training at the Oberdachstetten Range Complex in Bavaria 130320-D-OE523-540.jpg",
+   "license": "Public domain",
+   "weapon_visible": true
+  },
+  {
+   "title": "File:Exercise Joint Viking 25- Rounds Down Range (8873982).jpg",
+   "license": "Public domain",
+   "weapon_visible": true
+  },
+  {
+   "title": "File:NATO Operational Mentor Liaison Team Training Exercise 23 120508-A-ZD093-579.jpg",
+   "license": "Public domain",
+   "weapon_visible": true
+  },
+  {
+   "title": "File:Afghan National Army soldier.JPEG",
+   "license": "Public domain",
+   "weapon_visible": true
+  },
+  {
+   "title": "File:Afghan soldiers patrol.JPG",
+   "license": "Public domain",
+   "weapon_visible": true
+  },
+  {
+   "title": "File:GIs patrol Mianishin, Afghanistan -a.jpg",
+   "license": "Public domain",
+   "weapon_visible": true
+  },
+  {
+   "title": "File:Balikatan 2019 - Marines participate in combined-arms live fire at CERAB (Image 2 of 5).jpg",
+   "license": "Public domain",
+   "weapon_visible": true
+  },
+  {
+   "title": "File:KAMANDAG 9- U S , Philippine Marines conduct counter-landing live-fire (9093625).jpg",
+   "license": "Public domain",
+   "weapon_visible": true
+  },
+  {
+   "title": "File:Soldier cleaning his plate - DPLA - 986be71e56f87fc7921e799d32514705 (page 1).jpg",
+   "license": "Public domain",
+   "weapon_visible": false
+  },
+  {
+   "title": "File:US Army 53662 Enjoying a Meal.jpg",
+   "license": "Public domain",
+   "weapon_visible": false
+  },
+  {
+   "title": "File:US Navy 050704-M-7173M-005 An inside view of the recently completed mess hall on board Camp Blue Diamond.jpg",
+   "license": "Public domain",
+   "weapon_visible": false
+  },
+  {
+   "title": "File:US Navy 050704-M-7173M-006 Seabees assigned to Naval Mobile Construction Battalion Two Four (NMCB-24) complete the new mess hall on board Camp Blue Diamond.jpg",
+   "license": "Public domain",
+   "weapon_visible": false
+  },
+  {
+   "title": "File:Crew chiefs crush 'em at Buddy Wing 15-6 150708-F-ZP572-062.jpg",
+   "license": "Public domain",
+   "weapon_visible": false
+  },
+  {
+   "title": "File:Crews Conduct Maintenance Operation (7031280).jpg",
+   "license": "Public domain",
+   "weapon_visible": false
+  },
+  {
+   "title": "File:Crews Conduct Maintenance Operation (7031281).jpg",
+   "license": "Public domain",
+   "weapon_visible": false
+  },
+  {
+   "title": "File:ISS-49 Kate Rubins works with an oxygen tank in the Quest airlock.jpg",
+   "license": "Public domain",
+   "weapon_visible": false
+  },
+  {
+   "title": "File:STS055-39-034 - STS-055 - Crewmembers in the middeck doing maintenance on the underfloor water tanks. - DPLA - 1ef1d3f752bee8af0c6ed444952e4385.jpg",
+   "license": "Public domain",
+   "weapon_visible": false
+  },
+  {
+   "title": "File:U S Army Soldier performs maintenance on an M1 Abrams (9406467).jpg",
+   "license": "Public domain",
+   "weapon_visible": false
+  }
+ ]
+}

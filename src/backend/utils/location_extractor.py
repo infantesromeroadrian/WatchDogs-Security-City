@@ -9,6 +9,8 @@ import logging
 import re
 from typing import Any
 
+from .untrusted import sanitize_text
+
 logger = logging.getLogger(__name__)
 
 # Coordinate regex patterns — reused from geolocation/response_parser.py
@@ -117,6 +119,9 @@ class LocationExtractor:
         for pattern in _LABEL_PATTERNS:
             m = pattern.search(context)
             if m:
-                return m.group(1).strip()
+                # Labels come from model text derived from untrusted images: strip markup characters
+                # and invisible characters, and cap the length (the UI also escapes them).
+                label = re.sub(r"[<>&\"'`]", "", sanitize_text(m.group(1), 120))
+                return label or None
 
         return None

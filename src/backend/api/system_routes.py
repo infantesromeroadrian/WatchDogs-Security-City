@@ -11,8 +11,8 @@ from werkzeug.utils import secure_filename
 from ..config import (
     MAPBOX_ACCESS_TOKEN,
     METRICS_ENABLED,
+    LLM_PROVIDER,
     OPENAI_API_KEY,
-    OPENAI_MODEL,
     TEMP_VIDEO_PATH,
     VIDEO_RETENTION_HOURS,
 )
@@ -30,13 +30,18 @@ system_bp = Blueprint("system", __name__)
 video_service = VideoService()
 
 
+def _llm_configured() -> bool:
+    """A key is required except for local providers (Ollama)."""
+    return bool(OPENAI_API_KEY) or LLM_PROVIDER == "ollama"
+
+
 @system_bp.route("/health", methods=["GET"])
 def health_check():
     """Health check endpoint with dependency verification."""
     # L-5: Verify critical dependencies beyond a simple "ok"
     checks = {
-        "llm_configured": bool(OPENAI_API_KEY and OPENAI_API_KEY != "lm-studio"),
-        "llm_model": OPENAI_MODEL,
+        "llm_configured": _llm_configured(),
+        "llm_provider": LLM_PROVIDER,
         "temp_dir_writable": TEMP_VIDEO_PATH.is_dir(),
         "map_configured": bool(MAPBOX_ACCESS_TOKEN),
     }
@@ -181,9 +186,8 @@ def serve_video(filename: str):
     """
     Serve a video file from temporary storage.
 
-    This endpoint does NOT require ``@auth_required`` because the browser's
-    ``<video src="...">`` element cannot send Bearer tokens.  The timestamped
-    filename provides weak authorization (unguessable + 1-hour retention).
+    Protected by the global authentication guard. The browser's ``<video src="...">`` element
+    cannot send a Bearer header, which is why the session also travels as an HttpOnly cookie.
 
     Security:
     - ``secure_filename`` strips path traversal characters.

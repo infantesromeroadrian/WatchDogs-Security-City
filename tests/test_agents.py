@@ -25,7 +25,7 @@ class TestVisionAgent:
 
     def test_agent_initialization(self):
         """Test that Vision Agent initializes correctly."""
-        with patch("src.backend.agents.vision_agent.ChatOpenAI"):
+        with patch("src.backend.llm.provider.ChatOpenAI"):
             from src.backend.agents.vision_agent import VisionAgent
 
             agent = VisionAgent()
@@ -35,7 +35,7 @@ class TestVisionAgent:
 
     @patch("src.backend.agents.vision_agent.CACHE_ENABLED", False)
     @patch("src.backend.agents.vision_agent.CIRCUIT_BREAKER_ENABLED", False)
-    @patch("src.backend.agents.vision_agent.ChatOpenAI")
+    @patch("src.backend.llm.provider.ChatOpenAI")
     def test_analyze_success(self, mock_openai):
         """Test successful analysis."""
         mock_response = Mock()
@@ -55,7 +55,7 @@ class TestVisionAgent:
 
     @patch("src.backend.agents.vision_agent.CACHE_ENABLED", False)
     @patch("src.backend.agents.vision_agent.CIRCUIT_BREAKER_ENABLED", False)
-    @patch("src.backend.agents.vision_agent.ChatOpenAI")
+    @patch("src.backend.llm.provider.ChatOpenAI")
     def test_analyze_error_handling(self, mock_openai):
         """Test error handling when LLM returns an error."""
         mock_llm_instance = Mock()
@@ -78,7 +78,7 @@ class TestOCRAgent:
 
     def test_agent_initialization(self):
         """Test that OCR Agent initializes correctly."""
-        with patch("src.backend.agents.ocr_agent.ChatOpenAI"):
+        with patch("src.backend.llm.provider.ChatOpenAI"):
             from src.backend.agents.ocr_agent import OCRAgent
 
             agent = OCRAgent()
@@ -88,11 +88,11 @@ class TestOCRAgent:
 
     @patch("src.backend.agents.ocr_agent.CACHE_ENABLED", False)
     @patch("src.backend.agents.ocr_agent.CIRCUIT_BREAKER_ENABLED", False)
-    @patch("src.backend.agents.ocr_agent.ChatOpenAI")
+    @patch("src.backend.llm.provider.ChatOpenAI")
     def test_analyze_with_text(self, mock_openai):
         """Test OCR analysis when text is found."""
         mock_response = Mock()
-        mock_response.content = "Detected text: ABC123"
+        mock_response.content = '{"has_text": true, "extracted_text": ["ABC123"], "summary": "plate"}'
         mock_llm_instance = Mock()
         mock_llm_instance.invoke.return_value = mock_response
         mock_openai.return_value = mock_llm_instance
@@ -108,11 +108,11 @@ class TestOCRAgent:
 
     @patch("src.backend.agents.ocr_agent.CACHE_ENABLED", False)
     @patch("src.backend.agents.ocr_agent.CIRCUIT_BREAKER_ENABLED", False)
-    @patch("src.backend.agents.ocr_agent.ChatOpenAI")
+    @patch("src.backend.llm.provider.ChatOpenAI")
     def test_analyze_no_text(self, mock_openai):
         """Test OCR analysis when no text is detected."""
         mock_response = Mock()
-        mock_response.content = "No se detectó texto en la imagen"
+        mock_response.content = '{"has_text": false, "extracted_text": []}'
         mock_llm_instance = Mock()
         mock_llm_instance.invoke.return_value = mock_response
         mock_openai.return_value = mock_llm_instance
@@ -132,7 +132,7 @@ class TestDetectionAgent:
 
     def test_agent_initialization(self):
         """Test that Detection Agent initializes correctly."""
-        with patch("src.backend.agents.detection_agent.ChatOpenAI"):
+        with patch("src.backend.llm.provider.ChatOpenAI"):
             from src.backend.agents.detection_agent import DetectionAgent
 
             agent = DetectionAgent()
@@ -142,11 +142,11 @@ class TestDetectionAgent:
 
     @patch("src.backend.agents.detection_agent.CACHE_ENABLED", False)
     @patch("src.backend.agents.detection_agent.CIRCUIT_BREAKER_ENABLED", False)
-    @patch("src.backend.agents.detection_agent.ChatOpenAI")
+    @patch("src.backend.llm.provider.ChatOpenAI")
     def test_analyze_success(self, mock_openai):
         """Test successful detection analysis."""
         mock_response = Mock()
-        mock_response.content = "Detected: 2 persons, 1 vehicle"
+        mock_response.content = '{"objects": [{"label": "persona", "count": 2}], "total_people": 2, "total_vehicles": 1}'
         mock_llm_instance = Mock()
         mock_llm_instance.invoke.return_value = mock_response
         mock_openai.return_value = mock_llm_instance
@@ -159,6 +159,7 @@ class TestDetectionAgent:
         assert result["agent"] == "detection"
         assert result["status"] == "success"
         assert "analysis" in result
+        assert result["total_people"] == 2
 
 
 if __name__ == "__main__":

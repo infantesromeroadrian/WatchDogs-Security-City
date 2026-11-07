@@ -119,7 +119,7 @@ class VideoMetadataExtractor:
                 metadata["format"].get("format_name", "unknown"),
             )
 
-        except (OSError, IOError, KeyError, ValueError) as e:
+        except (OSError, KeyError, ValueError) as e:
             logger.error("❌ Video metadata extraction error: %s", e)
             metadata["error"] = str(e)
 

@@ -64,7 +64,7 @@ def extract_metadata():
 
     except (ValueError, TypeError, KeyError) as e:
         logger.error("❌ Metadata extraction error: %s", e)
-        return jsonify({"success": False, "error": str(e)}), 500
+        return jsonify({"success": False, "error": "Internal server error"}), 500
 
 
 @professional_bp.route("/generate-pdf-report", methods=["POST"])
@@ -85,7 +85,7 @@ def generate_pdf_report():
     try:
         data = request.get_json()
 
-        if not data or "analysis_results" not in data:
+        if not isinstance(data, dict) or not isinstance(data.get("analysis_results"), dict):
             return jsonify({"success": False, "error": "No analysis results provided"}), 400
 
         analysis_results = data["analysis_results"]
@@ -119,7 +119,7 @@ def generate_pdf_report():
 
     except (ValueError, TypeError, KeyError) as e:
         logger.error("❌ PDF generation error: %s", e)
-        return jsonify({"success": False, "error": str(e)}), 500
+        return jsonify({"success": False, "error": "Internal server error"}), 500
 
 
 @professional_bp.route("/generate-evidence-package", methods=["POST"])
@@ -139,7 +139,11 @@ def generate_evidence_package():
     try:
         data = request.get_json()
 
-        if not data or "frame" not in data or "analysis_results" not in data:
+        if (
+            not isinstance(data, dict)
+            or not isinstance(data.get("frame"), str)
+            or not isinstance(data.get("analysis_results"), dict)
+        ):
             return jsonify({"success": False, "error": "Missing frame or analysis results"}), 400
 
         frame_base64 = data["frame"]
@@ -163,4 +167,4 @@ def generate_evidence_package():
 
     except (ValueError, TypeError, KeyError) as e:
         logger.error("❌ Evidence package error: %s", e)
-        return jsonify({"success": False, "error": str(e)}), 500
+        return jsonify({"success": False, "error": "Internal server error"}), 500

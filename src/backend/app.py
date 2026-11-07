@@ -7,49 +7,72 @@ import logging
 import os
 import secrets
 
-from flask import Flask, send_from_directory
+from flask import Flask, request, send_from_directory
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from PIL import Image
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 # Import blueprints
 from .api import analysis_bp, auth_bp, map_bp, professional_bp, system_bp
+from .api.middleware import init_auth
 from .config import (
     ALLOWED_ORIGINS,
     FLASK_DEBUG,
     FLASK_HOST,
     FLASK_PORT,
+    IS_PRODUCTION,
     MAX_CONTENT_LENGTH,
+    MAX_IMAGE_PIXELS,
     RATE_LIMIT_PER_MINUTE,
+    TRUST_PROXY,
 )
+from .services.janitor import ensure_started as start_janitor
+from .utils import log_redaction
 
 # Configure logging (following rule 19)
 logger = logging.getLogger(__name__)
 
+log_redaction.install()  # no image data / tokens / e-mails in logs
+Image.MAX_IMAGE_PIXELS = MAX_IMAGE_PIXELS  # decompression-bomb guard (Pillow raises above 2x)
+
 # Initialize Flask app
 app = Flask(__name__, static_folder="../frontend/static", template_folder="../frontend")
 app.config["MAX_CONTENT_LENGTH"] = MAX_CONTENT_LENGTH  # Limit upload file size
+if TRUST_PROXY:
+    # Behind Render's TLS proxy: real client IP for rate limiting, correct scheme for cookies
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)  # type: ignore[method-assign]
 
 # H-3: Secret key from env var — required for session integrity and CSRF protection.
 # Falls back to a random secret (safe but sessions won't survive restarts).
 _env_secret = os.getenv("FLASK_SECRET_KEY")
 if _env_secret:
     app.secret_key = _env_secret
+elif IS_PRODUCTION:
+    raise RuntimeError("FLASK_SECRET_KEY is required in production")
 else:
     app.secret_key = secrets.token_hex(32)
     logger.warning("⚠️ FLASK_SECRET_KEY not set — using random secret (sessions lost on restart)")
 
-# Configure CORS with restrictions (security baseline rule 01)
-CORS(
-    app,
-    resources={
-        r"/api/*": {
-            "origins": ALLOWED_ORIGINS,
-            "methods": ["GET", "POST"],
-            "allow_headers": ["Content-Type", "Authorization"],
-        }
-    },
-)
+# CORS: the SPA is served by this same app, so cross-origin access is OFF unless explicit origins
+# are configured (ALLOWED_ORIGINS). Credentials are never shared cross-origin.
+if ALLOWED_ORIGINS:
+    CORS(
+        app,
+        resources={
+            r"/api/*": {
+                "origins": ALLOWED_ORIGINS,
+                "methods": ["GET", "POST"],
+                "allow_headers": ["Content-Type", "Authorization"],
+            }
+        },
+        supports_credentials=False,
+    )
+
+# Deny-by-default authentication for every route (see api/middleware.py)
+init_auth(app)
+app.before_request(start_janitor)
 
 # Configure rate limiting (security rule 21)
 limiter = Limiter(
@@ -100,6 +123,9 @@ def set_security_headers(response):
         "worker-src 'self' blob:; "
         "frame-ancestors 'none';"
     )
+    # Analysis results can contain personal data: never let browsers or proxies cache API responses
+    if request.path.startswith("/api/"):
+        response.headers["Cache-Control"] = "no-store"
     # HSTS — only in production (avoids locking out local dev)
     if not FLASK_DEBUG:
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
@@ -108,14 +134,37 @@ def set_security_headers(response):
 
 @app.route("/")
 def index():
-    """Serve main frontend page."""
+    """Serve main frontend page (requires a session; otherwise the guard redirects to /login)."""
     return send_from_directory("../frontend", "index.html")
+
+
+@app.route("/login")
+def login_page():
+    """Public login page."""
+    return send_from_directory("../frontend", "login.html")
+
+
+@app.errorhandler(413)
+def too_large(error):
+    """Handle oversized request bodies."""
+    return {"success": False, "error": "Request body too large"}, 413
 
 
 @app.errorhandler(404)
 def not_found(error):
     """Handle 404 errors."""
     return {"success": False, "error": "Endpoint not found"}, 404
+
+
+@app.errorhandler(Exception)
+def unhandled_error(error):
+    """Last resort: log the traceback server-side, return nothing internal to the client."""
+    from werkzeug.exceptions import HTTPException
+
+    if isinstance(error, HTTPException):
+        return error
+    logger.exception("Unhandled error")
+    return {"success": False, "error": "Internal server error"}, 500
 
 
 @app.errorhandler(500)

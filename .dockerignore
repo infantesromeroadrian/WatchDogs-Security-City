@@ -63,3 +63,13 @@ Dockerfile
 docker-compose*.yml
 .dockerignore
 
+
+# Runtime state and secrets must never be baked into an image
+.env
+.env.*
+!.env.example
+data/.auth_storage.json
+data/llm_budget.sqlite3*
+data/temp/*
+eval/
+tests/

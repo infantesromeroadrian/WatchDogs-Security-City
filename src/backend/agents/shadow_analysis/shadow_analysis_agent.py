@@ -15,7 +15,8 @@ import logging
 from typing import Any
 
 from langchain_core.messages import HumanMessage
-from langchain_openai import ChatOpenAI
+from ...llm import StructuredParser, build_chat_model
+from ...models.structured import ShadowSchema
 
 from ...config import (
     AGENT_RETRY_MAX_ATTEMPTS,
@@ -26,9 +27,6 @@ from ...config import (
     CACHE_TTL_SECONDS,
     CIRCUIT_BREAKER_ENABLED,
     METRICS_ENABLED,
-    OPENAI_API_KEY,
-    OPENAI_BASE_URL,
-    OPENAI_MODEL,
 )
 from ...exceptions import (
     OpenAIAPIError,
@@ -64,14 +62,9 @@ class ShadowAnalysisAgent:
 
     def __init__(self) -> None:
         """Initialize Shadow Analysis Agent."""
-        self.llm = ChatOpenAI(
-            model=OPENAI_MODEL,
-            api_key=OPENAI_API_KEY,
-            temperature=0.2,  # Precision for geometric calculations
-            **({"base_url": OPENAI_BASE_URL} if OPENAI_BASE_URL else {}),
-        )
+        self.llm = build_chat_model(temperature=0.2, schema=ShadowSchema)
 
-        self.parser = ShadowAnalysisResponseParser()
+        self.parser = StructuredParser(ShadowSchema, ShadowAnalysisResponseParser())
 
         if CIRCUIT_BREAKER_ENABLED:
             from ...config import (
@@ -113,7 +106,7 @@ class ShadowAnalysisAgent:
 
         logger.info("✅ Shadow & sun analysis complete")
 
-        parsed_data = self.parser.parse(analysis_text)
+        parsed_data, analysis_text = self.parser.parse_with_text(analysis_text)
 
         return {
             "agent": "shadow_analysis",

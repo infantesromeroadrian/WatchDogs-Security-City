@@ -1,5 +1,5 @@
 """
-Forensic Analysis Agent for image authenticity verification using GPT-5.1.
+Forensic Analysis Agent for image authenticity verification using the configured vision LLM.
 
 CIA-Level OSINT Analysis including:
 - Manipulation detection (copy-paste, splicing, retouching)
@@ -14,7 +14,8 @@ import logging
 from typing import Any
 
 from langchain_core.messages import HumanMessage
-from langchain_openai import ChatOpenAI
+from ...llm import StructuredParser, build_chat_model
+from ...models.structured import ForensicSchema
 
 from ...config import (
     AGENT_RETRY_MAX_ATTEMPTS,
@@ -25,9 +26,6 @@ from ...config import (
     CACHE_TTL_SECONDS,
     CIRCUIT_BREAKER_ENABLED,
     METRICS_ENABLED,
-    OPENAI_API_KEY,
-    OPENAI_BASE_URL,
-    OPENAI_MODEL,
 )
 from ...exceptions import (
     OpenAIAPIError,
@@ -62,16 +60,11 @@ class ForensicAnalysisAgent:
     """
 
     def __init__(self) -> None:
-        """Initialize Forensic Analysis Agent with GPT-5.1 model."""
-        self.llm = ChatOpenAI(
-            model=OPENAI_MODEL,
-            api_key=OPENAI_API_KEY,
-            temperature=0.1,  # Very low temperature for objective forensic analysis
-            **({"base_url": OPENAI_BASE_URL} if OPENAI_BASE_URL else {}),
-        )
+        """Initialize Forensic Analysis Agent with the configured vision LLM."""
+        self.llm = build_chat_model(temperature=0.1, schema=ForensicSchema)
 
         # Initialize response parser
-        self.parser = ForensicResponseParser()
+        self.parser = StructuredParser(ForensicSchema, ForensicResponseParser())
 
         # Initialize circuit breaker (lazy import to avoid circular deps)
         if CIRCUIT_BREAKER_ENABLED:
@@ -126,7 +119,7 @@ class ForensicAnalysisAgent:
         logger.info("✅ Forensic analysis complete")
 
         # Parse response using enhanced parser
-        parsed_data = self.parser.parse(analysis_text)
+        parsed_data, analysis_text = self.parser.parse_with_text(analysis_text)
 
         # Build comprehensive result
         return {

@@ -1,5 +1,5 @@
 """
-Geolocation Agent for identifying location details from images using GPT-5.1.
+Geolocation Agent for identifying location details from images using the configured vision LLM.
 
 CIA-Level OSINT Analysis including:
 - Hierarchical location (Country → Region → City → District → Street → Number)
@@ -15,7 +15,8 @@ import logging
 from typing import Any
 
 from langchain_core.messages import HumanMessage
-from langchain_openai import ChatOpenAI
+from ..llm import StructuredParser, build_chat_model
+from ..models.structured import GeolocationSchema
 
 from ..config import (
     AGENT_RETRY_MAX_ATTEMPTS,
@@ -26,9 +27,6 @@ from ..config import (
     CACHE_TTL_SECONDS,
     CIRCUIT_BREAKER_ENABLED,
     METRICS_ENABLED,
-    OPENAI_API_KEY,
-    OPENAI_BASE_URL,
-    OPENAI_MODEL,
 )
 from ..exceptions import (
     OpenAIAPIError,
@@ -61,16 +59,11 @@ class GeolocationAgent:
     """
 
     def __init__(self) -> None:
-        """Initialize Geolocation Agent with GPT-5.1 model."""
-        self.llm = ChatOpenAI(
-            model=OPENAI_MODEL,
-            api_key=OPENAI_API_KEY,
-            temperature=0.2,  # Low temperature for precise location identification
-            **({"base_url": OPENAI_BASE_URL} if OPENAI_BASE_URL else {}),
-        )
+        """Initialize Geolocation Agent with the configured vision LLM."""
+        self.llm = build_chat_model(temperature=0.2, schema=GeolocationSchema)
 
         # Initialize response parser
-        self.parser = GeolocationResponseParser()
+        self.parser = StructuredParser(GeolocationSchema, GeolocationResponseParser())
 
         # Initialize circuit breaker ONCE per agent instance (shared state)
         if CIRCUIT_BREAKER_ENABLED:
@@ -126,7 +119,7 @@ class GeolocationAgent:
         logger.info("✅ Geolocation analysis complete")
 
         # Parse response using enhanced parser
-        parsed_data = self.parser.parse(geolocation_text)
+        parsed_data, geolocation_text = self.parser.parse_with_text(geolocation_text)
 
         # Build comprehensive result with all CIA-level fields
         return {

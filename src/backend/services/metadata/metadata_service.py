@@ -102,7 +102,7 @@ class MetadataService:
                             exif_dict["Exif"]
                         )
 
-                except (OSError, IOError, KeyError, ValueError) as e:
+                except (OSError, KeyError, ValueError) as e:
                     logger.debug("Piexif extraction failed (normal for non-JPEG): %s", e)
 
             logger.info(
@@ -111,7 +111,7 @@ class MetadataService:
                 metadata["technical"]["size"],
             )
 
-        except (OSError, IOError, KeyError, ValueError) as e:
+        except (OSError, KeyError, ValueError) as e:
             logger.error("❌ Metadata extraction error: %s", e)
             metadata["error"] = str(e)
 

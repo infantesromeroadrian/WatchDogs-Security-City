@@ -1,5 +1,5 @@
 """
-Context Intelligence Agent for temporal and cultural inference using GPT-5.1.
+Context Intelligence Agent for temporal and cultural inference using the configured vision LLM.
 
 CIA-Level OSINT Analysis including:
 - Temporal analysis (time of day, season, era, specific dates)
@@ -14,7 +14,8 @@ import logging
 from typing import Any
 
 from langchain_core.messages import HumanMessage
-from langchain_openai import ChatOpenAI
+from ...llm import StructuredParser, build_chat_model
+from ...models.structured import ContextIntelSchema
 
 from ...config import (
     AGENT_RETRY_MAX_ATTEMPTS,
@@ -25,9 +26,6 @@ from ...config import (
     CACHE_TTL_SECONDS,
     CIRCUIT_BREAKER_ENABLED,
     METRICS_ENABLED,
-    OPENAI_API_KEY,
-    OPENAI_BASE_URL,
-    OPENAI_MODEL,
 )
 from ...exceptions import (
     OpenAIAPIError,
@@ -61,16 +59,11 @@ class ContextIntelAgent:
     """
 
     def __init__(self) -> None:
-        """Initialize Context Intelligence Agent with GPT-5.1 model."""
-        self.llm = ChatOpenAI(
-            model=OPENAI_MODEL,
-            api_key=OPENAI_API_KEY,
-            temperature=0.3,  # Slightly higher for inferential reasoning
-            **({"base_url": OPENAI_BASE_URL} if OPENAI_BASE_URL else {}),
-        )
+        """Initialize Context Intelligence Agent with the configured vision LLM."""
+        self.llm = build_chat_model(temperature=0.3, schema=ContextIntelSchema)
 
         # Initialize response parser
-        self.parser = ContextIntelResponseParser()
+        self.parser = StructuredParser(ContextIntelSchema, ContextIntelResponseParser())
 
         # Initialize circuit breaker (lazy import to avoid circular deps)
         if CIRCUIT_BREAKER_ENABLED:
@@ -125,7 +118,7 @@ class ContextIntelAgent:
         logger.info("✅ Context intelligence analysis complete")
 
         # Parse response using enhanced parser
-        parsed_data = self.parser.parse(analysis_text)
+        parsed_data, analysis_text = self.parser.parse_with_text(analysis_text)
 
         # Build comprehensive result
         return {

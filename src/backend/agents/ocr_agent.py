@@ -1,12 +1,13 @@
 """
-OCR Agent for text extraction using GPT-5.1 (Improved with retry, timeout, caching, metrics).
+OCR Agent for text extraction using the configured vision LLM (Improved with retry, timeout, caching, metrics).
 """
 
 import logging
 from typing import Any
 
 from langchain_core.messages import HumanMessage
-from langchain_openai import ChatOpenAI
+from ..llm import StructuredParser, build_chat_model, message_text
+from ..models.structured import OcrSchema
 
 from ..config import (
     AGENT_RETRY_MAX_ATTEMPTS,
@@ -17,9 +18,6 @@ from ..config import (
     CACHE_TTL_SECONDS,
     CIRCUIT_BREAKER_ENABLED,
     METRICS_ENABLED,
-    OPENAI_API_KEY,
-    OPENAI_BASE_URL,
-    OPENAI_MODEL,
 )
 from ..models.agent_results import OCRResult
 from ..utils.cache_utils import get_cache_key, get_cached_result, set_cached_result
@@ -41,13 +39,9 @@ class OCRAgent:
     """Agent specialized in text extraction and OCR."""
 
     def __init__(self):
-        """Initialize OCR Agent with GPT-5.1 model."""
-        self.llm = ChatOpenAI(
-            model=OPENAI_MODEL,
-            api_key=OPENAI_API_KEY,
-            **({"base_url": OPENAI_BASE_URL} if OPENAI_BASE_URL else {}),
-            temperature=0.1,  # Lower temperature for OCR accuracy
-        )
+        """Initialize OCR Agent with the configured vision LLM."""
+        self.llm = build_chat_model(temperature=0.1, schema=OcrSchema)  # low temp: OCR accuracy
+        self.parser = StructuredParser(OcrSchema)
 
         # Initialize circuit breaker ONCE per agent instance (shared state)
         if CIRCUIT_BREAKER_ENABLED:
@@ -104,7 +98,7 @@ Proporciona:
    - Relación del texto con elementos visuales
    - Posible significado o importancia investigativa
 
-Si no hay texto visible, indica claramente "No se detectó texto en la imagen".
+Si no hay texto visible, devuelve extracted_text vacío y has_text false.
 Si el texto está en otro alfabeto, transcríbelo fielmente."""
 
         message = HumanMessage(
@@ -115,8 +109,8 @@ Si el texto está en otro alfabeto, transcríbelo fielmente."""
         )
 
         response = self.llm.invoke([message])
-        ocr_text = response.content
-        has_text = "no se detectó texto" not in ocr_text.lower()
+        parsed, ocr_text = self.parser.parse_with_text(message_text(response.content))
+        has_text = bool(parsed["extracted_text"] or parsed["texts"])
 
         logger.info("✅ OCR extraction complete - Text found: %s", has_text)
 
@@ -125,7 +119,9 @@ Si el texto está en otro alfabeto, transcríbelo fielmente."""
             "status": "success",
             "analysis": ocr_text,
             "has_text": has_text,
-            "confidence": "high" if has_text else "n/a",
+            "extracted_text": parsed["extracted_text"],
+            "texts": parsed["texts"],
+            "confidence": (parsed["confidence"] or "medium") if has_text else "n/a",
         }
 
     @(track_agent_metrics("ocr") if METRICS_ENABLED else _noop_decorator)
