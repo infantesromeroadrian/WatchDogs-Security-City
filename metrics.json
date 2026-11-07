@@ -1,0 +1,795 @@
+{
+ "generated_at": "2026-11-07T22:14:04+00:00",
+ "git_commit": "8b217ba",
+ "backend": {
+  "provider": "ollama",
+  "model": "qwen3-vl:8b-instruct",
+  "endpoint_host": "localhost:11434"
+ },
+ "limit_per_family": null,
+ "calls": {
+  "total": 235,
+  "non_success": 1
+ },
+ "usage": {
+  "calls": 234,
+  "input_tokens": 752806,
+  "output_tokens": 118250
+ },
+ "families": {
+  "geolocation": {
+   "agent": "geolocation",
+   "n": 19,
+   "n_with_prediction": 9,
+   "median_error_km": 5.1,
+   "within_25km_pct": 36.8,
+   "within_200km_pct": 42.1,
+   "items": [
+    {
+     "city": "Madrid",
+     "error_km": null,
+     "predicted_city": null,
+     "stated_confidence": "No determinado"
+    },
+    {
+     "city": "Tokyo",
+     "error_km": 7.3,
+     "predicted_city": "Tokio",
+     "stated_confidence": "Muy Alto"
+    },
+    {
+     "city": "Nairobi",
+     "error_km": null,
+     "predicted_city": null,
+     "stated_confidence": "No determinado"
+    },
+    {
+     "city": "MexicoCity",
+     "error_km": null,
+     "predicted_city": null,
+     "stated_confidence": "Muy Bajo"
+    },
+    {
+     "city": "Cairo",
+     "error_km": 0.1,
+     "predicted_city": "El Cairo",
+     "stated_confidence": "Muy Alto"
+    },
+    {
+     "city": "Mumbai",
+     "error_km": null,
+     "predicted_city": null,
+     "stated_confidence": "No determinado"
+    },
+    {
+     "city": "Sydney",
+     "error_km": null,
+     "predicted_city": null,
+     "stated_confidence": "No determinado"
+    },
+    {
+     "city": "Reykjavik",
+     "error_km": 0.2,
+     "predicted_city": "Reikiavik",
+     "stated_confidence": "Muy Alto"
+    },
+    {
+     "city": "Istanbul",
+     "error_km": 5.1,
+     "predicted_city": "Estambul",
+     "stated_confidence": "Muy Alto"
+    },
+    {
+     "city": "Bangkok",
+     "error_km": null,
+     "predicted_city": null,
+     "stated_confidence": "Muy Bajo"
+    },
+    {
+     "city": "BuenosAires",
+     "error_km": 7392.2,
+     "predicted_city": "Ciudad de México",
+     "stated_confidence": "Muy Alto"
+    },
+    {
+     "city": "Moscow",
+     "error_km": null,
+     "predicted_city": null,
+     "stated_confidence": "No determinado"
+    },
+    {
+     "city": "Toronto",
+     "error_km": null,
+     "predicted_city": null,
+     "stated_confidence": "No determinable"
+    },
+    {
+     "city": "CapeTown",
+     "error_km": null,
+     "predicted_city": null,
+     "stated_confidence": "Muy Bajo"
+    },
+    {
+     "city": "Seoul",
+     "error_km": 8.2,
+     "predicted_city": "Seúl",
+     "stated_confidence": "Muy Alto"
+    },
+    {
+     "city": "Prague",
+     "error_km": 1.5,
+     "predicted_city": "Praga",
+     "stated_confidence": "Muy Alto"
+    },
+    {
+     "city": "Marrakesh",
+     "error_km": 38.7,
+     "predicted_city": "Marrakech",
+     "stated_confidence": "Muy Alto"
+    },
+    {
+     "city": "Lima",
+     "error_km": null,
+     "predicted_city": null,
+     "stated_confidence": "Muy Bajo"
+    },
+    {
+     "city": "Hanoi",
+     "error_km": 2.2,
+     "predicted_city": "Hanoi",
+     "stated_confidence": "Muy Alto"
+    }
+   ]
+  },
+  "ocr": {
+   "agent": "ocr",
+   "n": 24,
+   "dataset": "synthetic text images (PIL, seed 7)",
+   "mean_cer": 0.03,
+   "median_cer": 0.0,
+   "exact_match_pct": 87.5,
+   "mean_cer_by_kind": {
+    "plate": 0.021,
+    "sign": 0.039
+   },
+   "items": [
+    {
+     "file": "plate00.png",
+     "truth": "R CD 8789",
+     "read": "R CD 8789",
+     "cer": 0.0
+    },
+    {
+     "file": "plate01.png",
+     "truth": "6991 YCW",
+     "read": "6991 YCW",
+     "cer": 0.0
+    },
+    {
+     "file": "plate02.png",
+     "truth": "1614 DSS",
+     "read": "1614 DSS",
+     "cer": 0.0
+    },
+    {
+     "file": "plate03.png",
+     "truth": "4943 DXS",
+     "read": "4943 DXS",
+     "cer": 0.0
+    },
+    {
+     "file": "plate04.png",
+     "truth": "3028 KYC",
+     "read": "3028 KYC",
+     "cer": 0.0
+    },
+    {
+     "file": "plate05.png",
+     "truth": "YR16 KCX",
+     "read": "YR16 KCX",
+     "cer": 0.0
+    },
+    {
+     "file": "plate06.png",
+     "truth": "5744 SGX",
+     "read": "5744 SGX",
+     "cer": 0.0
+    },
+    {
+     "file": "plate07.png",
+     "truth": "6054 XHF",
+     "read": "6054 XHF",
+     "cer": 0.0
+    },
+    {
+     "file": "plate08.png",
+     "truth": "YJ57 FXD",
+     "read": "YJ57 FXD",
+     "cer": 0.0
+    },
+    {
+     "file": "plate09.png",
+     "truth": "CZ36 VXS",
+     "read": "CZ36 VXS",
+     "cer": 0.0
+    },
+    {
+     "file": "plate10.png",
+     "truth": "YT PM 4080",
+     "read": "IT PM 408(",
+     "cer": 0.25
+    },
+    {
+     "file": "plate11.png",
+     "truth": "4999 DYM",
+     "read": "4999 DYM",
+     "cer": 0.0
+    },
+    {
+     "file": "sign12.png",
+     "truth": "FARMACIA 24 HORAS",
+     "read": "ARMACIA 24 HORA",
+     "cer": 0.133
+    },
+    {
+     "file": "sign13.png",
+     "truth": "SALIDA DE EMERGENCIA",
+     "read": "VIDA DE EMERGEN",
+     "cer": 0.333
+    },
+    {
+     "file": "sign14.png",
+     "truth": "CALLE MAYOR 15",
+     "read": "CALLE MAYOR 15",
+     "cer": 0.0
+    },
+    {
+     "file": "sign15.png",
+     "truth": "HOTEL CENTRAL",
+     "read": "HOTEL CENTRAL",
+     "cer": 0.0
+    },
+    {
+     "file": "sign16.png",
+     "truth": "NO ENTRAR",
+     "read": "NO ENTRAR",
+     "cer": 0.0
+    },
+    {
+     "file": "sign17.png",
+     "truth": "AEROPUERTO",
+     "read": "AEROPUERTO",
+     "cer": 0.0
+    },
+    {
+     "file": "sign18.png",
+     "truth": "BANK OF TRUST",
+     "read": "BANK OF TRUST",
+     "cer": 0.0
+    },
+    {
+     "file": "sign19.png",
+     "truth": "PARKING LEVEL 2",
+     "read": "PARKING LEVEL 2",
+     "cer": 0.0
+    },
+    {
+     "file": "sign20.png",
+     "truth": "ESTACION NORTE",
+     "read": "ESTACION NORTE",
+     "cer": 0.0
+    },
+    {
+     "file": "sign21.png",
+     "truth": "CAFE DEL MAR",
+     "read": "CAFE DEL MAR",
+     "cer": 0.0
+    },
+    {
+     "file": "sign22.png",
+     "truth": "ZONA RESTRINGIDA",
+     "read": "ZONA RESTRINGIDA",
+     "cer": 0.0
+    },
+    {
+     "file": "sign23.png",
+     "truth": "OPEN 9 TO 18",
+     "read": "OPEN 9 TO 18",
+     "cer": 0.0
+    }
+   ]
+  },
+  "counting": {
+   "dataset": "COCO val2017 (licences BY / BY-SA / no-known-restrictions)",
+   "results": [
+    {
+     "agent": "detection",
+     "set": "people",
+     "task": "people: total_people",
+     "n": 20,
+     "n_missing": 1,
+     "mae": 2.25,
+     "median_abs_error": 1.5,
+     "exact_match_pct": 40.0,
+     "mean_truth": 5.5,
+     "baseline_mae_constant_median": 2.5
+    },
+    {
+     "agent": "face_analysis",
+     "set": "people",
+     "task": "people: detection_summary.total_persons",
+     "n": 20,
+     "n_missing": 0,
+     "mae": 2.45,
+     "median_abs_error": 1.0,
+     "exact_match_pct": 40.0,
+     "mean_truth": 5.5,
+     "baseline_mae_constant_median": 2.5
+    },
+    {
+     "agent": "detection",
+     "set": "vehicles",
+     "task": "vehicles: total_vehicles",
+     "n": 20,
+     "n_missing": 0,
+     "mae": 2.9,
+     "median_abs_error": 3.0,
+     "exact_match_pct": 5.0,
+     "mean_truth": 5.5,
+     "baseline_mae_constant_median": 2.5
+    },
+    {
+     "agent": "vehicle_detection",
+     "set": "vehicles",
+     "task": "vehicles: vehicle_count",
+     "n": 20,
+     "n_missing": 0,
+     "mae": 3.3,
+     "median_abs_error": 2.5,
+     "exact_match_pct": 10.0,
+     "mean_truth": 5.5,
+     "baseline_mae_constant_median": 2.5
+    },
+    {
+     "agent": "crowd_analysis",
+     "set": "crowd",
+     "task": "crowd: density_estimate.total_count",
+     "n": 10,
+     "n_missing": 1,
+     "mae": 6.7,
+     "median_abs_error": 5.0,
+     "exact_match_pct": 20.0,
+     "mean_truth": 12.0,
+     "baseline_mae_constant_median": 0.6
+    },
+    {
+     "agent": "detection",
+     "set": "crowd",
+     "task": "crowd: total_people",
+     "n": 10,
+     "n_missing": 0,
+     "mae": 3.9,
+     "median_abs_error": 3.0,
+     "exact_match_pct": 10.0,
+     "mean_truth": 12.0,
+     "baseline_mae_constant_median": 0.6
+    }
+   ]
+  },
+  "nato": {
+   "agent": "nato_symbology",
+   "dataset": "synthetic APP-6D symbols (milsymbol 3.0.5, MIT), 4 affiliations x 6 entities",
+   "n": 24,
+   "well_formed_sidc_pct": 45.8,
+   "affiliation_acc_pct": 41.7,
+   "symbol_set_acc_pct": 25.0,
+   "entity_acc_pct": 0.0,
+   "exact_16_acc_pct": 0.0,
+   "items": [
+    {
+     "truth": "10031000001211000000",
+     "predicted": null,
+     "entities_returned": 1
+    },
+    {
+     "truth": "10031000001205000000",
+     "predicted": null,
+     "entities_returned": 0
+    },
+    {
+     "truth": "10031000001213000000",
+     "predicted": "10031000001211000000",
+     "entities_returned": 1
+    },
+    {
+     "truth": "10031000001204000000",
+     "predicted": null,
+     "entities_returned": 0
+    },
+    {
+     "truth": "10031500001109000000",
+     "predicted": "10031000001213000000",
+     "entities_returned": 1
+    },
+    {
+     "truth": "10031500001110000000",
+     "predicted": "10031000002000000000",
+     "entities_returned": 1
+    },
+    {
+     "truth": "10061000001211000000",
+     "predicted": null,
+     "entities_returned": 0
+    },
+    {
+     "truth": "10061000001205000000",
+     "predicted": "10061000001201000000",
+     "entities_returned": 1
+    },
+    {
+     "truth": "10061000001213000000",
+     "predicted": "10061000000000000000",
+     "entities_returned": 1
+    },
+    {
+     "truth": "10061000001204000000",
+     "predicted": "10061000001201000000",
+     "entities_returned": 1
+    },
+    {
+     "truth": "10061500001109000000",
+     "predicted": null,
+     "entities_returned": 0
+    },
+    {
+     "truth": "10061500001110000000",
+     "predicted": null,
+     "entities_returned": 1
+    },
+    {
+     "truth": "10041000001211000000",
+     "predicted": "10031000001213000000",
+     "entities_returned": 1
+    },
+    {
+     "truth": "10041000001205000000",
+     "predicted": null,
+     "entities_returned": 1
+    },
+    {
+     "truth": "10041000001213000000",
+     "predicted": "10041000000000000000",
+     "entities_returned": 1
+    },
+    {
+     "truth": "10041000001204000000",
+     "predicted": null,
+     "entities_returned": 0
+    },
+    {
+     "truth": "10041500001109000000",
+     "predicted": "10041000000000000000",
+     "entities_returned": 1
+    },
+    {
+     "truth": "10041500001110000000",
+     "predicted": "10042000002000000000",
+     "entities_returned": 1
+    },
+    {
+     "truth": "10011000001211000000",
+     "predicted": "10014000000000000000",
+     "entities_returned": 1
+    },
+    {
+     "truth": "10011000001205000000",
+     "predicted": null,
+     "entities_returned": 1
+    },
+    {
+     "truth": "10011000001213000000",
+     "predicted": null,
+     "entities_returned": 1
+    },
+    {
+     "truth": "10011000001204000000",
+     "predicted": null,
+     "entities_returned": 0
+    },
+    {
+     "truth": "10011500001109000000",
+     "predicted": null,
+     "entities_returned": 1
+    },
+    {
+     "truth": "10011500001110000000",
+     "predicted": null,
+     "entities_returned": 1
+    }
+   ]
+  },
+  "weapons": {
+   "agent": "weapon_detection",
+   "dataset": "Wikimedia Commons PD/CC0, maintainer-labelled (small)",
+   "n": 20,
+   "tp": 10,
+   "fp": 0,
+   "fn": 0,
+   "tn": 10,
+   "accuracy_pct": 100.0,
+   "precision_pct": 100.0,
+   "recall_pct": 100.0
+  },
+  "latency": {
+   "images": 3,
+   "per_agent": {
+    "vision": {
+     "mean_input_tokens": 1357,
+     "mean_output_tokens": 1868,
+     "mean_seconds": 63.8,
+     "statuses": [
+      "success",
+      "success",
+      "success"
+     ]
+    },
+    "ocr": {
+     "mean_input_tokens": 1708,
+     "mean_output_tokens": 81,
+     "mean_seconds": 4.6,
+     "statuses": [
+      "success",
+      "success",
+      "success"
+     ]
+    },
+    "detection": {
+     "mean_input_tokens": 1548,
+     "mean_output_tokens": 234,
+     "mean_seconds": 9.3,
+     "statuses": [
+      "success",
+      "success",
+      "success"
+     ]
+    },
+    "geolocation": {
+     "mean_input_tokens": 5435,
+     "mean_output_tokens": 575,
+     "mean_seconds": 23.7,
+     "statuses": [
+      "success",
+      "success",
+      "success"
+     ]
+    },
+    "face_analysis": {
+     "mean_input_tokens": 5238,
+     "mean_output_tokens": 1861,
+     "mean_seconds": 72.5,
+     "statuses": [
+      "success",
+      "success",
+      "success"
+     ]
+    },
+    "forensic_analysis": {
+     "mean_input_tokens": 4698,
+     "mean_output_tokens": 369,
+     "mean_seconds": 15.7,
+     "statuses": [
+      "success",
+      "success",
+      "success"
+     ]
+    },
+    "context_intel": {
+     "mean_input_tokens": 4466,
+     "mean_output_tokens": 1341,
+     "mean_seconds": 50.6,
+     "statuses": [
+      "success",
+      "success",
+      "success"
+     ]
+    },
+    "vehicle_detection": {
+     "mean_input_tokens": 3210,
+     "mean_output_tokens": 104,
+     "mean_seconds": 5.4,
+     "statuses": [
+      "success",
+      "success",
+      "success"
+     ]
+    },
+    "weapon_detection": {
+     "mean_input_tokens": 3288,
+     "mean_output_tokens": 121,
+     "mean_seconds": 6.0,
+     "statuses": [
+      "success",
+      "success",
+      "success"
+     ]
+    },
+    "crowd_analysis": {
+     "mean_input_tokens": 3465,
+     "mean_output_tokens": 354,
+     "mean_seconds": 15.9,
+     "statuses": [
+      "success",
+      "success",
+      "success"
+     ]
+    },
+    "shadow_analysis": {
+     "mean_input_tokens": 3626,
+     "mean_output_tokens": 294,
+     "mean_seconds": 12.7,
+     "statuses": [
+      "success",
+      "success",
+      "success"
+     ]
+    },
+    "infrastructure_analysis": {
+     "mean_input_tokens": 3651,
+     "mean_output_tokens": 150,
+     "mean_seconds": 7.6,
+     "statuses": [
+      "success",
+      "success",
+      "success"
+     ]
+    },
+    "temporal_comparison": {
+     "mean_input_tokens": 3222,
+     "mean_output_tokens": 250,
+     "mean_seconds": 11.0,
+     "statuses": [
+      "success",
+      "success",
+      "success"
+     ]
+    },
+    "night_vision": {
+     "mean_input_tokens": 3535,
+     "mean_output_tokens": 369,
+     "mean_seconds": 15.3,
+     "statuses": [
+      "success",
+      "success",
+      "success"
+     ]
+    },
+    "nato_symbology": {
+     "mean_input_tokens": 3733,
+     "mean_output_tokens": 163,
+     "mean_seconds": 7.5,
+     "statuses": [
+      "success",
+      "success",
+      "success"
+     ]
+    },
+    "multi_monitor": {
+     "mean_input_tokens": 3090,
+     "mean_output_tokens": 270,
+     "mean_seconds": 11.2,
+     "statuses": [
+      "success",
+      "success",
+      "success"
+     ]
+    }
+   },
+   "full_analysis_16_agents": {
+    "input_tokens": 55275,
+    "output_tokens": 8405,
+    "sequential_seconds_this_backend": 332.8,
+    "note": "sequential time on the evaluated backend; production runs the 16 agents in parallel"
+   }
+  }
+ },
+ "service": {
+  "setup": "gunicorn 1 worker x 4 threads, MALLOC_ARENA_MAX=2, stub LLM with 0.5s per call",
+  "concurrent_analyses": 4,
+  "rounds": 2,
+  "frame_bytes": 166409,
+  "analyses_16_of_16_agents_ok": "8/8",
+  "median_latency_s": 2.27,
+  "max_latency_s": 2.34,
+  "worker_rss_idle_mb": 108.6,
+  "worker_rss_after_load_mb": 151.1,
+  "render_free_plan_limit_mb": 512
+ },
+ "notes": {
+  "dev_set": "El conjunto de evaluación se usó para ajustar prompts: es de desarrollo, no una prueba independiente.",
+  "protocol_deviations": [
+   {
+    "id": 1,
+    "descripcion": "Tras el pase 1 se cambiaron los marcadores del esquema JSON (0/0.0 -> '<número o null>') y se añadió la regla 'null, nunca 0'; (0,0) se trata como sin coordenadas. Medido sobre el mismo conjunto."
+   },
+   {
+    "id": 2,
+    "descripcion": "Tras el pase 2 se añadió la directiva 'en conteos da siempre una estimación numérica; null solo en coordenadas/códigos' (el pase 2 dejó crowd_analysis sin conteo). Medido sobre el mismo conjunto. El pase 3 es el reportado."
+   },
+   {
+    "id": "robustez",
+    "descripcion": "LengthFinishReasonError -> StructuredOutputError con reintento y BD de presupuesto propia del eval: correcciones de robustez, no ajustes al conjunto."
+   }
+  ],
+  "passes": {
+   "pase1": {
+    "geo_con_coordenadas": 19,
+    "geo_pct_25km": 42.1,
+    "geo_pct_200km": 42.1,
+    "ocr_cer": 0.03,
+    "mae_detection_people": 2.55,
+    "sin_dato_detection_people": 0,
+    "mae_face_analysis_people": 2.7,
+    "sin_dato_face_analysis_people": 1,
+    "mae_detection_vehicles": 3.15,
+    "sin_dato_detection_vehicles": 1,
+    "mae_vehicle_detection_vehicles": 2.4,
+    "sin_dato_vehicle_detection_vehicles": 0,
+    "mae_crowd_analysis_crowd": 3.1,
+    "sin_dato_crowd_analysis_crowd": 0,
+    "mae_detection_crowd": 6.2,
+    "sin_dato_detection_crowd": 1,
+    "nato_sidc_bien_formado": 83.3,
+    "nato_afiliacion": 70.8,
+    "nato_entidad": 4.2,
+    "armas_accuracy": 100.0,
+    "llamadas_no_success": 3
+   },
+   "pase2": {
+    "geo_con_coordenadas": 8,
+    "geo_pct_25km": 36.8,
+    "geo_pct_200km": 36.8,
+    "ocr_cer": 0.03,
+    "mae_detection_people": 2.1,
+    "sin_dato_detection_people": 2,
+    "mae_face_analysis_people": 2.75,
+    "sin_dato_face_analysis_people": 1,
+    "mae_detection_vehicles": 2.75,
+    "sin_dato_detection_vehicles": 1,
+    "mae_vehicle_detection_vehicles": 3.3,
+    "sin_dato_vehicle_detection_vehicles": 2,
+    "mae_crowd_analysis_crowd": 12.0,
+    "sin_dato_crowd_analysis_crowd": 10,
+    "mae_detection_crowd": 5.4,
+    "sin_dato_detection_crowd": 1,
+    "nato_sidc_bien_formado": 54.2,
+    "nato_afiliacion": 41.7,
+    "nato_entidad": 0.0,
+    "armas_accuracy": 100.0,
+    "llamadas_no_success": 6
+   },
+   "pase3": {
+    "geo_con_coordenadas": 9,
+    "geo_pct_25km": 36.8,
+    "geo_pct_200km": 42.1,
+    "ocr_cer": 0.03,
+    "mae_detection_people": 2.25,
+    "sin_dato_detection_people": 1,
+    "mae_face_analysis_people": 2.45,
+    "sin_dato_face_analysis_people": 0,
+    "mae_detection_vehicles": 2.9,
+    "sin_dato_detection_vehicles": 0,
+    "mae_vehicle_detection_vehicles": 3.3,
+    "sin_dato_vehicle_detection_vehicles": 0,
+    "mae_crowd_analysis_crowd": 6.7,
+    "sin_dato_crowd_analysis_crowd": 1,
+    "mae_detection_crowd": 3.9,
+    "sin_dato_detection_crowd": 0,
+    "nato_sidc_bien_formado": 45.8,
+    "nato_afiliacion": 41.7,
+    "nato_entidad": 0.0,
+    "armas_accuracy": 100.0,
+    "llamadas_no_success": 1
+   }
+  }
+ }
+}
