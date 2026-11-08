@@ -14,7 +14,8 @@ import logging
 from typing import Any
 
 from langchain_core.messages import HumanMessage
-from langchain_openai import ChatOpenAI
+from ...llm import StructuredParser, build_chat_model
+from ...models.structured import CrowdSchema
 
 from ...config import (
     AGENT_RETRY_MAX_ATTEMPTS,
@@ -25,9 +26,6 @@ from ...config import (
     CACHE_TTL_SECONDS,
     CIRCUIT_BREAKER_ENABLED,
     METRICS_ENABLED,
-    OPENAI_API_KEY,
-    OPENAI_BASE_URL,
-    OPENAI_MODEL,
 )
 from ...exceptions import (
     OpenAIAPIError,
@@ -62,14 +60,9 @@ class CrowdAnalysisAgent:
 
     def __init__(self) -> None:
         """Initialize Crowd Analysis Agent."""
-        self.llm = ChatOpenAI(
-            model=OPENAI_MODEL,
-            api_key=OPENAI_API_KEY,
-            temperature=0.3,  # Moderate for behavioral inference
-            **({"base_url": OPENAI_BASE_URL} if OPENAI_BASE_URL else {}),
-        )
+        self.llm = build_chat_model(temperature=0.3, schema=CrowdSchema)
 
-        self.parser = CrowdAnalysisResponseParser()
+        self.parser = StructuredParser(CrowdSchema, CrowdAnalysisResponseParser())
 
         if CIRCUIT_BREAKER_ENABLED:
             from ...config import (
@@ -111,7 +104,7 @@ class CrowdAnalysisAgent:
 
         logger.info("✅ Crowd analysis complete")
 
-        parsed_data = self.parser.parse(analysis_text)
+        parsed_data, analysis_text = self.parser.parse_with_text(analysis_text)
 
         return {
             "agent": "crowd_analysis",

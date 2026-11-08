@@ -106,3 +106,7 @@ secrets/
 *.swp
 *.swo
 *~
+
+# Runtime state
+data/llm_budget.sqlite3*
+metrics.tmp.json

@@ -1,12 +1,12 @@
 """
-Face Analysis Agent for detailed person identification using GPT-5.1.
+Face Analysis Agent for detailed person identification using the configured vision LLM.
 
 CIA-Level OSINT Analysis including:
 - Detailed facial feature extraction
 - Body characteristics and posture
 - Clothing and accessories identification
 - Distinguishing marks (scars, tattoos, birthmarks)
-- Age, gender, and ethnicity estimation
+- Age and apparent gender estimation (no ethnicity inference)
 - Behavioral context analysis
 """
 
@@ -14,7 +14,8 @@ import logging
 from typing import Any
 
 from langchain_core.messages import HumanMessage
-from langchain_openai import ChatOpenAI
+from ...llm import StructuredParser, build_chat_model
+from ...models.structured import FaceSchema
 
 from ...config import (
     AGENT_RETRY_MAX_ATTEMPTS,
@@ -25,9 +26,6 @@ from ...config import (
     CACHE_TTL_SECONDS,
     CIRCUIT_BREAKER_ENABLED,
     METRICS_ENABLED,
-    OPENAI_API_KEY,
-    OPENAI_BASE_URL,
-    OPENAI_MODEL,
 )
 from ...exceptions import (
     OpenAIAPIError,
@@ -60,16 +58,11 @@ class FaceAnalysisAgent:
     """
 
     def __init__(self) -> None:
-        """Initialize Face Analysis Agent with GPT-5.1 model."""
-        self.llm = ChatOpenAI(
-            model=OPENAI_MODEL,
-            api_key=OPENAI_API_KEY,
-            temperature=0.2,  # Low temperature for precise descriptions
-            **({"base_url": OPENAI_BASE_URL} if OPENAI_BASE_URL else {}),
-        )
+        """Initialize Face Analysis Agent with the configured vision LLM."""
+        self.llm = build_chat_model(temperature=0.2, schema=FaceSchema)
 
         # Initialize response parser
-        self.parser = FaceAnalysisResponseParser()
+        self.parser = StructuredParser(FaceSchema, FaceAnalysisResponseParser())
 
         # Initialize circuit breaker
         if CIRCUIT_BREAKER_ENABLED:
@@ -124,7 +117,7 @@ class FaceAnalysisAgent:
         logger.info("✅ Face/person analysis complete")
 
         # Parse response using enhanced parser
-        parsed_data = self.parser.parse(analysis_text)
+        parsed_data, analysis_text = self.parser.parse_with_text(analysis_text)
 
         # Build comprehensive result
         return {

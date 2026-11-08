@@ -11,9 +11,16 @@ from flask import Blueprint, Response, jsonify, request
 
 from ..agents.coordinator import CoordinatorAgent
 from ..agents.vision_agent import VisionAgent
+from ..agents.coordinator.state import DEFAULT_AGENTS
 from ..config import MAX_BASE64_SIZE_BYTES, MAX_BASE64_SIZE_MB
 from ..exceptions import ImageProcessingError
 from ..services.image_service import ImageService
+from ..services.llm_budget import (
+    BudgetExceeded,
+    current_principal,
+    get_budget,
+    seconds_until_reset,
+)
 from ..services.session_store import session_store
 from ..utils.location_extractor import LocationExtractor
 from .middleware import auth_required
@@ -23,6 +30,8 @@ logger = logging.getLogger(__name__)
 # Blueprint
 analysis_bp = Blueprint("analysis", __name__)
 
+MAX_CHAT_MESSAGE_CHARS = 4000
+
 # Services
 image_service = ImageService()
 coordinator = CoordinatorAgent()
@@ -31,6 +40,18 @@ location_extractor = LocationExtractor()
 # H-6: Module-level VisionAgent singleton — reused across chat requests
 # instead of re-instantiating per request (avoids repeated LLM + circuit breaker setup).
 _chat_vision_agent = VisionAgent()
+
+
+def budget_guard(calls: int) -> tuple[Response, int] | None:
+    """Reject a request up front (HTTP 429) if the daily LLM budget cannot cover it."""
+    try:
+        get_budget().check(calls, current_principal.get())
+    except BudgetExceeded as exc:
+        logger.warning("Daily LLM budget exhausted (scope=%s)", exc.scope.split(":")[0])
+        response = jsonify({"success": False, "error": "Daily analysis budget exhausted"})
+        response.headers["Retry-After"] = str(seconds_until_reset())
+        return response, 429
+    return None
 
 
 def validate_base64_size(base64_string: str) -> tuple[bool, str | None]:
@@ -178,6 +199,10 @@ def analyze_frame():
             logger.info("ℹ️ Context provided: %s chars", len(context))
 
         # Prepare image (decode and crop ROI if provided)
+        blocked = budget_guard(len(DEFAULT_AGENTS))
+        if blocked:
+            return blocked
+
         _image, prepared_base64, crop_meta = image_service.prepare_for_analysis(
             frame_base64, roi_coords
         )
@@ -258,6 +283,10 @@ def analyze_frame_stream():
         is_valid, error_msg = validate_base64_size(frame_base64)
         if not is_valid:
             return jsonify({"success": False, "error": error_msg}), 413
+
+        blocked = budget_guard(len(DEFAULT_AGENTS))
+        if blocked:
+            return blocked
 
         _image, prepared_base64, crop_meta = image_service.prepare_for_analysis(
             frame_base64, roi_coords
@@ -341,7 +370,7 @@ def analyze_frame_stream():
         return jsonify({"success": False, "error": f"Image processing failed: {e}"}), 422
     except (TypeError, KeyError) as e:
         logger.error("SSE analysis error: %s", e)
-        return jsonify({"success": False, "error": str(e)}), 500
+        return jsonify({"success": False, "error": "Internal server error"}), 500
 
 
 def _handle_session_chat(data: dict) -> tuple:
@@ -363,6 +392,11 @@ def _handle_session_chat(data: dict) -> tuple:
 
     if not user_message:
         return jsonify({"success": False, "error": "No message provided"}), 400
+    if len(user_message) > MAX_CHAT_MESSAGE_CHARS:
+        return jsonify({"success": False, "error": "Message too long"}), 413
+    blocked = budget_guard(1)
+    if blocked:
+        return blocked
 
     if not session_store.session_exists(session_id):
         return jsonify(
@@ -636,6 +670,10 @@ def analyze_batch():
 
         frames = data["frames"]
         enable_context = data.get("enable_context_accumulation", True)
+
+        blocked = budget_guard(len(DEFAULT_AGENTS) * min(len(frames), 10))
+        if blocked:
+            return blocked
 
         # Validate frames count
         if not frames or len(frames) > 10:

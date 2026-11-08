@@ -156,10 +156,10 @@ class VideoService:
 
         except PermissionError as e:
             logger.error("❌ Permission denied saving video: %s", e)
-            return {"success": False, "error": f"Permission denied: {e}"}
-        except (OSError, IOError) as e:
+            return {"success": False, "error": "Failed to save video"}
+        except OSError as e:
             logger.error("❌ Failed to save video: %s", e)
-            return {"success": False, "error": f"Failed to save video: {e}"}
+            return {"success": False, "error": "Failed to save video"}
 
     @staticmethod
     def cleanup_old_videos(retention_hours: int = 1) -> int:
@@ -194,7 +194,7 @@ class VideoService:
         except PermissionError as e:
             logger.error("❌ Permission denied during cleanup: %s", e)
             return 0
-        except (OSError, IOError) as e:
+        except OSError as e:
             logger.error("❌ Cleanup failed: %s", e)
             return 0
 

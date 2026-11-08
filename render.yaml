@@ -1,6 +1,11 @@
 # =============================================================================
-# Render Blueprint — WatchDogs Security City (16 OSINT Agents)
-# Deploy: Connect GitHub repo → Render auto-detects this file
+# Render Blueprint - WatchDogs Security City (16 OSINT agents)
+# Deploy: connect the GitHub repo; Render reads this file.
+#
+# SECRETS are never stored here. Every `sync: false` variable must be set by hand in the Render
+# dashboard (Environment). The app REFUSES TO START without ADMIN_PASSWORD and FLASK_SECRET_KEY, so a
+# deploy can never come up open: if a variable is missing the deploy fails its health check and
+# Render keeps the previous version running.
 # =============================================================================
 
 services:
@@ -9,69 +14,56 @@ services:
     runtime: docker
     repo: https://github.com/infantesromeroadrian/WatchDogs-Security-City
     plan: free
-    region: frankfurt  # EU — closest to Spain
+    region: frankfurt  # EU - closest to Spain
 
-    # Override Dockerfile CMD for free tier (1 worker, memory-optimized)
-    dockerCommand: >
-      gunicorn
-      --bind 0.0.0.0:5000
-      --workers 1
-      --threads 4
-      --timeout 300
-      --preload
-      --max-requests 50
-      --max-requests-jitter 10
-      --access-logfile -
-      --error-logfile -
-      src.backend.app:app
-
-    # Health check
+    # gunicorn flags live in the Dockerfile CMD (1 worker x 4 threads, --preload, --max-requests 50)
     healthCheckPath: /api/health
 
-    # Environment variables (set GROQ_API_KEY in Render dashboard as secret)
     envVars:
-      # LLM Provider — Groq API
-      - key: OPENAI_BASE_URL
-        value: https://api.groq.com/openai/v1
+      # --- Secrets (set in the dashboard; never commit) ---
+      - key: OPENAI_API_KEY      # provider key (Groq by default)
+        sync: false
+      - key: ADMIN_USERNAME      # login for the web app and the API
+        sync: false
+      - key: ADMIN_PASSWORD      # >= 12 chars upper + lower + digit, or >= 32 random chars (dashboard "Generate")
+        sync: false
+      - key: FLASK_SECRET_KEY    # signs session tokens
+        generateValue: true
+      - key: MAP_BOX_ACCESS_TOKEN  # optional; use a URL-restricted public token
+        sync: false
+
+      # --- LLM backend: one provider, one default model (see README) ---
+      - key: LLM_PROVIDER
+        value: groq
       - key: OPENAI_MODEL
         value: meta-llama/llama-4-scout-17b-16e-instruct
-      - key: OPENAI_API_KEY
-        sync: false  # Must be set manually in Render dashboard
+      - key: AGENT_TIMEOUT_SECONDS   # must stay below gunicorn --timeout (300)
+        value: "180"
+      - key: LLM_TIMEOUT_SECONDS
+        value: "120"
 
-      # Flask
-      - key: FLASK_HOST
-        value: "0.0.0.0"
-      - key: FLASK_PORT
-        value: "5000"
+      # --- Hard limits protecting the provider key ---
+      - key: LLM_DAILY_CALL_LIMIT          # a full analysis = 16 calls per frame
+        value: "480"
+      - key: LLM_DAILY_CALL_LIMIT_PER_USER
+        value: "320"
+      - key: MAX_VIDEO_SIZE_MB
+        value: "50"
+      - key: VIDEO_RETENTION_MINUTES
+        value: "15"
+
+      # --- Runtime ---
+      - key: FLASK_ENV
+        value: production
       - key: FLASK_DEBUG
         value: "false"
+      - key: TRUST_PROXY       # Render terminates TLS: honour X-Forwarded-*
+        value: "1"
+      - key: MALLOC_ARENA_MAX  # keeps RSS ~200 MB under 4 concurrent analyses (512 MB plan)
+        value: "2"
       - key: PYTHONPATH
         value: /app
       - key: PYTHONDONTWRITEBYTECODE
         value: "1"
       - key: PYTHONUNBUFFERED
         value: "1"
-
-      # Agent timeout (generous for free tier cold starts)
-      - key: AGENT_TIMEOUT_SECONDS
-        value: "180"
-
-      # All 16 agents enabled
-      - key: VEHICLE_DETECTION_ENABLED
-        value: "true"
-      - key: WEAPON_DETECTION_ENABLED
-        value: "true"
-      - key: CROWD_ANALYSIS_ENABLED
-        value: "true"
-      - key: SHADOW_ANALYSIS_ENABLED
-        value: "true"
-      - key: INFRASTRUCTURE_ANALYSIS_ENABLED
-        value: "true"
-      - key: TEMPORAL_COMPARISON_ENABLED
-        value: "true"
-      - key: NIGHT_VISION_ENABLED
-        value: "true"
-      - key: NATO_SYMBOLOGY_ENABLED
-        value: "true"
-      - key: MULTI_MONITOR_ENABLED
-        value: "true"

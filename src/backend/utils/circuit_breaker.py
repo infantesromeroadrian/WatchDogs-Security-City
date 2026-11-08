@@ -80,13 +80,10 @@ class CircuitBreaker:
                     self.success_count = 0
                     logger.info("Circuit breaker: Attempting recovery (HALF_OPEN)")
                 else:
+                    since_failure = time.time() - (self.last_failure_time or 0)
                     raise CircuitBreakerOpenError(
-                        "Circuit breaker is OPEN. "
-                        "Last failure: %.1fs ago. Recovery timeout: %ss"
-                        % (
-                            time.time() - (self.last_failure_time or 0),
-                            self.recovery_timeout,
-                        )
+                        f"Circuit breaker is OPEN. Last failure: {since_failure:.1f}s ago. "
+                        f"Recovery timeout: {self.recovery_timeout}s"
                     )
 
         # Execute function OUTSIDE the lock to avoid holding it during I/O

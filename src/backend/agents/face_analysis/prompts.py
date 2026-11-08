@@ -51,7 +51,6 @@ NO estás identificando personas específicas, estás DESCRIBIENDO característi
   * Confianza en la estimación
 - **Género aparente**: Masculino/Femenino/No determinable
   * Indicadores utilizados
-- **Grupo étnico aparente**: Descripción general de rasgos
   * NOTA: Solo para descripción física, no para categorización
 
 ### 2.2 FORMA DE LA CARA
@@ -239,7 +238,6 @@ NO estás identificando personas específicas, estás DESCRIBIENDO característi
 **DATOS DEMOGRÁFICOS ESTIMADOS:**
 - Edad aparente: [rango] - Confianza: [Alta/Media/Baja]
 - Género aparente: [M/F/No determinable] - Confianza: [Alta/Media/Baja]
-- Grupo étnico aparente: [descripción general]
 
 **DESCRIPCIÓN FACIAL:**
 - Forma de cara: [descripción]

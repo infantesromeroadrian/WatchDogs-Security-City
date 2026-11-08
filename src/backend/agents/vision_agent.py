@@ -1,12 +1,13 @@
 """
-Vision Agent for general scene analysis using GPT-5.1.
+Vision Agent for general scene analysis using the configured vision LLM.
 """
 
 import logging
 from typing import Any
 
 from langchain_core.messages import HumanMessage
-from langchain_openai import ChatOpenAI
+from ..llm import build_chat_model, message_text
+from ..utils.untrusted import IMAGE_TEXT_NOTICE, sanitize_text
 
 from ..config import (
     AGENT_RETRY_MAX_ATTEMPTS,
@@ -17,10 +18,6 @@ from ..config import (
     CACHE_TTL_SECONDS,
     CIRCUIT_BREAKER_ENABLED,
     METRICS_ENABLED,
-    OPENAI_API_KEY,
-    OPENAI_BASE_URL,
-    OPENAI_MODEL,
-    OPENAI_TEMPERATURE,
 )
 from ..models.agent_results import VisionResult
 from ..utils.cache_utils import get_cache_key, get_cached_result, set_cached_result
@@ -42,13 +39,8 @@ class VisionAgent:
     """Agent specialized in general visual scene analysis."""
 
     def __init__(self):
-        """Initialize Vision Agent with GPT-5.1 model."""
-        self.llm = ChatOpenAI(
-            model=OPENAI_MODEL,
-            api_key=OPENAI_API_KEY,
-            temperature=OPENAI_TEMPERATURE,
-            **({"base_url": OPENAI_BASE_URL} if OPENAI_BASE_URL else {}),
-        )
+        """Initialize Vision Agent with the configured vision LLM."""
+        self.llm = build_chat_model()
 
         # Initialize circuit breaker ONCE per agent instance (shared state)
         if CIRCUIT_BREAKER_ENABLED:
@@ -128,6 +120,8 @@ Proporciona un análisis estructurado:
 
 Sé objetivo y factual en tu análisis. RESPONDE EN ESPAÑOL."""
 
+        prompt += "\n\n" + IMAGE_TEXT_NOTICE
+
         # Create message with image
         message = HumanMessage(
             content=[
@@ -138,7 +132,7 @@ Sé objetivo y factual en tu análisis. RESPONDE EN ESPAÑOL."""
 
         # Get response from LLM
         response = self.llm.invoke([message])
-        analysis_text = response.content
+        analysis_text = sanitize_text(message_text(response.content), 8000)
 
         logger.info("✅ General vision analysis complete")
 

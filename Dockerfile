@@ -24,7 +24,8 @@ FROM python:3.12-slim AS runtime
 # Environment configuration
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PYTHONPATH=/app
+    PYTHONPATH=/app \
+    MALLOC_ARENA_MAX=2
 
 # Install system dependencies for OpenCV and other libraries
 # libgl1: OpenGL support for OpenCV
@@ -68,12 +69,18 @@ EXPOSE 5000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:5000/api/health')" || exit 1
 
-# Production WSGI server — gunicorn with gthread workers for parallel agent calls.
-# Workers: 2 (demo/internal use). Timeout: 300s (16 agents calling Groq in parallel).
+# Production WSGI server: 1 worker x 4 threads (gthread). The 16 agents of one request run
+# in LangGraph's thread pool; a single worker keeps RSS ~200 MB under load (measured), which
+# fits Render's free plan (512 MB). MALLOC_ARENA_MAX=2 avoids glibc per-thread arena bloat.
+# Timeout 300 s must stay above AGENT_TIMEOUT_SECONDS.
 CMD ["gunicorn", \
      "--bind", "0.0.0.0:5000", \
-     "--workers", "2", \
+     "--workers", "1", \
+     "--threads", "4", \
      "--timeout", "300", \
+     "--preload", \
+     "--max-requests", "50", \
+     "--max-requests-jitter", "10", \
      "--access-logfile", "-", \
      "--error-logfile", "-", \
      "src.backend.app:app"]

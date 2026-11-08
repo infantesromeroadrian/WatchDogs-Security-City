@@ -34,6 +34,8 @@ class OCRResult(BaseModel):
     status: str = Field(description="Status: success, error, timeout")
     analysis: str = Field(description="OCR text output")
     has_text: bool = Field(default=False, description="Whether text was detected")
+    extracted_text: list[str] = Field(default_factory=list, description="Literal texts read")
+    texts: list[dict] = Field(default_factory=list, description="Texts with kind/language")
     confidence: str | None = Field(default=None, description="Confidence level")
     error: str | None = Field(default=None, description="Error message if failed")
 
@@ -46,6 +48,9 @@ class DetectionResult(BaseModel):
     agent: str = Field(default="detection", description="Agent identifier")
     status: str = Field(description="Status: success, error, timeout")
     analysis: str = Field(description="Detection text output")
+    objects: list[dict] = Field(default_factory=list, description="Object labels with counts")
+    total_people: int | None = Field(default=None, description="People counted")
+    total_vehicles: int | None = Field(default=None, description="Vehicles counted")
     confidence: str | None = Field(default=None, description="Confidence level")
     error: str | None = Field(default=None, description="Error message if failed")
 

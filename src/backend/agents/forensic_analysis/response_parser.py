@@ -168,7 +168,7 @@ class ForensicResponseParser:
 
         # Copy-paste
         cp_match = re.search(
-            r"Copy-paste:\s*\[?\s*(Detectado|No detectado)\s*\]?\s*(?:-\s*(.+?))?(?:\n|$)",
+            r"Copy-paste:\s*\[?\s*(Detectado|No detectado)[ \t]*\]?[ \t]*(?:-[ \t]*([^\n]+))?(?:\n|$)",
             text,
             re.IGNORECASE,
         )
@@ -179,7 +179,7 @@ class ForensicResponseParser:
 
         # Splicing
         splice_match = re.search(
-            r"Splicing:\s*\[?\s*(Detectado|No detectado)\s*\]?\s*(?:-\s*(.+?))?(?:\n|$)",
+            r"Splicing:\s*\[?\s*(Detectado|No detectado)[ \t]*\]?[ \t]*(?:-[ \t]*([^\n]+))?(?:\n|$)",
             text,
             re.IGNORECASE,
         )
@@ -190,7 +190,7 @@ class ForensicResponseParser:
 
         # Retouching
         retouch_match = re.search(
-            r"Retoque:\s*\[?\s*(Detectado|No detectado)\s*\]?\s*(?:-\s*(.+?))?(?:\n|$)",
+            r"Retoque:\s*\[?\s*(Detectado|No detectado)[ \t]*\]?[ \t]*(?:-[ \t]*([^\n]+))?(?:\n|$)",
             text,
             re.IGNORECASE,
         )
@@ -201,7 +201,7 @@ class ForensicResponseParser:
 
         # AI Generation
         ai_match = re.search(
-            r"Generación\s*IA:\s*\[?\s*(Detectado|No detectado)\s*\]?\s*(?:-\s*(.+?))?(?:\n|$)",
+            r"Generación\s*IA:\s*\[?\s*(Detectado|No detectado)[ \t]*\]?[ \t]*(?:-[ \t]*([^\n]+))?(?:\n|$)",
             text,
             re.IGNORECASE,
         )

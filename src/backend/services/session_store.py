@@ -9,17 +9,21 @@ Thread-safe, TTL-based expiration, bounded memory usage.
 """
 
 import logging
+import os
 import threading
 import time
 import uuid
 from dataclasses import dataclass, field
+from collections.abc import Callable
 from typing import Any
 
 logger = logging.getLogger(__name__)
 
 # Defaults
-DEFAULT_TTL_SECONDS = 3600  # 1 hour
-DEFAULT_MAX_SESSIONS = 100
+# Privacy/memory: images live only as long as a follow-up chat needs them. Short TTL and
+# a small cap by default (Render free = 512 MB); override with SESSION_* variables.
+DEFAULT_TTL_SECONDS = int(os.getenv("SESSION_TTL_SECONDS", "900"))  # 15 min
+DEFAULT_MAX_SESSIONS = int(os.getenv("SESSION_MAX_SESSIONS", "20"))
 DEFAULT_MAX_IMAGES_PER_SESSION = 20
 
 
@@ -92,6 +96,7 @@ class SessionImageStore:
         self._max_sessions = max_sessions
         self._max_images_per_session = max_images_per_session
         self._ttl_seconds = ttl_seconds
+        self._listeners: list[Callable[[str], None]] = []
 
         logger.info(
             "SessionImageStore initialized (max_sessions=%s, max_images=%s, ttl=%ss)",
@@ -99,6 +104,24 @@ class SessionImageStore:
             max_images_per_session,
             ttl_seconds,
         )
+
+    def add_eviction_listener(self, listener: Callable[[str], None]) -> None:
+        """Register ``listener(thread_id)``, called whenever a session's data is dropped."""
+        self._listeners.append(listener)
+
+    def _drop(self, session_id: str) -> None:
+        """Remove a session and notify listeners (e.g. to purge its LangGraph thread).
+
+        Caller must hold the lock.
+        """
+        session = self._sessions.pop(session_id, None)
+        if session is None:
+            return
+        for listener in self._listeners:
+            try:
+                listener(session.thread_id)
+            except Exception:  # noqa: BLE001 - a listener must never break eviction
+                logger.exception("Eviction listener failed")
 
     def create_session(self, thread_id: str | None = None) -> str:
         """
@@ -300,7 +323,7 @@ class SessionImageStore:
                 return False
             session = self._sessions[session_id]
             if session.is_expired:
-                del self._sessions[session_id]
+                self._drop(session_id)
                 return False
             return True
 
@@ -316,10 +339,17 @@ class SessionImageStore:
         """
         with self._lock:
             if session_id in self._sessions:
-                del self._sessions[session_id]
+                self._drop(session_id)
                 logger.info("Session deleted: %s", session_id[:8])
                 return True
             return False
+
+    def purge_expired(self) -> int:
+        """Evict expired sessions now (called by the background janitor)."""
+        with self._lock:
+            before = len(self._sessions)
+            self._evict_expired()
+            return before - len(self._sessions)
 
     @property
     def active_session_count(self) -> int:
@@ -338,7 +368,7 @@ class SessionImageStore:
 
         session = self._sessions[session_id]
         if session.is_expired:
-            del self._sessions[session_id]
+            self._drop(session_id)
             msg = f"Session {session_id[:8]} has expired"
             raise KeyError(msg)
 
@@ -352,7 +382,7 @@ class SessionImageStore:
             if (time.time() - session.last_accessed) > self._ttl_seconds
         ]
         for sid in expired:
-            del self._sessions[sid]
+            self._drop(sid)
             logger.debug("Evicted expired session: %s", sid[:8])
 
     def _evict_if_full(self) -> None:
@@ -363,7 +393,7 @@ class SessionImageStore:
                 self._sessions,
                 key=lambda sid: self._sessions[sid].last_accessed,
             )
-            del self._sessions[oldest_sid]
+            self._drop(oldest_sid)
             logger.info("Evicted oldest session: %s (at capacity)", oldest_sid[:8])
 
 

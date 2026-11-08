@@ -46,7 +46,7 @@ class ImageService:
         except UnidentifiedImageError as e:
             logger.error("❌ Unidentified image format: %s", e)
             raise ImageProcessingError(f"Cannot identify image format: {e}") from e
-        except (OSError, IOError) as e:
+        except OSError as e:
             logger.error("❌ Failed to read image data: %s", e)
             raise ImageProcessingError(f"Failed to read image data: {e}") from e
 
@@ -101,7 +101,7 @@ class ImageService:
             buffer.seek(0)
             base64_string = base64.b64encode(buffer.read()).decode("utf-8")
             return f"data:image/{img_format.lower()};base64,{base64_string}"
-        except (OSError, IOError) as e:
+        except OSError as e:
             logger.error("❌ Failed to save image: %s", e)
             raise ImageProcessingError(f"Failed to save image to buffer: {e}") from e
         except (KeyError, ValueError) as e:

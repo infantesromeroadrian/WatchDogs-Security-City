@@ -7,6 +7,7 @@ event so the thread can exit cooperatively after a timeout.
 """
 
 import builtins
+import contextvars
 import logging
 import queue
 import signal
@@ -102,9 +103,11 @@ def with_timeout(seconds: int = 30) -> Callable:
             # Expose cancel event so callers can pass it downstream.
             wrapper.cancel_event = cancel  # type: ignore[attr-defined]
 
+            ctx = contextvars.copy_context()  # keep request-scoped context (e.g. LLM budget principal)
+
             def _target() -> None:
                 try:
-                    result_q.put(func(*args, **kwargs))
+                    result_q.put(ctx.run(func, *args, **kwargs))
                 except Exception as exc:
                     error_q.put(exc)
 

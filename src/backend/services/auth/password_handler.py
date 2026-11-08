@@ -7,9 +7,21 @@ import secrets
 
 # Security constants
 MIN_PASSWORD_LENGTH = 12
+# NIST SP 800-63B favours length over composition rules: from this length on a password is accepted
+# without the upper/lower/digit rule (e.g. the 64 hex characters of Render's "Generate").
+MIN_PASSPHRASE_LENGTH = 32
+# Rejects trivially repetitive long values such as 40 times the same character.
+MIN_DISTINCT_CHARS = 8
 
 
-def hash_password(password: str, salt: str | None = None) -> tuple[str, str]:
+# OWASP (2023) minimum for PBKDF2-HMAC-SHA256. Stored per user so old hashes (100k) still verify.
+PBKDF2_ITERATIONS = 600_000
+LEGACY_ITERATIONS = 100_000
+
+
+def hash_password(
+    password: str, salt: str | None = None, iterations: int = PBKDF2_ITERATIONS
+) -> tuple[str, str]:
     """
     Hash password with salt using PBKDF2-HMAC-SHA256.
 
@@ -23,12 +35,11 @@ def hash_password(password: str, salt: str | None = None) -> tuple[str, str]:
     if not salt:
         salt = secrets.token_hex(32)
 
-    # Use PBKDF2 with 100,000 iterations (OWASP recommendation)
     hashed = hashlib.pbkdf2_hmac(
         "sha256",
         password.encode("utf-8"),
         salt.encode("utf-8"),
-        100000,  # iterations
+        iterations,
     )
 
     return hashed.hex(), salt
@@ -46,6 +57,11 @@ def validate_password_strength(password: str) -> tuple[bool, str]:
             False,
             f"Password must be at least {MIN_PASSWORD_LENGTH} characters",
         )
+
+    if len(password) >= MIN_PASSPHRASE_LENGTH:
+        if len(set(password)) < MIN_DISTINCT_CHARS:
+            return False, "Password is too repetitive"
+        return True, ""
 
     if not any(c.isupper() for c in password):
         return False, "Password must contain at least one uppercase letter"
