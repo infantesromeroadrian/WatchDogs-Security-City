@@ -1,8 +1,8 @@
 # M-6: Removed flask-login (never imported) and flask-sqlalchemy (never imported)
 # M-7: All versions pinned to minimum known-good (use pip freeze > lockfile for exact pins)
-flask==3.0.0
-flask-cors==4.0.0
-flask-limiter==3.5.0
+flask==3.1.3
+flask-cors==6.0.5
+flask-limiter==4.1.1
 langgraph>=0.2.50
 langchain>=0.3.0
 langchain-openai>=0.2.0
@@ -27,4 +27,4 @@ reportlab>=4.0.0
 imagehash>=4.3.1
 
 # Production WSGI server
-gunicorn>=22.0.0
+gunicorn>=26.2.0
