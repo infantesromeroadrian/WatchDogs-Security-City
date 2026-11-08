@@ -7,6 +7,11 @@ import secrets
 
 # Security constants
 MIN_PASSWORD_LENGTH = 12
+# NIST SP 800-63B favours length over composition rules: from this length on a password is accepted
+# without the upper/lower/digit rule (e.g. the 64 hex characters of Render's "Generate").
+MIN_PASSPHRASE_LENGTH = 32
+# Rejects trivially repetitive long values such as 40 times the same character.
+MIN_DISTINCT_CHARS = 8
 
 
 # OWASP (2023) minimum for PBKDF2-HMAC-SHA256. Stored per user so old hashes (100k) still verify.
@@ -52,6 +57,11 @@ def validate_password_strength(password: str) -> tuple[bool, str]:
             False,
             f"Password must be at least {MIN_PASSWORD_LENGTH} characters",
         )
+
+    if len(password) >= MIN_PASSPHRASE_LENGTH:
+        if len(set(password)) < MIN_DISTINCT_CHARS:
+            return False, "Password is too repetitive"
+        return True, ""
 
     if not any(c.isupper() for c in password):
         return False, "Password must contain at least one uppercase letter"

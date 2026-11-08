@@ -59,7 +59,8 @@ docker compose up --build # http://localhost:5000  (pide usuario y contraseña)
 ```
 
 Sin Docker: `pip install -r requirements.txt && python main.py`.
-`ADMIN_PASSWORD` debe tener al menos 12 caracteres con mayúscula, minúscula y dígito. **La aplicación no arranca sin
+`ADMIN_PASSWORD` debe tener al menos 12 caracteres con mayúscula, minúscula y dígito, o al menos 32 caracteres aleatorios
+(por ejemplo, el botón «Generate» de Render), sin reglas de composición (NIST SP 800-63B). **La aplicación no arranca sin
 `ADMIN_PASSWORD`** (y, en producción, sin `FLASK_SECRET_KEY`): no existe contraseña por defecto ni generada.
 
 ### Despliegue en Render

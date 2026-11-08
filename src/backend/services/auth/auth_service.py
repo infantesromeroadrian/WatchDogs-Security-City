@@ -92,7 +92,7 @@ class AuthService:
         if not password:
             raise RuntimeError(
                 "ADMIN_PASSWORD is not set. Authentication is mandatory: set ADMIN_USERNAME and "
-                "ADMIN_PASSWORD (min 12 chars, upper/lower/digit) in the environment."
+                "ADMIN_PASSWORD (12+ chars with upper/lower/digit, or 32+ random chars) in the environment."
             )
         is_valid, error_msg = validate_password_strength(password)
         if not is_valid:

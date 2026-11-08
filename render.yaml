@@ -25,7 +25,7 @@ services:
         sync: false
       - key: ADMIN_USERNAME      # login for the web app and the API
         sync: false
-      - key: ADMIN_PASSWORD      # >= 12 chars, upper + lower + digit
+      - key: ADMIN_PASSWORD      # >= 12 chars upper + lower + digit, or >= 32 random chars (dashboard "Generate")
         sync: false
       - key: FLASK_SECRET_KEY    # signs session tokens
         generateValue: true
